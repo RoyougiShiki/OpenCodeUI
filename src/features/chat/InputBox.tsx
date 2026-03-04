@@ -133,6 +133,10 @@ function InputBoxComponent({
   const [slashOpen, setSlashOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
   const [slashStartIndex, setSlashStartIndex] = useState(-1)
+
+  // 拖拽状态
+  const [isDragging, setIsDragging] = useState(false)
+  const dragCounterRef = useRef(0)
   
   // 响应式 placeholder
   const isMobile = useIsMobile()
@@ -729,6 +733,41 @@ function InputBoxComponent({
     // 文本粘贴：让 textarea 默认处理（天然支持换行和 undo）
   }, [supportsAnyFile, fileCaps, handleFileUpload])
 
+  // 拖拽文件到输入框
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current++
+    // 只在有文件类型的拖拽时高亮
+    if (supportsAnyFile && e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true)
+    }
+  }, [supportsAnyFile])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current--
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounterRef.current = 0
+    setIsDragging(false)
+    if (supportsAnyFile && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files)
+    }
+  }, [supportsAnyFile, handleFileUpload])
+
   // 滚动同步（备用，overlay 内部也监听了 scroll）
   const handleScroll = useCallback(() => {
     // overlay 通过 useEffect 自动同步，这里留空
@@ -837,12 +876,24 @@ function InputBoxComponent({
               <div 
                 ref={inputContainerRef}
                 data-input-box
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
                 className={`bg-bg-000 rounded-2xl relative z-30 transition-all focus-within:outline-none shadow-lg shadow-black/5 ${
-                  isStreaming 
-                    ? 'border border-accent-main-100/50 animate-border-pulse' 
-                    : 'border border-border-200/50'
+                  isDragging
+                    ? 'border border-accent-main-100 ring-2 ring-accent-main-100/30'
+                    : isStreaming 
+                      ? 'border border-accent-main-100/50 animate-border-pulse' 
+                      : 'border border-border-200/50'
                 }`}
               >
+                {/* Drop overlay */}
+                {isDragging && (
+                  <div className="absolute inset-0 z-50 rounded-2xl bg-accent-main-100/5 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+                    <span className="text-sm text-accent-main-100 font-medium">Drop files here</span>
+                  </div>
+                )}
                 {/* @ Mention Menu */}
                 <MentionMenu
                   ref={mentionMenuRef}
