@@ -2,7 +2,7 @@ import { memo, useState, useCallback, useRef, useEffect } from 'react'
 import { ContentBlock } from '../../../../components'
 import { ChevronRightIcon, ExternalLinkIcon, StopIcon } from '../../../../components/Icons'
 import { useDelayedRender } from '../../../../hooks'
-import { useChildSessions, useSessionState, messageStore, childSessionStore } from '../../../../store'
+import { useSessionState, messageStore, childSessionStore } from '../../../../store'
 import { abortSession, getSessionMessages } from '../../../../api'
 import { sessionErrorHandler } from '../../../../utils'
 import type { ToolRendererProps } from '../types'
@@ -31,16 +31,11 @@ export const TaskRenderer = memo(function TaskRenderer({ part }: ToolRendererPro
   const prompt = input?.prompt as string || ''
   const agentType = input?.subagent_type as string || 'general'
   
-  // 获取子 session ID
+  // 获取子 session ID —— 只信任 metadata.sessionId，它是后端为这个 tool call 精确设置的
+  // 不再用 useChildSessions fallback 取"最新子 session"，因为同一父 session 下多个 task
+  // 同时运行时，fallback 会导致所有 task 都渲染最新的那个子 session
   const metadata = state.metadata as Record<string, unknown> | undefined
-  const metadataSessionId = metadata?.sessionId as string | undefined
-  
-  const childSessions = useChildSessions(part.sessionID)
-  const storeChildSession = childSessions.length > 0 
-    ? childSessions.sort((a, b) => b.createdAt - a.createdAt)[0]
-    : null
-    
-  const targetSessionId = metadataSessionId || storeChildSession?.id
+  const targetSessionId = metadata?.sessionId as string | undefined
   
   const isRunning = state.status === 'running' || state.status === 'pending'
   const isCompleted = state.status === 'completed'
