@@ -45,6 +45,8 @@ ENV MISE_DATA_DIR=/root/.local/share/mise \
 
 ENV PATH="/root/.local/bin:/root/.cargo/bin:/root/.local/share/mise/shims:/root/.local/share/mise/bin:${PATH}"
 
+COPY ./docker/backend-entrypoint.sh /usr/local/bin/backend-entrypoint.sh
+
 EXPOSE 4096
 
-CMD ["opencode", "serve", "--port", "4096", "--hostname", "0.0.0.0"]
+ENTRYPOINT ["/bin/sh", "/usr/local/bin/backend-entrypoint.sh"]
