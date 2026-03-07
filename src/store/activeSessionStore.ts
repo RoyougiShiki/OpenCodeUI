@@ -132,6 +132,9 @@ class ActiveSessionStore {
     permissions: Array<{ id: string; sessionID: string; permission: string; patterns?: string[] }>,
     questions: Array<{ id: string; sessionID: string; questions?: Array<{ header?: string }> }>,
   ) {
+    this.pendingRequests.clear()
+    this.deferredIdleSessions.clear()
+
     let changed = false
     const newMap = { ...this.state.statusMap }
 

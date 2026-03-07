@@ -241,7 +241,7 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
         .then(setAgents)
         .catch(() => {})
     },
-  })
+  }, effectiveDirectory)
 
   const handleVisibleMessageIdsChange = useCallback((ids: string[]) => {
     if (!routeSessionId || ids.length === 0) return

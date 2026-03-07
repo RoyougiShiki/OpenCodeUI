@@ -72,10 +72,13 @@ function belongsToCurrentSession(sessionId: string): boolean {
   return childSessionStore.belongsToSession(sessionId, currentSessionId)
 }
 
-export function useGlobalEvents(callbacks?: GlobalEventsCallbacks) {
+export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: string) {
   // 使用 ref 保存 callbacks，避免重新订阅 SSE
   const callbacksRef = useRef(callbacks)
   callbacksRef.current = callbacks
+  const directoryRef = useRef<string | undefined>(directory)
+  const refreshRef = useRef<(() => void) | null>(null)
+  const initializedDirectoryRef = useRef(false)
 
   useEffect(() => {
     // 节流滚动
@@ -94,17 +97,18 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks) {
     // ============================================
 
     const fetchAndInitialize = () => {
-      Promise.all([
-        getSessionStatus().catch(() => ({} as Record<string, import('../types/api/session').SessionStatus>)),
-        getPendingPermissions().catch(() => []),
-        getPendingQuestions().catch(() => []),
-      ]).then(([statusMap, permissions, questions]) => {
-        activeSessionStore.initialize(statusMap)
-        if (permissions.length > 0 || questions.length > 0) {
+        const directory = directoryRef.current
+        Promise.all([
+          getSessionStatus(directory).catch(() => ({} as Record<string, import('../types/api/session').SessionStatus>)),
+          getPendingPermissions(undefined, directory).catch(() => []),
+          getPendingQuestions(undefined, directory).catch(() => []),
+        ]).then(([statusMap, permissions, questions]) => {
+          activeSessionStore.initialize(statusMap)
           activeSessionStore.initializePendingRequests(permissions, questions)
-        }
-      })
+        })
     }
+
+    refreshRef.current = fetchAndInitialize
 
     const unsubscribe = subscribeToEvents({
       // ============================================
@@ -321,6 +325,20 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks) {
 
     fetchAndInitialize()
 
-    return unsubscribe
+    return () => {
+      if (refreshRef.current === fetchAndInitialize) {
+        refreshRef.current = null
+      }
+      unsubscribe()
+    }
   }, []) // 空依赖，只订阅一次
+
+  useEffect(() => {
+    directoryRef.current = directory
+    if (initializedDirectoryRef.current) {
+      refreshRef.current?.()
+      return
+    }
+    initializedDirectoryRef.current = true
+  }, [directory])
 }
