@@ -48,21 +48,37 @@ const tagName = `v${version}`;
 const today = new Date().toISOString().slice(0, 10);
 const isPrerelease = version.includes("-");
 
+function replaceCargoPackageVersion(lockContent, packageName, nextVersion) {
+  const packageBlocks = lockContent.split("[[package]]");
+  const updatedBlocks = packageBlocks.map((block, index) => {
+    if (index === 0) return block;
+    if (!block.includes(`name = "${packageName}"`)) return block;
+    return block.replace(/^(version\s*=\s*)"[^"]*"/m, `$1"${nextVersion}"`);
+  });
+  return updatedBlocks.join("[[package]]");
+}
+
 // ---------------------------------------------------------------------------
 // 1. Update package.json
 // ---------------------------------------------------------------------------
 const pkgPath = resolve(root, "package.json");
 const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
 const oldVersion = pkg.version;
-pkg.version = version;
-writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+
+execSync(`npm version ${version} --no-git-tag-version --allow-same-version`, {
+  cwd: root,
+  stdio: "pipe",
+});
 console.log(`  package.json          ${oldVersion} -> ${version}`);
+console.log(`  package-lock.json     ${oldVersion} -> ${version}`);
 
 // ---------------------------------------------------------------------------
 // 2. Update src-tauri/Cargo.toml
 // ---------------------------------------------------------------------------
 const cargoPath = resolve(root, "src-tauri/Cargo.toml");
 let cargo = readFileSync(cargoPath, "utf-8");
+const cargoPackageNameMatch = cargo.match(/^(name\s*=\s*)"([^"]+)"/m);
+const cargoPackageName = cargoPackageNameMatch?.[2];
 cargo = cargo.replace(
   /^(version\s*=\s*)"[^"]*"/m,
   `$1"${version}"`
@@ -80,7 +96,20 @@ writeFileSync(tauriConfPath, JSON.stringify(tauriConf, null, 2) + "\n");
 console.log(`  src-tauri/tauri.conf  ${oldVersion} -> ${version}`);
 
 // ---------------------------------------------------------------------------
-// 4. Generate changelog entry from git log
+// 4. Update src-tauri/Cargo.lock (workspace package entry)
+// ---------------------------------------------------------------------------
+const cargoLockPath = resolve(root, "src-tauri/Cargo.lock");
+if (cargoPackageName && existsSync(cargoLockPath)) {
+  const cargoLock = readFileSync(cargoLockPath, "utf-8");
+  const updatedCargoLock = replaceCargoPackageVersion(cargoLock, cargoPackageName, version);
+  if (updatedCargoLock !== cargoLock) {
+    writeFileSync(cargoLockPath, updatedCargoLock);
+    console.log(`  src-tauri/Cargo.lock  ${oldVersion} -> ${version}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 5. Generate changelog entry from git log
 // ---------------------------------------------------------------------------
 let commits = "";
 try {
@@ -134,12 +163,11 @@ if (existsSync(changelogPath)) {
 console.log(`  CHANGELOG.md          added entry for ${tagName}`);
 
 // ---------------------------------------------------------------------------
-// 5. Print next steps
+// 6. Print next steps
 // ---------------------------------------------------------------------------
 console.log(`
 Done! Next steps:
 
-  npm install                          # sync package-lock.json
   git add -A
   git commit -m "chore: bump version to ${version}"
   git tag ${tagName}
