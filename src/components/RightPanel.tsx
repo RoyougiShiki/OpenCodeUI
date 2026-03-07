@@ -1,17 +1,24 @@
-import { memo, useCallback, useState, useEffect } from 'react'
+import { lazy, memo, Suspense, useCallback, useState, useEffect } from 'react'
 import { useLayoutStore, layoutStore, type PanelTab } from '../store/layoutStore'
 import { PanelContainer } from './PanelContainer'
-import { SessionChangesPanel } from './SessionChangesPanel'
-import { FileExplorer } from './FileExplorer'
-import { Terminal } from './Terminal'
-import { McpPanel } from './McpPanel'
-import { SkillPanel } from './SkillPanel'
-import { WorktreePanel } from './WorktreePanel'
 import { useMessageStore } from '../store'
 import { useDirectory } from '../hooks'
 import { createPtySession, removePtySession } from '../api/pty'
 import type { TerminalTab } from '../store/layoutStore'
 import { ResizablePanel } from './ui/ResizablePanel'
+
+const SessionChangesPanel = lazy(() =>
+  import('./SessionChangesPanel').then(module => ({ default: module.SessionChangesPanel })),
+)
+const FileExplorer = lazy(() => import('./FileExplorer').then(module => ({ default: module.FileExplorer })))
+const Terminal = lazy(() => import('./Terminal').then(module => ({ default: module.Terminal })))
+const McpPanel = lazy(() => import('./McpPanel').then(module => ({ default: module.McpPanel })))
+const SkillPanel = lazy(() => import('./SkillPanel').then(module => ({ default: module.SkillPanel })))
+const WorktreePanel = lazy(() => import('./WorktreePanel').then(module => ({ default: module.WorktreePanel })))
+
+function PanelFallback() {
+  return <div className="flex items-center justify-center h-full text-text-400 text-xs">Loading panel...</div>
+}
 
 export const RightPanel = memo(function RightPanel() {
   const { rightPanelOpen, rightPanelWidth, previewFile } = useLayoutStore()
@@ -70,13 +77,15 @@ export const RightPanel = memo(function RightPanel() {
       switch (activeTab.type) {
         case 'files':
           return (
-            <FileExplorer
-              directory={currentDirectory}
-              previewFile={previewFile}
-              position="right"
-              isPanelResizing={isPanelResizing}
-              sessionId={sessionId}
-            />
+            <Suspense fallback={<PanelFallback />}>
+              <FileExplorer
+                directory={currentDirectory}
+                previewFile={previewFile}
+                position="right"
+                isPanelResizing={isPanelResizing}
+                sessionId={sessionId}
+              />
+            </Suspense>
           )
         case 'changes':
           if (!sessionId) {
@@ -84,15 +93,35 @@ export const RightPanel = memo(function RightPanel() {
               <div className="flex items-center justify-center h-full text-text-400 text-xs">No active session</div>
             )
           }
-          return <SessionChangesPanel sessionId={sessionId} isResizing={isPanelResizing} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <SessionChangesPanel sessionId={sessionId} isResizing={isPanelResizing} />
+            </Suspense>
+          )
         case 'terminal':
-          return <TerminalContent activeTab={activeTab} directory={currentDirectory} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <TerminalContent activeTab={activeTab} directory={currentDirectory} />
+            </Suspense>
+          )
         case 'mcp':
-          return <McpPanel isResizing={isPanelResizing} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <McpPanel isResizing={isPanelResizing} />
+            </Suspense>
+          )
         case 'skill':
-          return <SkillPanel isResizing={isPanelResizing} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <SkillPanel isResizing={isPanelResizing} />
+            </Suspense>
+          )
         case 'worktree':
-          return <WorktreePanel isResizing={isPanelResizing} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <WorktreePanel isResizing={isPanelResizing} />
+            </Suspense>
+          )
         default:
           return null
       }

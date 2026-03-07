@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
+import { lazy, Suspense, useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import {
   Header,
   InputBox,
@@ -9,13 +9,11 @@ import {
   type ChatAreaHandle,
 } from './features/chat'
 import { type ModelSelectorHandle } from './features/chat/ModelSelector'
-import { SettingsDialog } from './features/settings/SettingsDialog'
-import { CommandPalette, type CommandItem } from './components/CommandPalette'
+import type { CommandItem } from './components/CommandPalette'
 import { ToastContainer } from './components/ToastContainer'
 import { RightPanel } from './components/RightPanel'
 import { OutlineIndex } from './components/OutlineIndex'
 import { BottomPanel } from './components/BottomPanel'
-import { CloseServiceDialog } from './components/CloseServiceDialog'
 import { useTheme, useModels, useModelSelection, useChatSession, useGlobalKeybindings } from './hooks'
 import type { KeybindingHandlers } from './hooks/useKeybindings'
 import { keybindingStore } from './store/keybindingStore'
@@ -28,6 +26,16 @@ import type { Attachment } from './api'
 import { createPtySession } from './api/pty'
 import { autoApproveStore } from './store/autoApproveStore'
 import type { TerminalTab } from './store/layoutStore'
+
+const SettingsDialog = lazy(() =>
+  import('./features/settings/SettingsDialog').then(module => ({ default: module.SettingsDialog })),
+)
+const CommandPalette = lazy(() =>
+  import('./components/CommandPalette').then(module => ({ default: module.CommandPalette })),
+)
+const CloseServiceDialog = lazy(() =>
+  import('./components/CloseServiceDialog').then(module => ({ default: module.CloseServiceDialog })),
+)
 
 function App() {
   // ============================================
@@ -873,34 +881,38 @@ function App() {
         <RightPanel />
       </div>
 
-      {/* Settings Dialog */}
-      <SettingsDialog
-        isOpen={settingsDialogOpen}
-        onClose={closeSettings}
-        themeMode={themeMode}
-        onThemeChange={setThemeWithAnimation}
-        isWideMode={isWideMode}
-        onToggleWideMode={toggleWideMode}
-        initialTab={settingsInitialTab}
-        presetId={presetId}
-        onPresetChange={setPresetWithAnimation}
-        availablePresets={availablePresets}
-        customCSS={customCSS}
-        onCustomCSSChange={setCustomCSS}
-      />
+      <Suspense fallback={null}>
+        {/* Settings Dialog */}
+        <SettingsDialog
+          isOpen={settingsDialogOpen}
+          onClose={closeSettings}
+          themeMode={themeMode}
+          onThemeChange={setThemeWithAnimation}
+          isWideMode={isWideMode}
+          onToggleWideMode={toggleWideMode}
+          initialTab={settingsInitialTab}
+          presetId={presetId}
+          onPresetChange={setPresetWithAnimation}
+          availablePresets={availablePresets}
+          customCSS={customCSS}
+          onCustomCSSChange={setCustomCSS}
+        />
 
-      {/* Command Palette */}
-      <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} commands={commands} />
+        {/* Command Palette */}
+        <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} commands={commands} />
+      </Suspense>
 
       {/* Toast Notifications */}
       <ToastContainer />
 
-      {/* Close Service Dialog (Tauri desktop) */}
-      <CloseServiceDialog
-        isOpen={showCloseDialog}
-        onConfirm={handleCloseDialogConfirm}
-        onCancel={() => setShowCloseDialog(false)}
-      />
+      <Suspense fallback={null}>
+        {/* Close Service Dialog (Tauri desktop) */}
+        <CloseServiceDialog
+          isOpen={showCloseDialog}
+          onConfirm={handleCloseDialogConfirm}
+          onCancel={() => setShowCloseDialog(false)}
+        />
+      </Suspense>
     </div>
   )
 }

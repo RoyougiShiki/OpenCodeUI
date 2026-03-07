@@ -6,6 +6,21 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+
+          if (id.includes('@xterm/')) return 'vendor-terminal'
+          if (id.includes('shiki')) return 'vendor-shiki'
+          if (id.includes('react-markdown') || id.includes('remark-gfm')) return 'vendor-markdown'
+          if (id.includes('react-virtuoso')) return 'vendor-virtuoso'
+          if (id.includes('@tauri-apps/')) return 'vendor-tauri'
+        },
+      },
+    },
+  },
 
   // Tauri CLI 兼容：不清屏，让 Tauri 的日志能保留在终端
   clearScreen: false,

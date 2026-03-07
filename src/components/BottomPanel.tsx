@@ -1,19 +1,26 @@
-import { memo, useCallback, useState, useEffect, useRef } from 'react'
-import { Terminal } from './Terminal'
+import { lazy, memo, Suspense, useCallback, useState, useEffect, useRef } from 'react'
 import { TerminalIcon } from './Icons'
 import { PanelContainer } from './PanelContainer'
 import { layoutStore, useLayoutStore, type TerminalTab, type PanelTab } from '../store/layoutStore'
 import { createPtySession, removePtySession, listPtySessions } from '../api/pty'
-import { SessionChangesPanel } from './SessionChangesPanel'
-import { FileExplorer } from './FileExplorer'
-import { McpPanel } from './McpPanel'
-import { SkillPanel } from './SkillPanel'
-import { WorktreePanel } from './WorktreePanel'
 import { useMessageStore } from '../store'
 import { ResizablePanel } from './ui/ResizablePanel'
 
+const Terminal = lazy(() => import('./Terminal').then(module => ({ default: module.Terminal })))
+const SessionChangesPanel = lazy(() =>
+  import('./SessionChangesPanel').then(module => ({ default: module.SessionChangesPanel })),
+)
+const FileExplorer = lazy(() => import('./FileExplorer').then(module => ({ default: module.FileExplorer })))
+const McpPanel = lazy(() => import('./McpPanel').then(module => ({ default: module.McpPanel })))
+const SkillPanel = lazy(() => import('./SkillPanel').then(module => ({ default: module.SkillPanel })))
+const WorktreePanel = lazy(() => import('./WorktreePanel').then(module => ({ default: module.WorktreePanel })))
+
 interface BottomPanelProps {
   directory?: string
+}
+
+function PanelFallback() {
+  return <div className="flex items-center justify-center h-full text-text-400 text-xs">Loading panel...</div>
 }
 
 export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelProps) {
@@ -133,15 +140,21 @@ export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelP
 
       switch (activeTab.type) {
         case 'terminal':
-          return <TerminalContent activeTab={activeTab} directory={directory} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <TerminalContent activeTab={activeTab} directory={directory} />
+            </Suspense>
+          )
         case 'files':
           return (
-            <FileExplorer
-              directory={directory ?? ''}
-              previewFile={previewFile}
-              position="bottom"
-              isPanelResizing={isPanelResizing}
-            />
+            <Suspense fallback={<PanelFallback />}>
+              <FileExplorer
+                directory={directory ?? ''}
+                previewFile={previewFile}
+                position="bottom"
+                isPanelResizing={isPanelResizing}
+              />
+            </Suspense>
           )
         case 'changes':
           if (!sessionId) {
@@ -149,13 +162,29 @@ export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelP
               <div className="flex items-center justify-center h-full text-text-400 text-xs">No active session</div>
             )
           }
-          return <SessionChangesPanel sessionId={sessionId} isResizing={isPanelResizing} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <SessionChangesPanel sessionId={sessionId} isResizing={isPanelResizing} />
+            </Suspense>
+          )
         case 'mcp':
-          return <McpPanel isResizing={isPanelResizing} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <McpPanel isResizing={isPanelResizing} />
+            </Suspense>
+          )
         case 'skill':
-          return <SkillPanel isResizing={isPanelResizing} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <SkillPanel isResizing={isPanelResizing} />
+            </Suspense>
+          )
         case 'worktree':
-          return <WorktreePanel isResizing={isPanelResizing} />
+          return (
+            <Suspense fallback={<PanelFallback />}>
+              <WorktreePanel isResizing={isPanelResizing} />
+            </Suspense>
+          )
         default:
           return null
       }
