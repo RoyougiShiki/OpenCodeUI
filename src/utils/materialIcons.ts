@@ -54,7 +54,7 @@ const FILE_NAMES: Record<string, Icon> = {
   'turbo.json': 'turborepo',
   'gulpfile.js': 'gulp',
   makefile: 'makefile',
-  'cmake': 'cmake',
+  cmake: 'cmake',
   'cmakelists.txt': 'cmake',
   // Framework config
   'tailwind.config.js': 'tailwindcss',
@@ -82,9 +82,9 @@ const FILE_NAMES: Record<string, Icon> = {
   'go.sum': 'go-mod',
   'requirements.txt': 'python',
   'pyproject.toml': 'python',
-  'pipfile': 'python',
-  'gemfile': 'ruby',
-  'rakefile': 'ruby',
+  pipfile: 'python',
+  gemfile: 'ruby',
+  rakefile: 'ruby',
   'composer.json': 'php',
   'build.gradle': 'gradle',
   'pom.xml': 'maven',
@@ -104,7 +104,7 @@ const FILE_NAMES: Record<string, Icon> = {
   // Docs
   'readme.md': 'readme',
   'changelog.md': 'changelog',
-  'license': 'license',
+  license: 'license',
   'license.md': 'license',
   // Misc
   '.babelrc': 'babel',
@@ -455,14 +455,7 @@ function resolveFolderIcon(path: string, expanded: boolean): Icon {
 /**
  * Get the material icon SVG URL for a file or folder.
  */
-export function getMaterialIconUrl(
-  path: string,
-  type: 'file' | 'directory',
-  expanded = false,
-): string {
-  const icon =
-    type === 'directory'
-      ? resolveFolderIcon(path, expanded)
-      : resolveFileIcon(path)
+export function getMaterialIconUrl(path: string, type: 'file' | 'directory', expanded = false): string {
+  const icon = type === 'directory' ? resolveFolderIcon(path, expanded) : resolveFileIcon(path)
   return `${_base}material-icons/${icon}.svg`
 }

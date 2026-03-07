@@ -60,13 +60,13 @@ export const McpPanel = memo(function McpPanel({ isResizing: _isResizing }: McpP
       setError(null)
       const statusResponse = await getMcpStatus(currentDirectory)
       console.log('[McpPanel] Status:', statusResponse)
-      
+
       // 构建 server entries
       const entries: ServerEntry[] = Object.entries(statusResponse).map(([name, status]) => ({
         name,
         status: status as MCPStatus,
       }))
-      
+
       // 按名称排序
       entries.sort((a, b) => a.name.localeCompare(b.name))
       setServers(entries)
@@ -90,73 +90,85 @@ export const McpPanel = memo(function McpPanel({ isResizing: _isResizing }: McpP
   }, [loadStatus])
 
   // 连接服务器
-  const handleConnect = useCallback(async (name: string) => {
-    setActionLoading(name)
-    try {
-      await connectMcpServer(name, currentDirectory)
-      // 等一下让后端处理完
-      await new Promise(r => setTimeout(r, 500))
-      await loadStatus()
-    } catch (err) {
-      console.error('[McpPanel] Failed to connect:', err)
-    } finally {
-      setActionLoading(null)
-    }
-  }, [currentDirectory, loadStatus])
+  const handleConnect = useCallback(
+    async (name: string) => {
+      setActionLoading(name)
+      try {
+        await connectMcpServer(name, currentDirectory)
+        // 等一下让后端处理完
+        await new Promise(r => setTimeout(r, 500))
+        await loadStatus()
+      } catch (err) {
+        console.error('[McpPanel] Failed to connect:', err)
+      } finally {
+        setActionLoading(null)
+      }
+    },
+    [currentDirectory, loadStatus],
+  )
 
   // 断开服务器
-  const handleDisconnect = useCallback(async (name: string) => {
-    setActionLoading(name)
-    try {
-      await disconnectMcpServer(name, currentDirectory)
-      await new Promise(r => setTimeout(r, 500))
-      await loadStatus()
-    } catch (err) {
-      console.error('[McpPanel] Failed to disconnect:', err)
-    } finally {
-      setActionLoading(null)
-    }
-  }, [currentDirectory, loadStatus])
+  const handleDisconnect = useCallback(
+    async (name: string) => {
+      setActionLoading(name)
+      try {
+        await disconnectMcpServer(name, currentDirectory)
+        await new Promise(r => setTimeout(r, 500))
+        await loadStatus()
+      } catch (err) {
+        console.error('[McpPanel] Failed to disconnect:', err)
+      } finally {
+        setActionLoading(null)
+      }
+    },
+    [currentDirectory, loadStatus],
+  )
 
   // 开始认证流程
-  const handleAuth = useCallback(async (name: string) => {
-    setActionLoading(name)
-    try {
-      // 尝试使用 authenticate 接口（自动打开浏览器）
-      await authenticateMcp(name, currentDirectory)
-      // 等待用户完成认证
-      await new Promise(r => setTimeout(r, 3000))
-      await loadStatus()
-    } catch (err) {
-      // 如果失败，尝试 startMcpAuth 获取 URL
+  const handleAuth = useCallback(
+    async (name: string) => {
+      setActionLoading(name)
       try {
-        const result = await startMcpAuth(name, currentDirectory)
-        window.open(result.url, '_blank', 'noopener,noreferrer')
+        // 尝试使用 authenticate 接口（自动打开浏览器）
+        await authenticateMcp(name, currentDirectory)
+        // 等待用户完成认证
         await new Promise(r => setTimeout(r, 3000))
         await loadStatus()
-      } catch (err2) {
-        console.error('[McpPanel] Failed to start auth:', err2)
+      } catch (err) {
+        // 如果失败，尝试 startMcpAuth 获取 URL
+        try {
+          const result = await startMcpAuth(name, currentDirectory)
+          window.open(result.url, '_blank', 'noopener,noreferrer')
+          await new Promise(r => setTimeout(r, 3000))
+          await loadStatus()
+        } catch (err2) {
+          console.error('[McpPanel] Failed to start auth:', err2)
+        }
+      } finally {
+        setActionLoading(null)
       }
-    } finally {
-      setActionLoading(null)
-    }
-  }, [currentDirectory, loadStatus])
+    },
+    [currentDirectory, loadStatus],
+  )
 
   // 添加新服务器
-  const handleAddServer = useCallback(async (name: string, config: McpServerConfig) => {
-    setActionLoading('__adding__')
-    try {
-      await addMcpServer(name, config, currentDirectory)
-      setShowAddForm(false)
-      await new Promise(r => setTimeout(r, 500))
-      await loadStatus()
-    } catch (err) {
-      console.error('[McpPanel] Failed to add server:', err)
-      throw err
-    } finally {
-      setActionLoading(null)
-    }
-  }, [currentDirectory, loadStatus])
+  const handleAddServer = useCallback(
+    async (name: string, config: McpServerConfig) => {
+      setActionLoading('__adding__')
+      try {
+        await addMcpServer(name, config, currentDirectory)
+        setShowAddForm(false)
+        await new Promise(r => setTimeout(r, 500))
+        await loadStatus()
+      } catch (err) {
+        console.error('[McpPanel] Failed to add server:', err)
+        throw err
+      } finally {
+        setActionLoading(null)
+      }
+    },
+    [currentDirectory, loadStatus],
+  )
 
   // ============================================
   // Render
@@ -169,9 +181,7 @@ export const McpPanel = memo(function McpPanel({ isResizing: _isResizing }: McpP
         <div className="flex items-center gap-2 text-text-100 text-sm font-medium">
           <PlugIcon size={14} />
           <span>MCP Servers</span>
-          {!loading && (
-            <span className="text-text-400 text-xs">({servers.length})</span>
-          )}
+          {!loading && <span className="text-text-400 text-xs">({servers.length})</span>}
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -233,7 +243,7 @@ export const McpPanel = memo(function McpPanel({ isResizing: _isResizing }: McpP
           </div>
         ) : (
           <div className="divide-y divide-border-100">
-            {servers.map((server) => (
+            {servers.map(server => (
               <ServerItem
                 key={server.name}
                 server={server}
@@ -260,11 +270,7 @@ interface AddServerFormProps {
   isLoading: boolean
 }
 
-const AddServerForm = memo(function AddServerForm({
-  onSubmit,
-  onCancel,
-  isLoading,
-}: AddServerFormProps) {
+const AddServerForm = memo(function AddServerForm({ onSubmit, onCancel, isLoading }: AddServerFormProps) {
   const [serverType, setServerType] = useState<'local' | 'remote'>('local')
   const [name, setName] = useState('')
   const [command, setCommand] = useState('')
@@ -351,7 +357,7 @@ const AddServerForm = memo(function AddServerForm({
         <input
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={e => setName(e.target.value)}
           placeholder="Server name"
           className="w-full px-2 py-1.5 text-xs bg-bg-100 border border-border-200 rounded text-text-100 placeholder-text-500 focus:outline-none focus:border-accent-main-100"
         />
@@ -363,7 +369,7 @@ const AddServerForm = memo(function AddServerForm({
           <input
             type="text"
             value={command}
-            onChange={(e) => setCommand(e.target.value)}
+            onChange={e => setCommand(e.target.value)}
             placeholder="Command (e.g., npx -y @modelcontextprotocol/server-github)"
             className="w-full px-2 py-1.5 text-xs bg-bg-100 border border-border-200 rounded text-text-100 placeholder-text-500 focus:outline-none focus:border-accent-main-100"
           />
@@ -376,7 +382,7 @@ const AddServerForm = memo(function AddServerForm({
           <input
             type="text"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={e => setUrl(e.target.value)}
             placeholder="Server URL (e.g., https://mcp.example.com)"
             className="w-full px-2 py-1.5 text-xs bg-bg-100 border border-border-200 rounded text-text-100 placeholder-text-500 focus:outline-none focus:border-accent-main-100"
           />
@@ -384,9 +390,7 @@ const AddServerForm = memo(function AddServerForm({
       )}
 
       {/* Error */}
-      {error && (
-        <div className="mb-2 text-xs text-danger-100">{error}</div>
-      )}
+      {error && <div className="mb-2 text-xs text-danger-100">{error}</div>}
 
       {/* Submit */}
       <button
@@ -422,16 +426,10 @@ interface ServerItemProps {
   onAuth: (name: string) => void
 }
 
-const ServerItem = memo(function ServerItem({
-  server,
-  isLoading,
-  onConnect,
-  onDisconnect,
-  onAuth,
-}: ServerItemProps) {
+const ServerItem = memo(function ServerItem({ server, isLoading, onConnect, onDisconnect, onAuth }: ServerItemProps) {
   const { name, status } = server
   const [expanded, setExpanded] = useState(false)
-  
+
   // 获取错误信息（如果有）
   const getErrorMessage = (): string | null => {
     if (status.status === 'failed') {
@@ -469,16 +467,14 @@ const ServerItem = memo(function ServerItem({
   // 渲染操作按钮
   const renderActions = () => {
     if (isLoading) {
-      return (
-        <SpinnerIcon size={14} className="animate-spin text-text-400" />
-      )
+      return <SpinnerIcon size={14} className="animate-spin text-text-400" />
     }
 
     switch (status.status) {
       case 'connected':
         return (
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation()
               onDisconnect(name)
             }}
@@ -491,7 +487,7 @@ const ServerItem = memo(function ServerItem({
       case 'failed':
         return (
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation()
               onConnect(name)
             }}
@@ -504,7 +500,7 @@ const ServerItem = memo(function ServerItem({
       case 'needs_client_registration':
         return (
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation()
               onAuth(name)
             }}
@@ -522,20 +518,24 @@ const ServerItem = memo(function ServerItem({
   // 状态指示器颜色
   const getStatusDotColor = () => {
     switch (status.status) {
-      case 'connected': return 'bg-success-100'
-      case 'disabled': return 'bg-text-500'
-      case 'failed': return 'bg-danger-100'
+      case 'connected':
+        return 'bg-success-100'
+      case 'disabled':
+        return 'bg-text-500'
+      case 'failed':
+        return 'bg-danger-100'
       case 'needs_auth':
       case 'needs_client_registration':
         return 'bg-warning-100'
-      default: return 'bg-text-500'
+      default:
+        return 'bg-text-500'
     }
   }
 
   return (
     <div className="group">
       {/* Main row */}
-      <div 
+      <div
         className="flex items-center gap-2 px-3 py-2 hover:bg-bg-200/50 transition-colors"
         onClick={() => errorMessage && setExpanded(!expanded)}
       >
@@ -566,9 +566,7 @@ const ServerItem = memo(function ServerItem({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {renderActions()}
-        </div>
+        <div className="flex items-center gap-2 shrink-0">{renderActions()}</div>
       </div>
 
       {/* Expanded Error Details */}

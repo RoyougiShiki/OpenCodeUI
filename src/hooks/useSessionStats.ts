@@ -10,10 +10,10 @@ export interface SessionStats {
   cacheRead: number
   cacheWrite: number
   totalTokens: number
-  
+
   // 费用
   totalCost: number
-  
+
   // 上下文使用率（基于最后一条消息的 input tokens）
   contextUsed: number
   contextLimit: number
@@ -26,16 +26,10 @@ export interface SessionStats {
  */
 export function useSessionStats(contextLimit: number = 200000): SessionStats {
   const { messages } = useMessageStore()
-  
+
   return useMemo(() => {
     const tokenTotal = (tokens: AssistantMessageInfo['tokens']): number => {
-      return (
-        tokens.input +
-        tokens.output +
-        tokens.reasoning +
-        (tokens.cache?.read || 0) +
-        (tokens.cache?.write || 0)
-      )
+      return tokens.input + tokens.output + tokens.reasoning + (tokens.cache?.read || 0) + (tokens.cache?.write || 0)
     }
 
     let inputTokens = 0
@@ -45,13 +39,13 @@ export function useSessionStats(contextLimit: number = 200000): SessionStats {
     let cacheWrite = 0
     let totalCost = 0
     let lastContextSize = 0
-    
+
     for (const msg of messages) {
       if (msg.info.role === 'assistant') {
         const info = msg.info as AssistantMessageInfo
         // 只统计有实际 tokens 数据的消息（跳过 streaming 中的空 tokens）
         const hasTokens = tokenTotal(info.tokens) > 0
-        
+
         if (hasTokens) {
           inputTokens += info.tokens.input
           outputTokens += info.tokens.output
@@ -67,10 +61,10 @@ export function useSessionStats(contextLimit: number = 200000): SessionStats {
         }
       }
     }
-    
+
     const totalTokens = inputTokens + outputTokens + reasoningTokens + cacheRead + cacheWrite
     const contextPercent = contextLimit > 0 ? Math.min(100, (lastContextSize / contextLimit) * 100) : 0
-    
+
     return {
       inputTokens,
       outputTokens,

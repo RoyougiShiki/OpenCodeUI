@@ -11,20 +11,20 @@ import type { ToolRendererProps, ExtractedToolData } from '../types'
 export function DefaultRenderer({ part, data }: ToolRendererProps) {
   const { state, tool } = part
   const isActive = state.status === 'running' || state.status === 'pending'
-  
+
   const hasInput = !!data.input?.trim()
   const hasError = !!data.error
   const hasOutput = !!(data.files || data.diff || data.output?.trim() || data.exitCode !== undefined)
   const hasDiagnostics = !!data.diagnostics?.length
-  
+
   // Output 不再依赖 hasInput
   const showOutput = hasOutput || hasError || (isActive && !hasOutput)
-  
+
   return (
     <div className="flex flex-col gap-2">
       {/* Input - 默认折叠 */}
       {(hasInput || (isActive && !hasInput)) && (
-        <ContentBlock 
+        <ContentBlock
           label="Input"
           content={data.input || ''}
           language={data.inputLang}
@@ -33,22 +33,14 @@ export function DefaultRenderer({ part, data }: ToolRendererProps) {
           defaultCollapsed={true}
         />
       )}
-      
+
       {/* Output */}
       {showOutput && (
-        <OutputBlock 
-          tool={tool}
-          data={data}
-          isActive={isActive}
-          hasError={hasError}
-          hasOutput={hasOutput}
-        />
+        <OutputBlock tool={tool} data={data} isActive={isActive} hasError={hasError} hasOutput={hasOutput} />
       )}
-      
+
       {/* Diagnostics */}
-      {hasDiagnostics && (
-        <DiagnosticsBlock diagnostics={data.diagnostics!} />
-      )}
+      {hasDiagnostics && <DiagnosticsBlock diagnostics={data.diagnostics!} />}
     </div>
   )
 }
@@ -68,27 +60,15 @@ interface OutputBlockProps {
 function OutputBlock({ tool, data, isActive, hasError, hasOutput }: OutputBlockProps) {
   // 1. Error 优先
   if (hasError) {
-    return (
-      <ContentBlock 
-        label="Error"
-        content={data.error || ''}
-        variant="error"
-      />
-    )
+    return <ContentBlock label="Error" content={data.error || ''} variant="error" />
   }
-  
+
   // 2. 工具活跃时（running/pending）统一显示 loading
   //    所有工具行为一致，权限弹窗已有预览，这里不重复展示
   if (isActive) {
-    return (
-      <ContentBlock 
-        label="Output"
-        isLoading={true}
-        loadingText="Running..."
-      />
-    )
+    return <ContentBlock label="Output" isLoading={true} loadingText="Running..." />
   }
-  
+
   // 3. 完成后显示结果
   if (hasOutput) {
     // Multiple files with diff
@@ -96,24 +76,27 @@ function OutputBlock({ tool, data, isActive, hasError, hasOutput }: OutputBlockP
       return (
         <div className="flex flex-col gap-2">
           {data.files.map((file, idx) => (
-            <ContentBlock 
+            <ContentBlock
               key={idx}
               label={formatLabel(tool)}
               filePath={file.filePath}
-              diff={file.diff || (file.before !== undefined && file.after !== undefined 
-                ? { before: file.before, after: file.after } 
-                : undefined)}
+              diff={
+                file.diff ||
+                (file.before !== undefined && file.after !== undefined
+                  ? { before: file.before, after: file.after }
+                  : undefined)
+              }
               language={detectLanguage(file.filePath)}
             />
           ))}
         </div>
       )
     }
-    
+
     // Single diff
     if (data.diff) {
       return (
-        <ContentBlock 
+        <ContentBlock
           label="Output"
           filePath={data.filePath}
           diff={data.diff}
@@ -122,10 +105,10 @@ function OutputBlock({ tool, data, isActive, hasError, hasOutput }: OutputBlockP
         />
       )
     }
-    
+
     // Regular output
     return (
-      <ContentBlock 
+      <ContentBlock
         label="Output"
         content={data.output}
         language={data.outputLang}
@@ -134,13 +117,9 @@ function OutputBlock({ tool, data, isActive, hasError, hasOutput }: OutputBlockP
       />
     )
   }
-  
+
   // 4. 无输出
-  return (
-    <ContentBlock 
-      label="Output"
-    />
-  )
+  return <ContentBlock label="Output" />
 }
 
 // ============================================
@@ -154,9 +133,9 @@ interface DiagnosticsBlockProps {
 function DiagnosticsBlock({ diagnostics }: DiagnosticsBlockProps) {
   const errors = diagnostics.filter(d => d.severity === 'error')
   const warnings = diagnostics.filter(d => d.severity === 'warning')
-  
+
   if (errors.length === 0 && warnings.length === 0) return null
-  
+
   return (
     <div className="rounded-lg border border-border-200/40 bg-bg-100/80 overflow-hidden text-xs">
       <div className="px-3 h-8 bg-bg-200/40 flex items-center gap-2">
@@ -164,19 +143,25 @@ function DiagnosticsBlock({ diagnostics }: DiagnosticsBlockProps) {
         <span className="font-medium text-text-300">Diagnostics</span>
         <div className="flex items-center gap-2 ml-auto font-mono text-[10px]">
           {errors.length > 0 && (
-            <span className="text-danger-100">{errors.length} error{errors.length > 1 ? 's' : ''}</span>
+            <span className="text-danger-100">
+              {errors.length} error{errors.length > 1 ? 's' : ''}
+            </span>
           )}
           {warnings.length > 0 && (
-            <span className="text-warning-100">{warnings.length} warning{warnings.length > 1 ? 's' : ''}</span>
+            <span className="text-warning-100">
+              {warnings.length} warning{warnings.length > 1 ? 's' : ''}
+            </span>
           )}
         </div>
       </div>
       <div className="px-3 py-2 space-y-1.5 max-h-40 overflow-auto custom-scrollbar">
         {diagnostics.map((d, idx) => (
           <div key={idx} className="flex items-start gap-2 text-[11px]">
-            <span className={`flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full ${
-              d.severity === 'error' ? 'bg-danger-100' : 'bg-warning-100'
-            }`} />
+            <span
+              className={`flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full ${
+                d.severity === 'error' ? 'bg-danger-100' : 'bg-warning-100'
+              }`}
+            />
             <span className="text-text-400 font-mono flex-shrink-0">
               {d.file}:{d.line + 1}
             </span>
@@ -194,8 +179,10 @@ function DiagnosticsBlock({ diagnostics }: DiagnosticsBlockProps) {
 
 function formatLabel(name: string): string {
   if (!name) return 'Result'
-  return name
-    .split(/[_-]/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ') + ' Result'
+  return (
+    name
+      .split(/[_-]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ') + ' Result'
+  )
 }

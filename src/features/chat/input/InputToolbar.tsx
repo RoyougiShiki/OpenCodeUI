@@ -11,17 +11,17 @@ interface InputToolbarProps {
   agents: ApiAgent[]
   selectedAgent?: string
   onAgentChange?: (agentName: string) => void
-  
+
   variants?: string[]
   selectedVariant?: string
   onVariantChange?: (variant: string | undefined) => void
-  
+
   fileCapabilities?: FileCapabilities
   onFileUpload: (files: FileList | null) => void
-  
+
   isStreaming?: boolean
   onAbort?: () => void
-  
+
   canSend: boolean
   onSend: () => void
 
@@ -34,7 +34,7 @@ interface InputToolbarProps {
   inputContainerRef?: React.RefObject<HTMLDivElement | null>
 }
 
-export function InputToolbar({ 
+export function InputToolbar({
   agents,
   selectedAgent,
   onAgentChange,
@@ -54,7 +54,7 @@ export function InputToolbar({
   inputContainerRef,
 }: InputToolbarProps) {
   const isMobile = useIsMobile()
-  
+
   // 根据模型能力计算支持的文件类型
   const caps = fileCapabilities ?? { image: false, pdf: false, audio: false, video: false }
   const supportsAnyFile = caps.image || caps.pdf || caps.audio || caps.video
@@ -88,15 +88,13 @@ export function InputToolbar({
 
     return {
       acceptString: accept.join(','),
-      tauriFilters: extensions.length > 0
-        ? [{ name: filterNames.join(' / '), extensions }]
-        : [],
+      tauriFilters: extensions.length > 0 ? [{ name: filterNames.join(' / '), extensions }] : [],
     }
   }, [caps.image, caps.pdf, caps.audio, caps.video])
   // State for menus
   const [agentMenuOpen, setAgentMenuOpen] = useState(false)
   const [variantMenuOpen, setVariantMenuOpen] = useState(false)
-  
+
   // Refs
   const agentTriggerRef = useRef<HTMLButtonElement>(null)
   const agentMenuRef = useRef<HTMLDivElement>(null)
@@ -148,24 +146,30 @@ export function InputToolbar({
   // Click outside logic
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (agentMenuRef.current && !agentMenuRef.current.contains(e.target as Node) && !agentTriggerRef.current?.contains(e.target as Node)) {
+      if (
+        agentMenuRef.current &&
+        !agentMenuRef.current.contains(e.target as Node) &&
+        !agentTriggerRef.current?.contains(e.target as Node)
+      ) {
         setAgentMenuOpen(false)
       }
-      if (variantMenuRef.current && !variantMenuRef.current.contains(e.target as Node) && !variantTriggerRef.current?.contains(e.target as Node)) {
+      if (
+        variantMenuRef.current &&
+        !variantMenuRef.current.contains(e.target as Node) &&
+        !variantTriggerRef.current?.contains(e.target as Node)
+      ) {
         setVariantMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-  
+
   const selectableAgents = agents.filter(a => a.mode !== 'subagent' && !a.hidden)
   const currentAgent = agents.find(a => a.name === selectedAgent)
 
   return (
-    <div
-      className="flex items-center justify-between px-3 pb-3 relative"
-    >
+    <div className="flex items-center justify-between px-3 pb-3 relative">
       {/* Left side: Model (mobile) + Agent + Variant selectors */}
       <div className="flex items-center gap-1 md:gap-2 min-w-0">
         {/* Model Selector — 移动端显示在最左边 */}
@@ -180,32 +184,54 @@ export function InputToolbar({
         )}
 
         {/* Agent Selector */}
-        <AnimatedPresence show={selectableAgents.length > 1} className={isMobile ? "shrink-0" : ""}>
+        <AnimatedPresence show={selectableAgents.length > 1} className={isMobile ? 'shrink-0' : ''}>
           <div className="relative">
             <button
               ref={agentTriggerRef}
               onClick={() => setAgentMenuOpen(!agentMenuOpen)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-sm rounded-lg transition-all duration-150 hover:bg-bg-200 active:scale-95 cursor-pointer min-w-0 overflow-hidden w-full"
-              title={currentAgent ? `${currentAgent.name}${currentAgent.description ? ': ' + currentAgent.description : ''}` : selectedAgent || 'build'}
+              title={
+                currentAgent
+                  ? `${currentAgent.name}${currentAgent.description ? ': ' + currentAgent.description : ''}`
+                  : selectedAgent || 'build'
+              }
             >
               {/* 移动端隐藏 AgentIcon 节省空间 */}
-              <span className="text-text-400 hidden md:inline shrink-0" style={currentAgent?.color ? { color: currentAgent.color } : undefined}>
+              <span
+                className="text-text-400 hidden md:inline shrink-0"
+                style={currentAgent?.color ? { color: currentAgent.color } : undefined}
+              >
                 <AgentIcon />
               </span>
               <span className="text-xs text-text-300 capitalize truncate">{selectedAgent || 'build'}</span>
-              <span className="text-text-400 hidden md:inline shrink-0"><ChevronDownIcon /></span>
+              <span className="text-text-400 hidden md:inline shrink-0">
+                <ChevronDownIcon />
+              </span>
             </button>
 
-            <DropdownMenu triggerRef={agentTriggerRef} isOpen={agentMenuOpen} position="top" align="left" constrainToRef={inputContainerRef}>
+            <DropdownMenu
+              triggerRef={agentTriggerRef}
+              isOpen={agentMenuOpen}
+              position="top"
+              align="left"
+              constrainToRef={inputContainerRef}
+            >
               <div ref={agentMenuRef}>
                 {selectableAgents.map(agent => (
                   <MenuItem
                     key={agent.name}
                     label={agent.name.charAt(0).toUpperCase() + agent.name.slice(1)}
                     description={agent.description}
-                    icon={<span style={agent.color ? { color: agent.color } : undefined}><AgentIcon /></span>}
+                    icon={
+                      <span style={agent.color ? { color: agent.color } : undefined}>
+                        <AgentIcon />
+                      </span>
+                    }
                     selected={selectedAgent === agent.name}
-                    onClick={() => { onAgentChange?.(agent.name); setAgentMenuOpen(false) }}
+                    onClick={() => {
+                      onAgentChange?.(agent.name)
+                      setAgentMenuOpen(false)
+                    }}
                   />
                 ))}
               </div>
@@ -214,7 +240,7 @@ export function InputToolbar({
         </AnimatedPresence>
 
         {/* Variant Selector */}
-        <AnimatedPresence show={variants.length > 0} className={isMobile ? "shrink-0" : ""}>
+        <AnimatedPresence show={variants.length > 0} className={isMobile ? 'shrink-0' : ''}>
           <div className="relative">
             <button
               ref={variantTriggerRef}
@@ -223,18 +249,34 @@ export function InputToolbar({
               title={selectedVariant ? selectedVariant.charAt(0).toUpperCase() + selectedVariant.slice(1) : 'Default'}
             >
               {/* 移动端隐藏 ThinkingIcon */}
-              <span className="text-text-400 hidden md:inline shrink-0"><ThinkingIcon /></span>
-              <span className="text-xs text-text-300 truncate">{selectedVariant ? selectedVariant.charAt(0).toUpperCase() + selectedVariant.slice(1) : 'Default'}</span>
-              <span className="text-text-400 hidden md:inline shrink-0"><ChevronDownIcon /></span>
+              <span className="text-text-400 hidden md:inline shrink-0">
+                <ThinkingIcon />
+              </span>
+              <span className="text-xs text-text-300 truncate">
+                {selectedVariant ? selectedVariant.charAt(0).toUpperCase() + selectedVariant.slice(1) : 'Default'}
+              </span>
+              <span className="text-text-400 hidden md:inline shrink-0">
+                <ChevronDownIcon />
+              </span>
             </button>
 
-            <DropdownMenu triggerRef={variantTriggerRef} isOpen={variantMenuOpen} position="top" align="left" minWidth="auto" constrainToRef={inputContainerRef}>
+            <DropdownMenu
+              triggerRef={variantTriggerRef}
+              isOpen={variantMenuOpen}
+              position="top"
+              align="left"
+              minWidth="auto"
+              constrainToRef={inputContainerRef}
+            >
               <div ref={variantMenuRef}>
                 <MenuItem
                   label="Default"
                   icon={<ThinkingIcon />}
                   selected={!selectedVariant}
-                  onClick={() => { onVariantChange?.(undefined); setVariantMenuOpen(false) }}
+                  onClick={() => {
+                    onVariantChange?.(undefined)
+                    setVariantMenuOpen(false)
+                  }}
                 />
                 {variants.map(variant => (
                   <MenuItem
@@ -242,7 +284,10 @@ export function InputToolbar({
                     label={variant.charAt(0).toUpperCase() + variant.slice(1)}
                     icon={<ThinkingIcon />}
                     selected={selectedVariant === variant}
-                    onClick={() => { onVariantChange?.(variant); setVariantMenuOpen(false) }}
+                    onClick={() => {
+                      onVariantChange?.(variant)
+                      setVariantMenuOpen(false)
+                    }}
                   />
                 ))}
               </div>
@@ -263,7 +308,7 @@ export function InputToolbar({
                 accept={acceptString}
                 multiple
                 className="hidden"
-                onChange={(e) => onFileUpload(e.target.files)}
+                onChange={e => onFileUpload(e.target.files)}
               />
             )}
             <IconButton aria-label="Attach file" onClick={handleFileClick}>
@@ -284,4 +329,3 @@ export function InputToolbar({
     </div>
   )
 }
-

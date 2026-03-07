@@ -29,17 +29,10 @@ interface MentionTagProps {
  * - 点击复制完整路径
  * - 复制成功显示 ✓ 图标（不改变文字）
  */
-export function MentionTag({
-  type,
-  value,
-  displayName,
-  onClick,
-  className = '',
-  inEditor = false,
-}: MentionTagProps) {
+export function MentionTag({ type, value, displayName, onClick, className = '', inEditor = false }: MentionTagProps) {
   const [copied, setCopied] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  
+
   // 清理 timeout，防止内存泄漏
   useEffect(() => {
     return () => {
@@ -48,31 +41,34 @@ export function MentionTag({
       }
     }
   }, [])
-  
+
   const name = displayName || getFileName(value)
   const label = formatMentionLabel(type, name)
   const colors = MENTION_COLORS[type]
-  
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (onClick) {
-      onClick()
-      return
-    }
-    
-    // 复制完整值
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true)
-      // 清理之前的 timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      if (onClick) {
+        onClick()
+        return
       }
-      timeoutRef.current = setTimeout(() => setCopied(false), 1500)
-    })
-  }, [onClick, value])
-  
+
+      // 复制完整值
+      navigator.clipboard.writeText(value).then(() => {
+        setCopied(true)
+        // 清理之前的 timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current)
+        }
+        timeoutRef.current = setTimeout(() => setCopied(false), 1500)
+      })
+    },
+    [onClick, value],
+  )
+
   return (
     <span
       className={`
@@ -93,7 +89,6 @@ export function MentionTag({
   )
 }
 
-
 // ============================================
 // RichText - 渲染包含 mention 的文本
 // ============================================
@@ -112,24 +107,18 @@ interface RichTextProps {
  */
 export function RichText({ text, className = '' }: RichTextProps) {
   const segments = parseMentions(text)
-  
+
   if (segments.length === 0) {
     return <span className={className}>{text}</span>
   }
-  
+
   return (
     <span className={className}>
       {segments.map((segment, index) => {
         if (segment.type === 'text') {
           return <span key={index}>{segment.content}</span>
         }
-        return (
-          <MentionTag
-            key={index}
-            type={segment.mentionType!}
-            value={segment.mentionValue!}
-          />
-        )
+        return <MentionTag key={index} type={segment.mentionType!} value={segment.mentionValue!} />
       })}
     </span>
   )
@@ -142,41 +131,42 @@ export function RichText({ text, className = '' }: RichTextProps) {
 /**
  * 为 contentEditable 创建 mention span 元素
  * 用于在输入框中插入 mention 标签
- * 
+ *
  * 返回 { element, cleanup } - 调用者需要在元素移除时调用 cleanup 清理事件监听器
  */
 export function createMentionElement(item: MentionItem): { element: HTMLSpanElement; cleanup: () => void } {
   const span = document.createElement('span')
   const label = formatMentionLabel(item.type, item.displayName)
-  
+
   // 设置样式类
   span.className = `mention-tag inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border cursor-pointer select-none`
   span.contentEditable = 'false'
-  
+
   // 设置数据属性（用于序列化和样式）
   span.dataset.mentionType = item.type
   span.dataset.mentionValue = item.value
   span.dataset.mentionDisplay = item.displayName
-  
+
   // 设置显示文本
   span.textContent = label
   span.title = `Click to copy: ${item.value}`
-  
+
   // 用于清理的 timeout ref
   let copyTimeoutId: ReturnType<typeof setTimeout> | null = null
-  
+
   // 点击复制功能
   const handleClick = (e: Event) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     navigator.clipboard.writeText(item.value).then(() => {
       // 显示复制成功（添加 ✓ 图标）
       // NOTE: 此处使用字符串拼接的内联 SVG，因为是原始 DOM 操作（innerHTML），无法使用 React 组件
       const originalContent = span.innerHTML
-      const checkIcon = '<svg class="w-3 h-3 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+      const checkIcon =
+        '<svg class="w-3 h-3 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
       span.innerHTML = `${checkIcon}<span>${label}</span>`
-      
+
       // 清理之前的 timeout
       if (copyTimeoutId) {
         clearTimeout(copyTimeoutId)
@@ -187,9 +177,9 @@ export function createMentionElement(item: MentionItem): { element: HTMLSpanElem
       }, 1200)
     })
   }
-  
+
   span.addEventListener('click', handleClick)
-  
+
   // 返回清理函数
   const cleanup = () => {
     span.removeEventListener('click', handleClick)
@@ -198,6 +188,6 @@ export function createMentionElement(item: MentionItem): { element: HTMLSpanElem
       copyTimeoutId = null
     }
   }
-  
+
   return { element: span, cleanup }
 }

@@ -18,13 +18,16 @@ interface UsePermissionsReturn {
 export function usePermissions(): UsePermissionsReturn {
   const [sessionApprovedTools, setSessionApprovedTools] = useState<Set<ToolType>>(new Set())
 
-  const needsApproval = useCallback((tool: ToolType): boolean => {
-    // 如果已经在会话中批准过，则不需要再次批准
-    if (sessionApprovedTools.has(tool)) {
-      return false
-    }
-    return true
-  }, [sessionApprovedTools])
+  const needsApproval = useCallback(
+    (tool: ToolType): boolean => {
+      // 如果已经在会话中批准过，则不需要再次批准
+      if (sessionApprovedTools.has(tool)) {
+        return false
+      }
+      return true
+    },
+    [sessionApprovedTools],
+  )
 
   const recordDecision = useCallback((tool: ToolType, decision: PermissionDecision) => {
     if (decision === 'approved_session') {

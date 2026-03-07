@@ -18,7 +18,10 @@ interface UseModelSelectionReturn {
   currentModel: ModelInfo | undefined
   handleModelChange: (modelKey: string, model: ModelInfo) => void
   handleVariantChange: (variant: string | undefined) => void
-  restoreFromMessage: (model: { providerID: string; modelID: string } | null | undefined, variant: string | null | undefined) => void
+  restoreFromMessage: (
+    model: { providerID: string; modelID: string } | null | undefined,
+    variant: string | null | undefined,
+  ) => void
 }
 
 export function useModelSelection({ models }: UseModelSelectionOptions): UseModelSelectionReturn {
@@ -30,44 +33,50 @@ export function useModelSelection({ models }: UseModelSelectionOptions): UseMode
   const currentModel = selectedModelKey ? findModelByKey(models, selectedModelKey) : undefined
 
   // 切换模型
-  const handleModelChange = useCallback((modelKey: string, _model: ModelInfo) => {
-    // 先保存当前模型的 variant 偏好
-    if (selectedModelKey && selectedVariant) {
-      saveModelVariantPref(selectedModelKey, selectedVariant)
-    }
-    
-    // 切换模型
-    setSelectedModelKey(modelKey)
-    serverStorage.set(STORAGE_KEY_SELECTED_MODEL, modelKey)
-    
-    // 恢复新模型的 variant 偏好
-    const savedVariant = getModelVariantPref(modelKey)
-    setSelectedVariant(savedVariant)
-  }, [selectedModelKey, selectedVariant])
+  const handleModelChange = useCallback(
+    (modelKey: string, _model: ModelInfo) => {
+      // 先保存当前模型的 variant 偏好
+      if (selectedModelKey && selectedVariant) {
+        saveModelVariantPref(selectedModelKey, selectedVariant)
+      }
+
+      // 切换模型
+      setSelectedModelKey(modelKey)
+      serverStorage.set(STORAGE_KEY_SELECTED_MODEL, modelKey)
+
+      // 恢复新模型的 variant 偏好
+      const savedVariant = getModelVariantPref(modelKey)
+      setSelectedVariant(savedVariant)
+    },
+    [selectedModelKey, selectedVariant],
+  )
 
   // Variant 变化时保存偏好
-  const handleVariantChange = useCallback((variant: string | undefined) => {
-    setSelectedVariant(variant)
-    if (selectedModelKey) {
-      saveModelVariantPref(selectedModelKey, variant)
-    }
-  }, [selectedModelKey])
+  const handleVariantChange = useCallback(
+    (variant: string | undefined) => {
+      setSelectedVariant(variant)
+      if (selectedModelKey) {
+        saveModelVariantPref(selectedModelKey, variant)
+      }
+    },
+    [selectedModelKey],
+  )
 
   // 从消息中恢复模型选择
-  const restoreFromMessage = useCallback((
-    model: { providerID: string; modelID: string } | null | undefined,
-    variant: string | null | undefined
-  ) => {
-    if (!model) return
-    
-    const modelKey = `${model.providerID}:${model.modelID}`
-    const exists = findModelByKey(models, modelKey)
-    
-    if (exists) {
-      setSelectedModelKey(modelKey)
-      setSelectedVariant(variant ?? undefined)
-    }
-  }, [models])
+  const restoreFromMessage = useCallback(
+    (model: { providerID: string; modelID: string } | null | undefined, variant: string | null | undefined) => {
+      if (!model) return
+
+      const modelKey = `${model.providerID}:${model.modelID}`
+      const exists = findModelByKey(models, modelKey)
+
+      if (exists) {
+        setSelectedModelKey(modelKey)
+        setSelectedVariant(variant ?? undefined)
+      }
+    },
+    [models],
+  )
 
   // 初始化时恢复 variant 偏好
   useEffect(() => {

@@ -19,15 +19,19 @@ import { detectLanguage } from '../../../utils/languageUtils'
 // Tool Matchers (复用的匹配函数)
 // ============================================
 
-const includes = (...keywords: string[]) => (name: string) => {
-  const lower = name.toLowerCase()
-  return keywords.some(k => lower.includes(k))
-}
+const includes =
+  (...keywords: string[]) =>
+  (name: string) => {
+    const lower = name.toLowerCase()
+    return keywords.some(k => lower.includes(k))
+  }
 
-const exact = (...names: string[]) => (name: string) => {
-  const lower = name.toLowerCase()
-  return names.some(n => lower === n)
-}
+const exact =
+  (...names: string[]) =>
+  (name: string) => {
+    const lower = name.toLowerCase()
+    return names.some(n => lower === n)
+  }
 
 // ============================================
 // Default Data Extractor
@@ -37,20 +41,20 @@ export function defaultExtractData(part: ToolPart): ExtractedToolData {
   const { state } = part
   const inputObj = state.input as Record<string, unknown> | undefined
   const metadata = state.metadata as Record<string, unknown> | undefined
-  
+
   const result: ExtractedToolData = {}
-  
+
   // Input
   if (inputObj && Object.keys(inputObj).length > 0) {
     result.input = JSON.stringify(inputObj, null, 2)
     result.inputLang = 'json'
   }
-  
+
   // Error
   if (state.error) {
     result.error = String(state.error)
   }
-  
+
   // FilePath
   if (metadata && typeof metadata.filepath === 'string') {
     result.filePath = metadata.filepath
@@ -58,12 +62,12 @@ export function defaultExtractData(part: ToolPart): ExtractedToolData {
   if (!result.filePath && inputObj?.filePath) {
     result.filePath = String(inputObj.filePath)
   }
-  
+
   // Exit code
   if (metadata && typeof metadata.exit === 'number') {
     result.exitCode = metadata.exit
   }
-  
+
   // Diff / Files (from metadata)
   if (metadata) {
     if (Array.isArray(metadata.files) && metadata.files.length > 0) {
@@ -84,7 +88,7 @@ export function defaultExtractData(part: ToolPart): ExtractedToolData {
         if (fd.additions !== undefined || fd.deletions !== undefined) {
           result.diffStats = {
             additions: fd.additions || 0,
-            deletions: fd.deletions || 0
+            deletions: fd.deletions || 0,
           }
         }
       }
@@ -96,16 +100,16 @@ export function defaultExtractData(part: ToolPart): ExtractedToolData {
       if (fd.additions !== undefined || fd.deletions !== undefined) {
         result.diffStats = {
           additions: fd.additions || 0,
-          deletions: fd.deletions || 0
+          deletions: fd.deletions || 0,
         }
       }
     }
-    
+
     // 提取 diagnostics
     if (metadata.diagnostics && typeof metadata.diagnostics === 'object') {
       const diagMap = metadata.diagnostics as Record<string, any[]>
       const diagnostics: DiagnosticInfo[] = []
-      
+
       for (const [file, items] of Object.entries(diagMap)) {
         if (!Array.isArray(items)) continue
         for (const item of items) {
@@ -115,18 +119,18 @@ export function defaultExtractData(part: ToolPart): ExtractedToolData {
             1: 'error',
             2: 'warning',
             3: 'info',
-            4: 'hint'
+            4: 'hint',
           }
           diagnostics.push({
             file: file.split(/[/\\]/).pop() || file,
             severity: severityMap[item.severity] || 'info',
             message: item.message || '',
             line: item.range?.start?.line ?? 0,
-            column: item.range?.start?.character ?? 0
+            column: item.range?.start?.character ?? 0,
           })
         }
       }
-      
+
       // 只保留 error 和 warning
       const filtered = diagnostics.filter(d => d.severity === 'error' || d.severity === 'warning')
       if (filtered.length > 0) {
@@ -134,28 +138,25 @@ export function defaultExtractData(part: ToolPart): ExtractedToolData {
       }
     }
   }
-  
+
   // Output language from filePath
   if (result.filePath) {
     result.outputLang = detectLanguage(result.filePath)
   }
-  
+
   // Output
   if (!result.files && !result.diff && state.output) {
-    result.output = typeof state.output === 'string' 
-      ? state.output 
-      : JSON.stringify(state.output, null, 2)
-    
+    result.output = typeof state.output === 'string' ? state.output : JSON.stringify(state.output, null, 2)
+
     // 推断语言
     if (!result.outputLang && result.output) {
       const trimmed = result.output.trim()
-      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-          (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
         result.outputLang = 'json'
       }
     }
   }
-  
+
   return result
 }
 
@@ -166,55 +167,55 @@ export function defaultExtractData(part: ToolPart): ExtractedToolData {
 function bashExtractData(part: ToolPart): ExtractedToolData {
   const base = defaultExtractData(part)
   const inputObj = part.state.input as Record<string, unknown> | undefined
-  
+
   if (inputObj?.command) {
     base.input = String(inputObj.command)
     base.inputLang = 'bash'
   }
-  
+
   return base
 }
 
 function readExtractData(part: ToolPart): ExtractedToolData {
   const base = defaultExtractData(part)
-  
+
   if (part.state.output) {
     const str = String(part.state.output)
     const match = str.match(/<file[^>]*>([\s\S]*?)<\/file>/i)
     base.output = match ? match[1] : str
   }
-  
+
   return base
 }
 
 function writeExtractData(part: ToolPart): ExtractedToolData {
   const base = defaultExtractData(part)
   const inputObj = part.state.input as Record<string, unknown> | undefined
-  
+
   // 从 input.content 构造 diff（和 editExtractData 一致）
   // 状态控制由渲染层（OutputBlock）统一处理，extractData 只做数据转换
   if (!base.files && !base.diff && inputObj?.content && typeof inputObj.content === 'string') {
     base.diff = {
       before: '',
-      after: inputObj.content
+      after: inputObj.content,
     }
   }
-  
+
   return base
 }
 
 function editExtractData(part: ToolPart): ExtractedToolData {
   const base = defaultExtractData(part)
   const inputObj = part.state.input as Record<string, unknown> | undefined
-  
+
   // 如果 metadata 没有 diff，从 input 构造
   if (!base.files && !base.diff && inputObj?.oldString && inputObj?.newString) {
     base.diff = {
       before: String(inputObj.oldString),
-      after: String(inputObj.newString)
+      after: String(inputObj.newString),
     }
   }
-  
+
   return base
 }
 
@@ -230,58 +231,58 @@ export const toolRegistry: ToolRegistry = [
     icon: <TerminalIcon />,
     extractData: bashExtractData,
   },
-  
+
   // Todo (must be before write/read to avoid TodoWrite matching "write")
   {
     match: includes('todo'),
     icon: <ChecklistIcon />,
   },
-  
+
   // Task (子 agent)
   {
     match: exact('task'),
     icon: <TaskIcon />,
   },
-  
+
   // Read file
   {
     match: includes('read', 'cat'),
     icon: <FileReadIcon />,
     extractData: readExtractData,
   },
-  
+
   // Write file
   {
     match: includes('write', 'save'),
     icon: <FileWriteIcon />,
     extractData: writeExtractData,
   },
-  
+
   // Edit file
   {
     match: includes('edit', 'replace', 'patch'),
     icon: <FileWriteIcon />,
     extractData: editExtractData,
   },
-  
+
   // Search
   {
     match: includes('search', 'find', 'grep', 'glob'),
     icon: <SearchIcon />,
   },
-  
+
   // Web / Network
   {
     match: includes('web', 'fetch', 'http', 'browse', 'network', 'exa'),
     icon: <GlobeIcon />,
   },
-  
+
   // Think / Reasoning
   {
     match: includes('think', 'reason', 'plan'),
     icon: <BrainIcon />,
   },
-  
+
   // Question
   {
     match: includes('question', 'ask'),

@@ -24,19 +24,19 @@ async function getUnifiedFetch(): Promise<typeof globalThis.fetch> {
  * 服务器认证信息
  */
 export interface ServerAuth {
-  username: string     // 用户名 (默认 opencode)
-  password: string     // 密码
+  username: string // 用户名 (默认 opencode)
+  password: string // 密码
 }
 
 /**
  * 服务器配置
  */
 export interface ServerConfig {
-  id: string           // 唯一标识
-  name: string         // 显示名称
-  url: string          // 服务器 URL (不含尾部斜杠)
-  isDefault?: boolean  // 是否为默认服务器
-  auth?: ServerAuth    // 认证信息 (可选)
+  id: string // 唯一标识
+  name: string // 显示名称
+  url: string // 服务器 URL (不含尾部斜杠)
+  isDefault?: boolean // 是否为默认服务器
+  auth?: ServerAuth // 认证信息 (可选)
 }
 
 /**
@@ -44,10 +44,10 @@ export interface ServerConfig {
  */
 export interface ServerHealth {
   status: 'checking' | 'online' | 'offline' | 'error' | 'unauthorized'
-  latency?: number     // 响应延迟 (ms)
-  lastCheck?: number   // 上次检查时间戳
-  error?: string       // 错误信息
-  version?: string     // 服务器版本
+  latency?: number // 响应延迟 (ms)
+  lastCheck?: number // 上次检查时间戳
+  error?: string // 错误信息
+  version?: string // 服务器版本
 }
 
 type Listener = () => void
@@ -64,27 +64,27 @@ class ServerStore {
   private activeServerId: string | null = null
   private healthMap = new Map<string, ServerHealth>()
   private listeners: Set<Listener> = new Set()
-  
+
   // server 切换监听器（用于触发 SSE 重连等副作用，避免循环依赖）
   private serverChangeListeners: Set<(newServerId: string) => void> = new Set()
-  
+
   // 快照缓存 (用于 useSyncExternalStore)
   private _serversSnapshot: ServerConfig[] = []
   private _activeServerSnapshot: ServerConfig | null = null
   private _healthMapSnapshot: Map<string, ServerHealth> = new Map()
-  
+
   // 默认本地服务器 ID
   private readonly DEFAULT_SERVER_ID = 'local'
-  
+
   constructor() {
     this.loadFromStorage()
     this.updateSnapshots()
   }
-  
+
   // ============================================
   // Storage
   // ============================================
-  
+
   private loadFromStorage(): void {
     try {
       // 加载服务器列表
@@ -92,17 +92,19 @@ class ServerStore {
       if (stored) {
         this.servers = JSON.parse(stored)
       }
-      
+
       // 如果没有服务器，添加默认的本地服务器
       if (this.servers.length === 0) {
-        this.servers = [{
-          id: this.DEFAULT_SERVER_ID,
-          name: 'Local',
-          url: API_BASE_URL,
-          isDefault: true,
-        }]
+        this.servers = [
+          {
+            id: this.DEFAULT_SERVER_ID,
+            name: 'Local',
+            url: API_BASE_URL,
+            isDefault: true,
+          },
+        ]
       }
-      
+
       // 加载当前选中的服务器
       // 优先从 sessionStorage 读取（per-window 隔离，刷新保持）
       // 回退到 localStorage（新窗口首次打开时继承上次默认）
@@ -115,16 +117,18 @@ class ServerStore {
       }
     } catch {
       // 初始化默认值
-      this.servers = [{
-        id: this.DEFAULT_SERVER_ID,
-        name: 'Local',
-        url: API_BASE_URL,
-        isDefault: true,
-      }]
+      this.servers = [
+        {
+          id: this.DEFAULT_SERVER_ID,
+          name: 'Local',
+          url: API_BASE_URL,
+          isDefault: true,
+        },
+      ]
       this.activeServerId = this.DEFAULT_SERVER_ID
     }
   }
-  
+
   private saveToStorage(): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.servers))
@@ -137,16 +141,16 @@ class ServerStore {
       // ignore
     }
   }
-  
+
   // ============================================
   // Subscription
   // ============================================
-  
+
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)
   }
-  
+
   /**
    * 注册 server 切换监听器（用于触发 SSE 重连等副作用）
    * 返回取消注册函数
@@ -155,12 +159,12 @@ class ServerStore {
     this.serverChangeListeners.add(fn)
     return () => this.serverChangeListeners.delete(fn)
   }
-  
+
   private notify(): void {
     this.updateSnapshots()
     this.listeners.forEach(l => l())
   }
-  
+
   /**
    * 更新快照缓存
    */
@@ -169,25 +173,25 @@ class ServerStore {
     this._activeServerSnapshot = this.servers.find(s => s.id === this.activeServerId) ?? null
     this._healthMapSnapshot = new Map(this.healthMap)
   }
-  
+
   // ============================================
   // Getters
   // ============================================
-  
+
   /**
    * 获取所有服务器配置 (返回缓存快照)
    */
   getServers(): ServerConfig[] {
     return this._serversSnapshot
   }
-  
+
   /**
    * 获取当前活动服务器 (返回缓存快照)
    */
   getActiveServer(): ServerConfig | null {
     return this._activeServerSnapshot
   }
-  
+
   /**
    * 获取当前活动服务器 ID（用于 per-server storage 等场景）
    * 返回 'local' 作为默认值，保证永远有值
@@ -195,7 +199,7 @@ class ServerStore {
   getActiveServerId(): string {
     return this.activeServerId ?? this.DEFAULT_SERVER_ID
   }
-  
+
   /**
    * 获取当前 API Base URL
    */
@@ -203,7 +207,7 @@ class ServerStore {
     const server = this.getActiveServer()
     return server?.url ?? API_BASE_URL
   }
-  
+
   /**
    * 获取当前活动服务器的认证信息
    */
@@ -226,18 +230,18 @@ class ServerStore {
   getHealth(serverId: string): ServerHealth | null {
     return this.healthMap.get(serverId) ?? null
   }
-  
+
   /**
    * 获取所有服务器的健康状态 (返回缓存快照)
    */
   getAllHealth(): Map<string, ServerHealth> {
     return this._healthMapSnapshot
   }
-  
+
   // ============================================
   // Mutations
   // ============================================
-  
+
   /**
    * 添加服务器
    */
@@ -253,14 +257,14 @@ class ServerStore {
     this.notify()
     return server
   }
-  
+
   /**
    * 更新服务器配置
    */
   updateServer(id: string, updates: Partial<Omit<ServerConfig, 'id'>>): boolean {
     const index = this.servers.findIndex(s => s.id === id)
     if (index === -1) return false
-    
+
     const server = this.servers[index]
     this.servers[index] = {
       ...server,
@@ -272,7 +276,7 @@ class ServerStore {
     this.notify()
     return true
   }
-  
+
   /**
    * 删除服务器
    */
@@ -280,44 +284,44 @@ class ServerStore {
     // 不能删除默认服务器
     const server = this.servers.find(s => s.id === id)
     if (!server || server.isDefault) return false
-    
+
     this.servers = this.servers.filter(s => s.id !== id)
     this.healthMap.delete(id)
-    
+
     // 如果删除的是当前选中的，切换到默认
     if (this.activeServerId === id) {
       this.activeServerId = this.servers[0]?.id ?? null
     }
-    
+
     this.saveToStorage()
     this.notify()
     return true
   }
-  
+
   /**
    * 设置活动服务器
    * 如果实际切换了服务器，会通知 serverChangeListeners（用于 SSE 重连等）
    */
   setActiveServer(id: string): boolean {
     if (!this.servers.some(s => s.id === id)) return false
-    
+
     const changed = this.activeServerId !== id
     this.activeServerId = id
     this.saveToStorage()
     this.notify()
-    
+
     // 实际切换了服务器，通知外部（SSE 重连等）
     if (changed) {
       this.serverChangeListeners.forEach(fn => fn(id))
     }
-    
+
     return true
   }
-  
+
   // ============================================
   // Health Check
   // ============================================
-  
+
   /**
    * 检查服务器健康状态
    */
@@ -326,33 +330,33 @@ class ServerStore {
     if (!server) {
       return { status: 'error', error: 'Server not found' }
     }
-    
+
     // 标记为检查中
     this.healthMap.set(serverId, { status: 'checking' })
     this.notify()
-    
+
     const startTime = Date.now()
-    
+
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
-      
+
       const headers: Record<string, string> = {}
       if (server.auth?.password) {
         headers['Authorization'] = makeBasicAuthHeader(server.auth)
       }
-      
+
       const f = await getUnifiedFetch()
       const response = await f(`${server.url}/global/health`, {
         method: 'GET',
         signal: controller.signal,
         headers,
       })
-      
+
       clearTimeout(timeoutId)
-      
+
       const latency = Date.now() - startTime
-      
+
       if (response.ok) {
         // 解析返回的健康信息
         let version: string | undefined
@@ -362,7 +366,7 @@ class ServerStore {
         } catch {
           // ignore parse error
         }
-        
+
         const health: ServerHealth = {
           status: 'online',
           latency,
@@ -405,14 +409,12 @@ class ServerStore {
       return health
     }
   }
-  
+
   /**
    * 检查所有服务器健康状态
    */
   async checkAllHealth(): Promise<void> {
-    await Promise.all(
-      this.servers.map(s => this.checkHealth(s.id))
-    )
+    await Promise.all(this.servers.map(s => this.checkHealth(s.id)))
   }
 }
 

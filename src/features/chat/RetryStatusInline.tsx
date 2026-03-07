@@ -49,21 +49,21 @@ export const RetryStatusInline = memo(function RetryStatusInline({ status }: { s
         <RetryIcon className="w-4 h-4 text-warning-100 flex-shrink-0" />
         <span className="text-sm text-warning-100 flex-1 min-w-0 truncate">
           Retrying (attempt {status.attempt})
-          {nextLabel && (
-            <span className="text-xs text-text-400 ml-2 tabular-nums">
-              next in {nextLabel}
-            </span>
-          )}
+          {nextLabel && <span className="text-xs text-text-400 ml-2 tabular-nums">next in {nextLabel}</span>}
         </span>
         {hasMessage && (
-          <ChevronDownIcon className={`w-4 h-4 text-text-400 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
+          <ChevronDownIcon
+            className={`w-4 h-4 text-text-400 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
+          />
         )}
       </div>
 
       {hasMessage && (
-        <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}>
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+            expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
           <div className="overflow-hidden">
             {shouldRenderBody && (
               <div className="mt-2 pt-2 border-t border-warning-100/20">

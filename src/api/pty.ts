@@ -17,10 +17,7 @@ export async function listPtySessions(directory?: string): Promise<Pty[]> {
 /**
  * 创建新的 PTY 会话
  */
-export async function createPtySession(
-  params: PtyCreateParams,
-  directory?: string
-): Promise<Pty> {
+export async function createPtySession(params: PtyCreateParams, directory?: string): Promise<Pty> {
   return post<Pty>('/pty', { directory: formatPathForApi(directory) }, params)
 }
 
@@ -34,11 +31,7 @@ export async function getPtySession(ptyId: string, directory?: string): Promise<
 /**
  * 更新 PTY 会话
  */
-export async function updatePtySession(
-  ptyId: string,
-  params: PtyUpdateParams,
-  directory?: string
-): Promise<Pty> {
+export async function updatePtySession(ptyId: string, params: PtyUpdateParams, directory?: string): Promise<Pty> {
   return put<Pty>(`/pty/${ptyId}`, { directory: formatPathForApi(directory) }, params)
 }
 
@@ -51,9 +44,9 @@ export async function removePtySession(ptyId: string, directory?: string): Promi
 
 /**
  * 获取 PTY 连接 WebSocket URL
- * 
+ *
  * 动态从当前活动服务器获取地址，支持多后端连接
- * 
+ *
  * 浏览器的 new WebSocket(url) 不支持自定义 header，
  * 所以认证信息通过 URL 的 userinfo 部分传递：wss://user:pass@host/path
  * 浏览器会在 WebSocket 升级握手时自动发送 Basic Auth header
@@ -63,7 +56,7 @@ export function getPtyConnectUrl(ptyId: string, directory?: string): string {
   const httpBase = getApiBaseUrl()
   // http:// -> ws://, https:// -> wss://
   const wsBase = httpBase.replace(/^http/, 'ws')
-  
+
   // 如果服务器配置了认证，把 credentials 嵌入 URL
   // wss://host/path → wss://user:pass@host/path
   const auth = serverStore.getActiveAuth()
@@ -75,9 +68,9 @@ export function getPtyConnectUrl(ptyId: string, directory?: string): string {
   } else {
     wsUrl = wsBase
   }
-  
+
   const formatted = formatPathForApi(directory)
   const queryString = buildQueryString({ directory: formatted })
-  
+
   return `${wsUrl}/pty/${ptyId}/connect${queryString}`
 }

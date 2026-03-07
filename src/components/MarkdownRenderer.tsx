@@ -43,124 +43,107 @@ function extractText(node: React.ReactNode): string {
 /**
  * Main Markdown renderer component
  */
-export const MarkdownRenderer = memo(function MarkdownRenderer({ 
-  content, 
-  className = '' 
-}: MarkdownRendererProps) {
-  const components = useMemo(() => ({
-    code({ children }: any) {
-      return <InlineCode>{children}</InlineCode>
-    },
+export const MarkdownRenderer = memo(function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
+  const components = useMemo(
+    () => ({
+      code({ children }: any) {
+        return <InlineCode>{children}</InlineCode>
+      },
 
-    pre({ children }: any) {
-      const blockCode = extractBlockCode(children)
-      if (!blockCode) return <pre>{children}</pre>
+      pre({ children }: any) {
+        const blockCode = extractBlockCode(children)
+        if (!blockCode) return <pre>{children}</pre>
 
-      return (
-        <div className="my-4 first:mt-0 last:mb-0 w-full">
-          <CodeBlock code={blockCode.code} language={blockCode.language} />
+        return (
+          <div className="my-4 first:mt-0 last:mb-0 w-full">
+            <CodeBlock code={blockCode.code} language={blockCode.language} />
+          </div>
+        )
+      },
+
+      // Headings - Improved typography
+      h1: ({ children }: any) => (
+        <h1 className="text-xl font-bold text-text-100 mt-8 mb-4 first:mt-0 last:mb-0 tracking-tight">{children}</h1>
+      ),
+      h2: ({ children }: any) => (
+        <h2 className="text-lg font-bold text-text-100 mt-6 mb-3 first:mt-0 last:mb-0 tracking-tight pb-1 border-b border-border-100/50">
+          {children}
+        </h2>
+      ),
+      h3: ({ children }: any) => (
+        <h3 className="text-base font-semibold text-text-100 mt-5 mb-2 first:mt-0 last:mb-0 tracking-tight">
+          {children}
+        </h3>
+      ),
+      h4: ({ children }: any) => (
+        <h4 className="text-sm font-semibold text-text-100 mt-4 mb-2 first:mt-0 last:mb-0 tracking-tight">
+          {children}
+        </h4>
+      ),
+
+      // Paragraphs
+      p: ({ children }: any) => <p className="mb-4 last:mb-0 leading-7 text-text-200">{children}</p>,
+
+      // Lists
+      ul: ({ children }: any) => (
+        <ul className="list-disc list-outside ml-5 mb-4 last:mb-0 space-y-1 marker:text-text-400/80">{children}</ul>
+      ),
+      ol: ({ children }: any) => (
+        <ol className="list-decimal list-outside ml-5 mb-4 last:mb-0 space-y-1 marker:text-text-400/80">{children}</ol>
+      ),
+      li: ({ children }: any) => <li className="text-text-200 pl-1 leading-7">{children}</li>,
+
+      // Links
+      a: ({ href, children }: any) => (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-accent-main-100 hover:text-accent-main-200 hover:underline underline-offset-2 transition-colors"
+        >
+          {children}
+        </a>
+      ),
+
+      // Blockquotes - Modern style
+      blockquote: ({ children }: any) => (
+        <blockquote className="border-l-2 border-accent-main-100 pl-4 py-1 my-4 first:mt-0 last:mb-0 bg-bg-200/30 rounded-r-md text-text-300 italic">
+          {children}
+        </blockquote>
+      ),
+
+      // Tables - Modern style with striping
+      table: ({ children }: any) => (
+        <div className="overflow-x-auto my-6 first:mt-0 last:mb-0 border border-border-200 rounded-lg shadow-sm w-full">
+          <table className="min-w-full border-collapse text-sm divide-y divide-border-200">{children}</table>
         </div>
-      )
-    },
-    
-    // Headings - Improved typography
-    h1: ({ children }: any) => (
-      <h1 className="text-xl font-bold text-text-100 mt-8 mb-4 first:mt-0 last:mb-0 tracking-tight">{children}</h1>
-    ),
-    h2: ({ children }: any) => (
-      <h2 className="text-lg font-bold text-text-100 mt-6 mb-3 first:mt-0 last:mb-0 tracking-tight pb-1 border-b border-border-100/50">{children}</h2>
-    ),
-    h3: ({ children }: any) => (
-      <h3 className="text-base font-semibold text-text-100 mt-5 mb-2 first:mt-0 last:mb-0 tracking-tight">{children}</h3>
-    ),
-    h4: ({ children }: any) => (
-      <h4 className="text-sm font-semibold text-text-100 mt-4 mb-2 first:mt-0 last:mb-0 tracking-tight">{children}</h4>
-    ),
-    
-    // Paragraphs
-    p: ({ children }: any) => (
-      <p className="mb-4 last:mb-0 leading-7 text-text-200">{children}</p>
-    ),
-    
-    // Lists
-    ul: ({ children }: any) => (
-      <ul className="list-disc list-outside ml-5 mb-4 last:mb-0 space-y-1 marker:text-text-400/80">{children}</ul>
-    ),
-    ol: ({ children }: any) => (
-      <ol className="list-decimal list-outside ml-5 mb-4 last:mb-0 space-y-1 marker:text-text-400/80">{children}</ol>
-    ),
-    li: ({ children }: any) => (
-      <li className="text-text-200 pl-1 leading-7">{children}</li>
-    ),
-    
-    // Links
-    a: ({ href, children }: any) => (
-      <a 
-        href={href} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="font-medium text-accent-main-100 hover:text-accent-main-200 hover:underline underline-offset-2 transition-colors"
-      >
-        {children}
-      </a>
-    ),
-    
-    // Blockquotes - Modern style
-    blockquote: ({ children }: any) => (
-      <blockquote className="border-l-2 border-accent-main-100 pl-4 py-1 my-4 first:mt-0 last:mb-0 bg-bg-200/30 rounded-r-md text-text-300 italic">
-        {children}
-      </blockquote>
-    ),
-    
-    // Tables - Modern style with striping
-    table: ({ children }: any) => (
-      <div className="overflow-x-auto my-6 first:mt-0 last:mb-0 border border-border-200 rounded-lg shadow-sm w-full">
-        <table className="min-w-full border-collapse text-sm divide-y divide-border-200">{children}</table>
-      </div>
-    ),
-    thead: ({ children }: any) => (
-      <thead className="bg-bg-100 text-text-200 font-medium">{children}</thead>
-    ),
-    th: ({ children }: any) => (
-      <th className="px-4 py-3 text-left font-semibold whitespace-nowrap border-b border-border-200">
-        {children}
-      </th>
-    ),
-    tbody: ({ children }: any) => (
-      <tbody className="divide-y divide-border-200/50 bg-bg-000">
-        {children}
-      </tbody>
-    ),
-    tr: ({ children }: any) => (
-      <tr className="hover:bg-bg-200/30 transition-colors even:bg-bg-200/15">{children}</tr>
-    ),
-    td: ({ children }: any) => (
-      <td className="px-4 py-2.5 text-text-300 leading-relaxed">{children}</td>
-    ),
-    
-    // Horizontal rule
-    hr: () => <hr className="border-border-200 my-8 first:mt-0 last:mb-0" />,
-    
-    // Strong and emphasis
-    strong: ({ children }: any) => (
-      <strong className="font-semibold text-text-100">{children}</strong>
-    ),
-    em: ({ children }: any) => (
-      <em className="italic text-text-200">{children}</em>
-    ),
-    
-    // Strikethrough (GFM)
-    del: ({ children }: any) => (
-      <del className="text-text-400 line-through decoration-text-400/50">{children}</del>
-    ),
-  }), [])
+      ),
+      thead: ({ children }: any) => <thead className="bg-bg-100 text-text-200 font-medium">{children}</thead>,
+      th: ({ children }: any) => (
+        <th className="px-4 py-3 text-left font-semibold whitespace-nowrap border-b border-border-200">{children}</th>
+      ),
+      tbody: ({ children }: any) => <tbody className="divide-y divide-border-200/50 bg-bg-000">{children}</tbody>,
+      tr: ({ children }: any) => <tr className="hover:bg-bg-200/30 transition-colors even:bg-bg-200/15">{children}</tr>,
+      td: ({ children }: any) => <td className="px-4 py-2.5 text-text-300 leading-relaxed">{children}</td>,
+
+      // Horizontal rule
+      hr: () => <hr className="border-border-200 my-8 first:mt-0 last:mb-0" />,
+
+      // Strong and emphasis
+      strong: ({ children }: any) => <strong className="font-semibold text-text-100">{children}</strong>,
+      em: ({ children }: any) => <em className="italic text-text-200">{children}</em>,
+
+      // Strikethrough (GFM)
+      del: ({ children }: any) => <del className="text-text-400 line-through decoration-text-400/50">{children}</del>,
+    }),
+    [],
+  )
 
   return (
-    <div className={`markdown-content text-sm text-text-100 leading-relaxed break-words min-w-0 overflow-hidden ${className}`}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={components}
-      >
+    <div
+      className={`markdown-content text-sm text-text-100 leading-relaxed break-words min-w-0 overflow-hidden ${className}`}
+    >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {content}
       </ReactMarkdown>
     </div>
@@ -189,10 +172,7 @@ export const HighlightedCode = memo(function HighlightedCode({
   }, [filePath, language])
 
   return (
-    <div 
-      className={`overflow-auto ${className}`}
-      style={maxHeight ? { maxHeight } : undefined}
-    >
+    <div className={`overflow-auto ${className}`} style={maxHeight ? { maxHeight } : undefined}>
       <CodeBlock code={code} language={lang} />
     </div>
   )

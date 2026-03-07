@@ -16,11 +16,11 @@ import {
   CompactionPartView,
   MessageErrorView,
 } from './parts'
-import type { 
-  Message, 
-  Part, 
-  TextPart, 
-  ReasoningPart, 
+import type {
+  Message,
+  Part,
+  TextPart,
+  ReasoningPart,
   ToolPart,
   FilePart,
   AgentPart,
@@ -40,14 +40,20 @@ interface MessageRendererProps {
   onEnsureParts?: (messageId: string) => void
 }
 
-export const MessageRenderer = memo(function MessageRenderer({ message, turnDuration, onUndo, canUndo, onEnsureParts }: MessageRendererProps) {
+export const MessageRenderer = memo(function MessageRenderer({
+  message,
+  turnDuration,
+  onUndo,
+  canUndo,
+  onEnsureParts,
+}: MessageRendererProps) {
   const { info } = message
   const isUser = info.role === 'user'
-  
+
   if (isUser) {
     return <UserMessageView message={message} onUndo={onUndo} canUndo={canUndo} />
   }
-  
+
   return <AssistantMessageView message={message} turnDuration={turnDuration} onEnsureParts={onEnsureParts} />
 })
 
@@ -159,16 +165,16 @@ const UserMessageView = memo(function UserMessageView({ message, onUndo, canUndo
   const [showSystemContext, setShowSystemContext] = useState(false)
   const shouldRenderSystemContext = useDelayedRender(showSystemContext)
   const { collapseUserMessages } = useTheme()
-  
+
   // 分离不同类型的 parts
   const textParts = parts.filter((p): p is TextPart => p.type === 'text' && !p.synthetic)
   const syntheticParts = parts.filter((p): p is TextPart => p.type === 'text' && !!p.synthetic)
   const fileParts = parts.filter((p): p is FilePart => p.type === 'file')
   const agentParts = parts.filter((p): p is AgentPart => p.type === 'agent')
-  
+
   const hasSystemContext = syntheticParts.length > 0
   const messageText = textParts.map(p => p.text).join('')
-  
+
   return (
     <div className="flex flex-col items-end group">
       <div className="flex flex-col gap-1 items-end w-full">
@@ -176,7 +182,7 @@ const UserMessageView = memo(function UserMessageView({ message, onUndo, canUndo
         {messageText && (
           <CollapsibleUserText text={messageText} collapseEnabled={collapseUserMessages} messageId={info.id} />
         )}
-        
+
         {/* 用户附件 */}
         {(fileParts.length > 0 || agentParts.length > 0) && (
           <div className="mt-1 flex flex-wrap gap-2 justify-end">
@@ -192,19 +198,23 @@ const UserMessageView = memo(function UserMessageView({ message, onUndo, canUndo
         {/* 系统上下文 */}
         {hasSystemContext && (
           <div className="flex flex-col items-end mt-1 w-full">
-            <button 
+            <button
               onClick={() => setShowSystemContext(!showSystemContext)}
               className="flex items-center gap-1 text-xs text-text-400 hover:text-text-300 transition-colors py-1 px-2 rounded hover:bg-bg-200"
             >
-              <span>{showSystemContext ? 'Hide' : 'Show'} system context ({syntheticParts.length})</span>
+              <span>
+                {showSystemContext ? 'Hide' : 'Show'} system context ({syntheticParts.length})
+              </span>
               <span className={`transition-transform duration-300 ${showSystemContext ? 'rotate-180' : ''}`}>
                 <ChevronDownIcon size={10} />
               </span>
             </button>
-            
-            <div className={`grid w-full transition-[grid-template-rows,opacity] duration-300 ease-out ${
-              showSystemContext ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-            }`}>
+
+            <div
+              className={`grid w-full transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                showSystemContext ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
               <div className="overflow-hidden">
                 {shouldRenderSystemContext && (
                   <div className="pt-2 flex flex-wrap gap-2 justify-end">
@@ -231,9 +241,7 @@ const UserMessageView = memo(function UserMessageView({ message, onUndo, canUndo
             </button>
           )}
           {/* Copy button */}
-          {messageText && (
-            <CopyButton text={messageText} position="static" />
-          )}
+          {messageText && <CopyButton text={messageText} position="static" />}
         </div>
       </div>
     </div>
@@ -244,7 +252,15 @@ const UserMessageView = memo(function UserMessageView({ message, onUndo, canUndo
 // Assistant Message View
 // ============================================
 
-const AssistantMessageView = memo(function AssistantMessageView({ message, turnDuration, onEnsureParts }: { message: Message; turnDuration?: number; onEnsureParts?: (messageId: string) => void }) {
+const AssistantMessageView = memo(function AssistantMessageView({
+  message,
+  turnDuration,
+  onEnsureParts,
+}: {
+  message: Message
+  turnDuration?: number
+  onEnsureParts?: (messageId: string) => void
+}) {
   const { parts, isStreaming, info } = message
 
   useEffect(() => {
@@ -252,10 +268,10 @@ const AssistantMessageView = memo(function AssistantMessageView({ message, turnD
       onEnsureParts(message.info.id)
     }
   }, [parts.length, onEnsureParts, message.info.id])
-  
+
   // 收集连续的 tool parts 合并渲染
   const renderItems = useMemo(() => groupPartsForRender(parts), [parts])
-  
+
   // 判断哪些 reasoning part 已经结束（后面出现了任何非基础设施 part）
   // 直接检查源 parts 数组，而非 renderItems，因为 renderItems 会过滤掉空 text，
   // 但空 text part 的存在本身就说明模型已经进入了下一输出阶段
@@ -274,16 +290,16 @@ const AssistantMessageView = memo(function AssistantMessageView({ message, turnD
     }
     return ended
   }, [parts])
-  
+
   // 计算完整文本用于复制
   const fullText = parts
     .filter((p): p is TextPart => p.type === 'text' && !p.synthetic)
     .map(p => p.text)
     .join('')
-  
+
   // 检查消息级别错误
   const messageError = (info as AssistantMessageInfo).error
-  
+
   // 消息总耗时
   const { created, completed } = info.time
   const duration = completed ? completed - created : undefined
@@ -312,19 +328,19 @@ const AssistantMessageView = memo(function AssistantMessageView({ message, turnD
       </div>
     )
   }
-  
+
   return (
     <div className="flex flex-col gap-2 w-full group">
       {renderItems.map((item: RenderItem, idx: number) => {
         // 耗时只在最后一个含 stepFinish 的 item 上显示
-        const isLastStepFinish = idx === renderItems.findLastIndex(
-          it => it.type === 'tool-group' ? !!it.stepFinish : it.part.type === 'step-finish'
-        )
-        
+        const isLastStepFinish =
+          idx ===
+          renderItems.findLastIndex(it => (it.type === 'tool-group' ? !!it.stepFinish : it.part.type === 'step-finish'))
+
         if (item.type === 'tool-group') {
           return (
-            <ToolGroup 
-              key={item.parts[0].id} 
+            <ToolGroup
+              key={item.parts[0].id}
               parts={item.parts as ToolPart[]}
               stepFinish={item.stepFinish}
               duration={isLastStepFinish ? duration : undefined}
@@ -332,24 +348,18 @@ const AssistantMessageView = memo(function AssistantMessageView({ message, turnD
             />
           )
         }
-        
+
         const part = item.part
         switch (part.type) {
           case 'text':
-            return (
-              <TextPartView 
-                key={part.id} 
-                part={part as TextPart} 
-                isStreaming={isStreaming}
-              />
-            )
+            return <TextPartView key={part.id} part={part as TextPart} isStreaming={isStreaming} />
           case 'reasoning': {
             // 通过源 parts 数组判断思考是否已结束，而非依赖 renderItems 位置
             // 这样即使空 text part 被 renderItems 过滤，也能正确检测到思考结束
             const reasoningDone = endedReasoningIds.has(part.id)
             return (
-              <ReasoningPartView 
-                key={part.id} 
+              <ReasoningPartView
+                key={part.id}
                 part={part as ReasoningPart}
                 isStreaming={isStreaming && !reasoningDone}
               />
@@ -357,43 +367,26 @@ const AssistantMessageView = memo(function AssistantMessageView({ message, turnD
           }
           case 'step-finish':
             return (
-              <StepFinishPartView 
-                key={part.id} 
+              <StepFinishPartView
+                key={part.id}
                 part={part as StepFinishPart}
                 duration={isLastStepFinish ? duration : undefined}
                 turnDuration={isLastStepFinish ? turnDuration : undefined}
               />
             )
           case 'subtask':
-            return (
-              <SubtaskPartView
-                key={part.id}
-                part={part as SubtaskPart}
-              />
-            )
+            return <SubtaskPartView key={part.id} part={part as SubtaskPart} />
           case 'retry':
-            return (
-              <RetryPartView
-                key={part.id}
-                part={part as RetryPart}
-              />
-            )
+            return <RetryPartView key={part.id} part={part as RetryPart} />
           case 'compaction':
-            return (
-              <CompactionPartView
-                key={part.id}
-                part={part as CompactionPart}
-              />
-            )
+            return <CompactionPartView key={part.id} part={part as CompactionPart} />
           default:
             return null
         }
       })}
 
       {/* Message-level error */}
-      {messageError && (
-        <MessageErrorView error={messageError} />
-      )}
+      {messageError && <MessageErrorView error={messageError} />}
 
       {/* Copy button */}
       {fullText.trim() && (
@@ -419,22 +412,17 @@ interface ToolGroupProps {
 const ToolGroup = memo(function ToolGroup({ parts, stepFinish, duration, turnDuration }: ToolGroupProps) {
   const [expanded, setExpanded] = useState(true)
   const shouldRenderBody = useDelayedRender(expanded)
-  
+
   const doneCount = parts.filter(p => p.state.status === 'completed').length
   const totalCount = parts.length
   const isAllDone = doneCount === totalCount
-  
+
   // ── Single tool: render directly without steps header ──
   // Uses compact layout to align icon with ReasoningPartView
   if (totalCount === 1) {
     return (
       <div className="flex flex-col">
-        <ToolPartView 
-          part={parts[0]} 
-          isFirst={true}
-          isLast={true}
-          compact={true}
-        />
+        <ToolPartView part={parts[0]} isFirst={true} isLast={true} compact={true} />
         {stepFinish && (
           <div className="mt-2">
             <StepFinishPartView part={stepFinish} duration={duration} turnDuration={turnDuration} />
@@ -443,7 +431,7 @@ const ToolGroup = memo(function ToolGroup({ parts, stepFinish, duration, turnDur
       </div>
     )
   }
-  
+
   // ── Multi-tool: collapsible steps group with timeline ──
   return (
     <div className="flex flex-col">
@@ -459,25 +447,21 @@ const ToolGroup = memo(function ToolGroup({ parts, stepFinish, duration, turnDur
             {isAllDone ? `${totalCount} steps` : `${doneCount}/${totalCount} steps`}
           </span>
           {!expanded && stepFinish && (
-            <span className="text-xs text-text-500 font-mono opacity-70">
-              {formatTokens(stepFinish.tokens)}
-            </span>
+            <span className="text-xs text-text-500 font-mono opacity-70">{formatTokens(stepFinish.tokens)}</span>
           )}
         </span>
       </button>
 
-      <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-        expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-      }`}>
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
         <div className="flex flex-col overflow-hidden">
-          {shouldRenderBody && parts.map((part, idx) => (
-            <ToolPartView 
-              key={part.id} 
-              part={part} 
-              isFirst={idx === 0}
-              isLast={idx === parts.length - 1}
-            />
-          ))}
+          {shouldRenderBody &&
+            parts.map((part, idx) => (
+              <ToolPartView key={part.id} part={part} isFirst={idx === 0} isLast={idx === parts.length - 1} />
+            ))}
         </div>
       </div>
 
@@ -506,9 +490,7 @@ function formatTokens(tokens: StepFinishPart['tokens']): string {
 // Helper: Group parts for rendering
 // ============================================
 
-type RenderItem = 
-  | { type: 'single'; part: Part }
-  | { type: 'tool-group'; parts: Part[]; stepFinish?: StepFinishPart }
+type RenderItem = { type: 'single'; part: Part } | { type: 'tool-group'; parts: Part[]; stepFinish?: StepFinishPart }
 
 /** parts[from..] 跳过基础设施和空内容后，下一个有意义的 part 是否为 tool */
 function hasMoreToolsAhead(parts: Part[], from: number): boolean {
@@ -526,22 +508,22 @@ function groupPartsForRender(parts: Part[]): RenderItem[] {
   const result: RenderItem[] = []
   let toolGroup: ToolPart[] = []
   let stepFinish: StepFinishPart | undefined
-  
+
   const flushToolGroup = (sf?: StepFinishPart) => {
     if (toolGroup.length === 0) return
     result.push({ type: 'tool-group', parts: toolGroup, stepFinish: sf })
     toolGroup = []
     stepFinish = undefined
   }
-  
+
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i]
-    
+
     // 跳过不渲染的 parts
     if (part.type === 'step-start' || part.type === 'snapshot' || part.type === 'patch') continue
     if (part.type === 'text' && (!(part as TextPart).text?.trim() || (part as TextPart).synthetic)) continue
     if (part.type === 'reasoning' && !(part as ReasoningPart).text?.trim()) continue
-    
+
     if (part.type === 'tool') {
       toolGroup.push(part as ToolPart)
     } else if (part.type === 'step-finish') {
@@ -559,7 +541,7 @@ function groupPartsForRender(parts: Part[]): RenderItem[] {
       result.push({ type: 'single', part })
     }
   }
-  
+
   flushToolGroup(stepFinish)
   return result
 }

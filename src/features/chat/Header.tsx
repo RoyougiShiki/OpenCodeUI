@@ -30,18 +30,15 @@ export function Header({
   const { sessionId } = useMessageStore()
   const { rightPanelOpen, bottomPanelOpen } = useLayoutStore()
   const { sessions, refresh } = useSessionContext()
-  
+
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
-  
+
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const titleInputRef = useRef<HTMLInputElement>(null)
 
   // Session Data
-  const currentSession = useMemo(() => 
-    sessions.find(s => s.id === sessionId), 
-    [sessions, sessionId]
-  )
+  const currentSession = useMemo(() => sessions.find(s => s.id === sessionId), [sessions, sessionId])
   const sessionTitle = currentSession?.title || 'New Chat'
 
   // 同步 document.title - 有 session 标题时显示 "标题 - OpenCode"，否则只显示 "OpenCode"
@@ -51,7 +48,9 @@ export function Header({
     } else {
       document.title = 'OpenCode'
     }
-    return () => { document.title = 'OpenCode' }
+    return () => {
+      document.title = 'OpenCode'
+    }
   }, [currentSession?.title])
 
   // Editing Logic
@@ -89,7 +88,6 @@ export function Header({
 
   return (
     <div className="h-14 flex justify-between items-center px-4 z-20 bg-bg-100 transition-colors duration-200 relative">
-      
       {/* Left: Mobile Menu + Model/Title (z-20) */}
       <div className="flex items-center gap-2 min-w-0 shrink-1 z-20">
         {/* Mobile Sidebar Toggle - 只在移动端显示 */}
@@ -114,22 +112,24 @@ export function Header({
         </div>
         {/* 移动端：Session Title（移动端不显示 ModelSelector，模型选择在输入框） */}
         <div className="md:hidden min-w-0">
-          <div className={`flex items-center group ${isEditingTitle ? 'bg-bg-200/50 ring-1 ring-accent-main-100' : 'bg-transparent hover:bg-bg-200/50 border border-transparent hover:border-border-200/50'} rounded-lg transition-all duration-200 p-0.5 min-w-0 shrink`}>
+          <div
+            className={`flex items-center group ${isEditingTitle ? 'bg-bg-200/50 ring-1 ring-accent-main-100' : 'bg-transparent hover:bg-bg-200/50 border border-transparent hover:border-border-200/50'} rounded-lg transition-all duration-200 p-0.5 min-w-0 shrink`}
+          >
             {isEditingTitle ? (
               <input
                 ref={titleInputRef}
                 type="text"
                 value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
+                onChange={e => setEditTitle(e.target.value)}
                 onBlur={handleRename}
-                onKeyDown={(e) => {
+                onKeyDown={e => {
                   if (e.key === 'Enter') handleRename()
                   if (e.key === 'Escape') setIsEditingTitle(false)
                 }}
                 className="px-2 py-1.5 text-sm font-medium text-text-100 bg-transparent border-none outline-none w-[160px] h-full"
               />
             ) : (
-              <button 
+              <button
                 onClick={handleStartEdit}
                 className="px-2 py-1.5 text-sm font-medium text-text-200 hover:text-text-100 transition-colors truncate max-w-[200px] cursor-text select-none"
                 title="Click to rename"
@@ -140,7 +140,7 @@ export function Header({
             {!isEditingTitle && (
               <>
                 <div className="w-[1.5px] h-3 bg-border-200/50 mx-0.5 shrink-0" />
-                <button 
+                <button
                   className="p-1 text-text-400 hover:text-text-100 transition-colors rounded-md hover:bg-bg-300/50 shrink-0"
                   title="Share session"
                   onClick={() => setShareDialogOpen(true)}
@@ -155,23 +155,24 @@ export function Header({
 
       {/* Center: Session Title (PC only, 居中) (z-20) */}
       <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex z-20">
-        <div className={`flex items-center group ${isEditingTitle ? 'bg-bg-200/50 ring-1 ring-accent-main-100' : 'bg-transparent hover:bg-bg-200/50 border border-transparent hover:border-border-200/50'} rounded-lg transition-all duration-200 p-0.5 min-w-0 shrink`}>
-          
+        <div
+          className={`flex items-center group ${isEditingTitle ? 'bg-bg-200/50 ring-1 ring-accent-main-100' : 'bg-transparent hover:bg-bg-200/50 border border-transparent hover:border-border-200/50'} rounded-lg transition-all duration-200 p-0.5 min-w-0 shrink`}
+        >
           {isEditingTitle ? (
             <input
               ref={titleInputRef}
               type="text"
               value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
+              onChange={e => setEditTitle(e.target.value)}
               onBlur={handleRename}
-              onKeyDown={(e) => {
+              onKeyDown={e => {
                 if (e.key === 'Enter') handleRename()
                 if (e.key === 'Escape') setIsEditingTitle(false)
               }}
               className="px-3 py-1.5 text-sm font-medium text-text-100 bg-transparent border-none outline-none w-[200px] lg:w-[300px] h-full text-center"
             />
           ) : (
-            <button 
+            <button
               onClick={handleStartEdit}
               className="px-3 py-1.5 text-sm font-medium text-text-200 hover:text-text-100 transition-colors truncate max-w-[300px] cursor-text select-none text-center"
               title="Click to rename"
@@ -183,7 +184,7 @@ export function Header({
           {!isEditingTitle && (
             <>
               <div className="w-[1.5px] h-3 bg-border-200/50 mx-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <button 
+              <button
                 className="p-1 text-text-400 hover:text-text-100 transition-colors rounded-md hover:bg-bg-300/50 opacity-0 group-hover:opacity-100 shrink-0"
                 title="Share session"
                 onClick={() => setShareDialogOpen(true)}
@@ -200,7 +201,7 @@ export function Header({
         {/* Panel Toggles Group */}
         <div className="flex items-center gap-0.5">
           <IconButton
-            aria-label={bottomPanelOpen ? "Close bottom panel" : "Open bottom panel"}
+            aria-label={bottomPanelOpen ? 'Close bottom panel' : 'Open bottom panel'}
             onClick={() => layoutStore.toggleBottomPanel()}
             className={`transition-colors ${bottomPanelOpen ? 'text-accent-main-100 bg-bg-200/50' : 'text-text-400 hover:text-text-100 hover:bg-bg-200/50'}`}
           >
@@ -208,7 +209,7 @@ export function Header({
           </IconButton>
 
           <IconButton
-            aria-label={rightPanelOpen ? "Close panel" : "Open panel"}
+            aria-label={rightPanelOpen ? 'Close panel' : 'Open panel'}
             onClick={() => layoutStore.toggleRightPanel()}
             className={`transition-colors ${rightPanelOpen ? 'text-accent-main-100 bg-bg-200/50' : 'text-text-400 hover:text-text-100 hover:bg-bg-200/50'}`}
           >

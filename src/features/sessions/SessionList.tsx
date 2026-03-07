@@ -50,10 +50,10 @@ export function SessionList({
 }: SessionListProps) {
   const listRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  
+
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; sessionId: string | null }>({
     isOpen: false,
-    sessionId: null
+    sessionId: null,
   })
 
   // 滚动加载
@@ -77,11 +77,11 @@ export function SessionList({
   // 分组逻辑
   const groupedSessions = useMemo(() => {
     const groups: Record<TimeGroup, ApiSession[]> = {
-      'Today': [],
-      'Yesterday': [],
+      Today: [],
+      Yesterday: [],
       'Previous 7 Days': [],
       'Previous 30 Days': [],
-      'Older': []
+      Older: [],
     }
 
     const now = new Date()
@@ -125,7 +125,7 @@ export function SessionList({
                 ref={searchInputRef}
                 type="text"
                 value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
+                onChange={e => onSearchChange(e.target.value)}
                 placeholder="Search chats..."
                 className="w-full bg-bg-200/40 hover:bg-bg-200/80 focus:bg-bg-000 border border-transparent focus:border-border-200 rounded-lg py-2 pl-9 pr-3 text-xs text-text-100 placeholder:text-text-400/70 focus:outline-none focus:shadow-sm transition-all duration-200"
               />
@@ -152,9 +152,7 @@ export function SessionList({
           </div>
         ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-text-400 opacity-60">
-            <p className="text-xs">
-              {search ? 'No matches found' : 'No chats yet'}
-            </p>
+            <p className="text-xs">{search ? 'No matches found' : 'No chats yet'}</p>
           </div>
         ) : showGroups ? (
           // Grouped View
@@ -167,17 +165,17 @@ export function SessionList({
                 </h3>
                 <div className="space-y-0.5">
                   {groupSessions.map(session => (
-                      <SessionItem
-                        key={session.id}
-                        session={session}
-                        isSelected={session.id === selectedId}
-                        onSelect={() => onSelect(session)}
-                        onDelete={() => setDeleteConfirm({ isOpen: true, sessionId: session.id })}
-                        onRename={(newTitle) => onRename(session.id, newTitle)}
-                        density={density}
-                        showStats={showStats}
-                        showDirectory={showDirectory}
-                      />
+                    <SessionItem
+                      key={session.id}
+                      session={session}
+                      isSelected={session.id === selectedId}
+                      onSelect={() => onSelect(session)}
+                      onDelete={() => setDeleteConfirm({ isOpen: true, sessionId: session.id })}
+                      onRename={newTitle => onRename(session.id, newTitle)}
+                      density={density}
+                      showStats={showStats}
+                      showDirectory={showDirectory}
+                    />
                   ))}
                 </div>
               </div>
@@ -186,14 +184,14 @@ export function SessionList({
         ) : (
           // Flat View (Search)
           <div className="space-y-0.5 mt-1">
-            {sessions.map((session) => (
+            {sessions.map(session => (
               <SessionItem
                 key={session.id}
                 session={session}
                 isSelected={session.id === selectedId}
                 onSelect={() => onSelect(session)}
                 onDelete={() => setDeleteConfirm({ isOpen: true, sessionId: session.id })}
-                onRename={(newTitle) => onRename(session.id, newTitle)}
+                onRename={newTitle => onRename(session.id, newTitle)}
                 density={density}
                 showStats={showStats}
                 showDirectory={showDirectory}
@@ -201,7 +199,7 @@ export function SessionList({
             ))}
           </div>
         )}
-        
+
         {isLoadingMore && (
           <div className="flex items-center justify-center py-2">
             <LoadingSpinner size="sm" />
@@ -242,7 +240,16 @@ interface SessionItemProps {
   showDirectory?: boolean
 }
 
-function SessionItem({ session, isSelected, onSelect, onDelete, onRename, density = 'default', showStats: _showStats = true, showDirectory = false }: SessionItemProps) {
+function SessionItem({
+  session,
+  isSelected,
+  onSelect,
+  onDelete,
+  onRename,
+  density = 'default',
+  showStats: _showStats = true,
+  showDirectory = false,
+}: SessionItemProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(session.title || '')
   const [showActions, setShowActions] = useState(false)
@@ -358,10 +365,10 @@ function SessionItem({ session, isSelected, onSelect, onDelete, onRename, densit
           ref={inputRef}
           type="text"
           value={editTitle}
-          onChange={(e) => setEditTitle(e.target.value)}
+          onChange={e => setEditTitle(e.target.value)}
           onBlur={handleSaveEdit}
           onKeyDown={handleKeyDown}
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
           className="w-full bg-bg-000 border border-accent-main-100/50 rounded px-2 py-1.5 text-sm text-text-100 focus:outline-none focus:ring-1 focus:ring-accent-main-100/30 leading-relaxed"
         />
       </div>
@@ -380,14 +387,14 @@ function SessionItem({ session, isSelected, onSelect, onDelete, onRename, densit
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       className={`group relative flex items-start ${isCompact ? 'px-3 py-2' : 'px-3 py-2.5'} rounded-lg cursor-pointer transition-all duration-200 border border-transparent select-none ${
-        isSelected
-          ? 'bg-bg-000 shadow-sm ring-1 ring-border-200/50' 
-          : 'hover:bg-bg-200/50'
+        isSelected ? 'bg-bg-000 shadow-sm ring-1 ring-border-200/50' : 'hover:bg-bg-200/50'
       } ${showActions ? 'bg-bg-200/50' : ''}`}
     >
-      <div className={`flex-1 min-w-0 transition-[padding] duration-200 ${showActions ? 'pr-[60px]' : 'pr-1 group-hover:pr-[60px]'}`}>
+      <div
+        className={`flex-1 min-w-0 transition-[padding] duration-200 ${showActions ? 'pr-[60px]' : 'pr-1 group-hover:pr-[60px]'}`}
+      >
         {/* Row 1: Title */}
-        <p 
+        <p
           className={`${isCompact ? 'text-[13px]' : 'text-sm'} truncate font-medium ${isSelected ? 'text-text-100' : 'text-text-200 group-hover:text-text-100'}`}
           title={session.title || 'Untitled Chat'}
         >
@@ -395,7 +402,9 @@ function SessionItem({ session, isSelected, onSelect, onDelete, onRename, densit
         </p>
 
         {/* Row 2: Meta line — 始终存在，保持高度一致 */}
-        <div className={`flex items-center ${isCompact ? 'mt-1' : 'mt-1.5'} h-4 text-[10px] text-text-400 gap-1 overflow-hidden`}>
+        <div
+          className={`flex items-center ${isCompact ? 'mt-1' : 'mt-1.5'} h-4 text-[10px] text-text-400 gap-1 overflow-hidden`}
+        >
           {/* 时间 */}
           {session.time?.updated && (
             <span className="shrink-0 opacity-60">{formatRelativeTime(session.time.updated)}</span>
@@ -408,12 +417,8 @@ function SessionItem({ session, isSelected, onSelect, onDelete, onRename, densit
                 {session.summary.additions > 0 && (
                   <span className="text-success-100">+{session.summary.additions}</span>
                 )}
-                {session.summary.deletions > 0 && (
-                  <span className="text-danger-100">-{session.summary.deletions}</span>
-                )}
-                {session.summary.files > 0 && (
-                  <span>{session.summary.files}f</span>
-                )}
+                {session.summary.deletions > 0 && <span className="text-danger-100">-{session.summary.deletions}</span>}
+                {session.summary.files > 0 && <span>{session.summary.files}f</span>}
               </span>
             </>
           )}
@@ -430,11 +435,13 @@ function SessionItem({ session, isSelected, onSelect, onDelete, onRename, densit
       </div>
 
       {/* Actions: hover on desktop, long-press on mobile */}
-      <div className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 transition-all duration-200 z-10 ${
-        actionsVisible 
-          ? 'opacity-100 pointer-events-auto' 
-          : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
-      }`}>
+      <div
+        className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 transition-all duration-200 z-10 ${
+          actionsVisible
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
+        }`}
+      >
         <button
           onClick={handleStartEdit}
           className="p-1.5 rounded-md hover:bg-bg-300 active:bg-bg-300 text-text-400 hover:text-text-100 transition-colors focus:outline-none"
@@ -462,10 +469,5 @@ import { SpinnerIcon } from '../../components/Icons'
 
 function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const sizeClass = size === 'sm' ? 'w-3 h-3' : 'w-5 h-5'
-  return (
-    <SpinnerIcon 
-      className={`animate-spin text-text-400 ${sizeClass}`}
-      size={size === 'sm' ? 12 : 20}
-    />
-  )
+  return <SpinnerIcon className={`animate-spin text-text-400 ${sizeClass}`} size={size === 'sm' ? 12 : 20} />
 }

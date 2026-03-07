@@ -13,8 +13,8 @@ export type FileNodeType = 'file' | 'directory'
  */
 export interface FileNode {
   name: string
-  path: string       // 相对路径
-  absolute: string   // 绝对路径
+  path: string // 相对路径
+  absolute: string // 绝对路径
   type: FileNodeType
   ignored: boolean
   // UI 扩展字段

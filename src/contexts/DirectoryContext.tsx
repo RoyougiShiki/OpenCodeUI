@@ -49,10 +49,10 @@ type RecentProjects = Record<string, number>
 export function DirectoryProvider({ children }: { children: ReactNode }) {
   // 从 URL 获取 directory（替代 localStorage）
   const { directory: urlDirectory, setDirectory: setUrlDirectory } = useRouter()
-  
+
   // 从 layoutStore 获取 sidebarExpanded
   const { sidebarExpanded } = useLayoutStore()
-  
+
   const [savedDirectories, setSavedDirectories] = useState<SavedDirectory[]>(() => {
     return serverStorage.getJSON<SavedDirectory[]>(STORAGE_KEY_SAVED) ?? []
   })
@@ -60,7 +60,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   const [recentProjects, setRecentProjects] = useState<RecentProjects>(() => {
     return serverStorage.getJSON<RecentProjects>(STORAGE_KEY_RECENT) ?? {}
   })
-  
+
   const [pathInfo, setPathInfo] = useState<ApiPath | null>(null)
 
   // 服务器切换时，重新从 serverStorage 读取（key 前缀已变）
@@ -89,7 +89,7 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
         activeSessionStore.initializePendingRequests(permissions, questions)
       }
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // 只在挂载时跑一次
 
   // 保存 savedDirectories 到 per-server storage
@@ -103,60 +103,69 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   }, [recentProjects])
 
   // 设置当前目录（更新 URL + 记录最近使用 + 拉取 pending requests）
-  const setCurrentDirectory = useCallback((directory: string | undefined) => {
-    setUrlDirectory(directory)
-    if (directory) {
-      setRecentProjects(prev => ({ ...prev, [directory]: Date.now() }))
-    }
-    // 切换目录后拉取该目录下的 pending permission/question，补充到 active 列表
-    Promise.all([
-      getPendingPermissions(undefined, directory).catch(() => []),
-      getPendingQuestions(undefined, directory).catch(() => []),
-    ]).then(([permissions, questions]) => {
-      if (permissions.length > 0 || questions.length > 0) {
-        activeSessionStore.initializePendingRequests(permissions, questions)
+  const setCurrentDirectory = useCallback(
+    (directory: string | undefined) => {
+      setUrlDirectory(directory)
+      if (directory) {
+        setRecentProjects(prev => ({ ...prev, [directory]: Date.now() }))
       }
-    })
-  }, [setUrlDirectory])
+      // 切换目录后拉取该目录下的 pending permission/question，补充到 active 列表
+      Promise.all([
+        getPendingPermissions(undefined, directory).catch(() => []),
+        getPendingQuestions(undefined, directory).catch(() => []),
+      ]).then(([permissions, questions]) => {
+        if (permissions.length > 0 || questions.length > 0) {
+          activeSessionStore.initializePendingRequests(permissions, questions)
+        }
+      })
+    },
+    [setUrlDirectory],
+  )
 
   // 添加目录
-  const addDirectory = useCallback((path: string) => {
-    let normalized = normalizeToForwardSlash(path)
-    
-    // normalizeToForwardSlash 会去掉尾斜杠，导致根路径 "/" → "" 和 "C:/" → "C:"
-    // 需要修正：如果原始路径是根路径，恢复正确的值
-    const trimmed = path.replace(/\\/g, '/').replace(/\/+$/, '/')
-    if (!normalized && (trimmed === '/' || /^[a-zA-Z]:\/$/.test(trimmed))) {
-      normalized = trimmed.slice(0, -1) || '/'
-    }
-    
-    // 验证路径非空（只阻止空字符串和 "."）
-    if (!normalized || normalized === '.') return
-    
-    // 使用 isSameDirectory 检查是否已存在（处理大小写和斜杠差异）
-    if (savedDirectories.some(d => isSameDirectory(d.path, normalized))) {
+  const addDirectory = useCallback(
+    (path: string) => {
+      let normalized = normalizeToForwardSlash(path)
+
+      // normalizeToForwardSlash 会去掉尾斜杠，导致根路径 "/" → "" 和 "C:/" → "C:"
+      // 需要修正：如果原始路径是根路径，恢复正确的值
+      const trimmed = path.replace(/\\/g, '/').replace(/\/+$/, '/')
+      if (!normalized && (trimmed === '/' || /^[a-zA-Z]:\/$/.test(trimmed))) {
+        normalized = trimmed.slice(0, -1) || '/'
+      }
+
+      // 验证路径非空（只阻止空字符串和 "."）
+      if (!normalized || normalized === '.') return
+
+      // 使用 isSameDirectory 检查是否已存在（处理大小写和斜杠差异）
+      if (savedDirectories.some(d => isSameDirectory(d.path, normalized))) {
+        setCurrentDirectory(normalized)
+        return
+      }
+
+      const newDir: SavedDirectory = {
+        path: normalized,
+        name: getDirectoryName(normalized) || normalized,
+        addedAt: Date.now(),
+      }
+
+      setSavedDirectories(prev => [...prev, newDir])
       setCurrentDirectory(normalized)
-      return
-    }
-    
-    const newDir: SavedDirectory = {
-      path: normalized,
-      name: getDirectoryName(normalized) || normalized,
-      addedAt: Date.now(),
-    }
-    
-    setSavedDirectories(prev => [...prev, newDir])
-    setCurrentDirectory(normalized)
-  }, [savedDirectories, setCurrentDirectory])
+    },
+    [savedDirectories, setCurrentDirectory],
+  )
 
   // 移除目录
-  const removeDirectory = useCallback((path: string) => {
-    const normalized = normalizeToForwardSlash(path)
-    setSavedDirectories(prev => prev.filter(d => !isSameDirectory(d.path, normalized)))
-    if (isSameDirectory(urlDirectory, normalized)) {
-      setCurrentDirectory(undefined)
-    }
-  }, [urlDirectory, setCurrentDirectory])
+  const removeDirectory = useCallback(
+    (path: string) => {
+      const normalized = normalizeToForwardSlash(path)
+      setSavedDirectories(prev => prev.filter(d => !isSameDirectory(d.path, normalized)))
+      if (isSameDirectory(urlDirectory, normalized)) {
+        setCurrentDirectory(undefined)
+      }
+    },
+    [urlDirectory, setCurrentDirectory],
+  )
 
   // Tauri: 启动时获取 CLI 传入的目录 + 监听后续 open-directory 事件
   // 用 ref 持有最新的 addDirectory 避免 stale closure
@@ -170,19 +179,25 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
 
     // 拉取启动时的 CLI 目录（一次性）
     import('@tauri-apps/api/core').then(({ invoke }) => {
-      invoke<string | null>('get_cli_directory').then((dir) => {
-        if (dir) addDirectoryRef.current(dir)
-      }).catch(() => {})
+      invoke<string | null>('get_cli_directory')
+        .then(dir => {
+          if (dir) addDirectoryRef.current(dir)
+        })
+        .catch(() => {})
     })
 
     // 监听后续的 open-directory 事件（single-instance / macOS RunEvent::Opened）
     import('@tauri-apps/api/event').then(({ listen }) => {
-      listen<string>('open-directory', (event) => {
+      listen<string>('open-directory', event => {
         addDirectoryRef.current(event.payload)
-      }).then(fn => { unlisten = fn })
+      }).then(fn => {
+        unlisten = fn
+      })
     })
 
-    return () => { unlisten?.() }
+    return () => {
+      unlisten?.()
+    }
   }, [])
 
   // 设置侧边栏展开 - 委托给 layoutStore
@@ -191,33 +206,32 @@ export function DirectoryProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // 稳定化 Provider value，避免每次渲染创建新对象导致子组件不必要重渲染
-  const value = useMemo<DirectoryContextValue>(() => ({
-    currentDirectory: urlDirectory,
-    setCurrentDirectory,
-    savedDirectories,
-    addDirectory,
-    removeDirectory,
-    pathInfo,
-    sidebarExpanded,
-    setSidebarExpanded,
-    recentProjects,
-  }), [
-    urlDirectory,
-    setCurrentDirectory,
-    savedDirectories,
-    addDirectory,
-    removeDirectory,
-    pathInfo,
-    sidebarExpanded,
-    setSidebarExpanded,
-    recentProjects,
-  ])
-
-  return (
-    <DirectoryContext.Provider value={value}>
-      {children}
-    </DirectoryContext.Provider>
+  const value = useMemo<DirectoryContextValue>(
+    () => ({
+      currentDirectory: urlDirectory,
+      setCurrentDirectory,
+      savedDirectories,
+      addDirectory,
+      removeDirectory,
+      pathInfo,
+      sidebarExpanded,
+      setSidebarExpanded,
+      recentProjects,
+    }),
+    [
+      urlDirectory,
+      setCurrentDirectory,
+      savedDirectories,
+      addDirectory,
+      removeDirectory,
+      pathInfo,
+      sidebarExpanded,
+      setSidebarExpanded,
+      recentProjects,
+    ],
   )
+
+  return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>
 }
 
 export function useDirectory(): DirectoryContextValue {

@@ -9,10 +9,10 @@ export function useIsMobile() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
-    
+
     // Initial check
     checkMobile()
-    
+
     // Listen for resize
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)

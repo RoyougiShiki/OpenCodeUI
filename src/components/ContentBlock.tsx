@@ -1,6 +1,6 @@
 /**
  * ContentBlock - 通用内容展示容器
- * 
+ *
  * 根据内容类型自动选择渲染器：
  * - 普通代码/文本 -> CodePreview
  * - Diff -> DiffViewer
@@ -35,7 +35,7 @@ export interface ContentBlockProps {
   maxHeight?: number
   /** 是否可折叠 */
   collapsible?: boolean
-  
+
   // 内容
   /** 普通文本/代码内容 */
   content?: string
@@ -45,7 +45,7 @@ export interface ContentBlockProps {
   diffStats?: { additions: number; deletions: number }
   /** 统计信息 */
   stats?: { exit?: number }
-  
+
   // Loading 状态
   /** 是否正在加载 */
   isLoading?: boolean
@@ -76,33 +76,36 @@ export const ContentBlock = memo(function ContentBlock({
   const [fullscreenOpen, setFullscreenOpen] = useState(false)
   const [diffViewMode, setDiffViewMode] = useState<ViewMode>('split')
   const contentRef = useRef<HTMLDivElement>(null)
-  
+
   const isError = variant === 'error'
   const isDiff = !!diff
-  const hasContent = !!(content?.trim()) || isDiff || stats?.exit !== undefined
+  const hasContent = !!content?.trim() || isDiff || stats?.exit !== undefined
   const canCollapse = collapsible && hasContent
   const lang = language || (filePath ? detectLanguage(filePath) : 'text')
   const fileName = filePath?.split(/[/\\]/).pop()
-  
+
   // Diff 统计
   const diffStats = useMemo(() => {
     if (!isDiff) return null
     if (providedDiffStats) return providedDiffStats
-    
+
     if (typeof diff === 'object') {
       const changes = diffLines(diff.before, diff.after)
-      let additions = 0, deletions = 0
+      let additions = 0,
+        deletions = 0
       for (const c of changes) {
         if (c.added) additions += c.count || 0
         if (c.removed) deletions += c.count || 0
       }
       return { additions, deletions }
     }
-    
+
     const lines = (diff as string).split('\n')
-    let additions = 0, deletions = 0
+    let additions = 0,
+      deletions = 0
     for (const line of lines) {
-      if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('Index:') || line.startsWith('===')) continue
+      if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('Index:') || line.startsWith('==='))
+        continue
       if (line.startsWith('+')) additions++
       if (line.startsWith('-')) deletions++
     }
@@ -137,39 +140,34 @@ export const ContentBlock = memo(function ContentBlock({
   const showBody = (hasContent && !collapsed) || (isLoading && !hasContent)
 
   return (
-    <div className={`rounded-lg overflow-hidden text-xs ${
-      isError
-        ? 'border border-danger-100/30 bg-danger-100/5'
-        : 'bg-bg-100/80 border border-border-200/40'
-    }`}>
+    <div
+      className={`rounded-lg overflow-hidden text-xs ${
+        isError ? 'border border-danger-100/30 bg-danger-100/5' : 'bg-bg-100/80 border border-border-200/40'
+      }`}
+    >
       {/* Header */}
       <div
         className={`flex items-center gap-2 px-3 h-8 select-none transition-colors ${
           canCollapse ? 'cursor-pointer' : ''
-        } ${isError
-          ? 'bg-danger-100/8 hover:bg-danger-100/12'
-          : 'bg-bg-200/40 hover:bg-bg-200/60'
-        }`}
+        } ${isError ? 'bg-danger-100/8 hover:bg-danger-100/12' : 'bg-bg-200/40 hover:bg-bg-200/60'}`}
         onClick={canCollapse ? () => setCollapsed(!collapsed) : undefined}
       >
         {/* Left: chevron + label + filename */}
         <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
           {canCollapse && (
-            <span className={`shrink-0 ${
-              isError ? 'text-danger-100/60' : 'text-text-500'
-            }`}>
+            <span className={`shrink-0 ${isError ? 'text-danger-100/60' : 'text-text-500'}`}>
               {collapsed ? <ChevronRightIcon size={12} /> : <ChevronDownIcon size={12} />}
             </span>
           )}
-          <span className={`font-medium font-mono leading-none whitespace-nowrap ${
-            isError ? 'text-danger-100' : 'text-text-300'
-          }`}>
+          <span
+            className={`font-medium font-mono leading-none whitespace-nowrap ${
+              isError ? 'text-danger-100' : 'text-text-300'
+            }`}
+          >
             {label}
           </span>
-          {fileName && (
-            <span className="text-text-500 truncate font-mono min-w-0 flex-1 ml-0.5">{fileName}</span>
-          )}
-          
+          {fileName && <span className="text-text-500 truncate font-mono min-w-0 flex-1 ml-0.5">{fileName}</span>}
+
           {/* Loading spinner */}
           {isLoading && (
             <div className="flex items-center gap-1.5 text-text-400 ml-1">
@@ -178,7 +176,7 @@ export const ContentBlock = memo(function ContentBlock({
             </div>
           )}
         </div>
-        
+
         {/* Right: stats + actions */}
         <div className="flex items-center gap-2.5 font-mono shrink-0">
           {/* Diff stats */}
@@ -191,12 +189,12 @@ export const ContentBlock = memo(function ContentBlock({
               )}
             </div>
           )}
-          
+
           {/* Fullscreen button - 支持 diff 和代码 */}
           {(isDiff || content?.trim()) && !collapsed && (
             <button
               className="p-0.5 text-text-400 hover:text-text-200 rounded transition-colors"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation()
                 setFullscreenOpen(true)
               }}
@@ -205,12 +203,14 @@ export const ContentBlock = memo(function ContentBlock({
               <MaximizeIcon size={13} />
             </button>
           )}
-          
+
           {/* Exit code */}
           {stats?.exit !== undefined && (
-            <span className={`tabular-nums text-[10px] font-medium ${
-              stats.exit === 0 ? 'text-accent-secondary-100' : 'text-warning-100'
-            }`}>
+            <span
+              className={`tabular-nums text-[10px] font-medium ${
+                stats.exit === 0 ? 'text-accent-secondary-100' : 'text-warning-100'
+              }`}
+            >
               exit {stats.exit}
             </span>
           )}
@@ -218,9 +218,11 @@ export const ContentBlock = memo(function ContentBlock({
       </div>
 
       {/* Body - grid collapse animation */}
-      <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-        showBody ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-      }`}>
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+          showBody ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
         <div className="overflow-hidden">
           {/* Loading skeleton */}
           {isLoading && !hasContent && (
@@ -229,12 +231,12 @@ export const ContentBlock = memo(function ContentBlock({
               <div className="h-3 bg-bg-300/40 rounded animate-pulse w-1/2" />
             </div>
           )}
-          
+
           {/* Content */}
           {hasContent && (
             <div ref={contentRef} className="relative group/content">
               {content && <CopyButton text={content} position="absolute" groupName="content" />}
-              
+
               {isDiff && resolvedDiff ? (
                 <DiffViewer
                   before={resolvedDiff.before}
@@ -244,18 +246,13 @@ export const ContentBlock = memo(function ContentBlock({
                   maxHeight={maxHeight}
                 />
               ) : content?.trim() ? (
-                <CodePreview
-                  code={content}
-                  language={lang}
-                  maxHeight={maxHeight}
-                  truncateLines={false}
-                />
+                <CodePreview code={content} language={lang} maxHeight={maxHeight} truncateLines={false} />
               ) : null}
             </div>
           )}
         </div>
       </div>
-      
+
       {/* Fullscreen Viewer - 支持 diff 和代码 */}
       {isDiff && diff ? (
         <FullscreenViewer

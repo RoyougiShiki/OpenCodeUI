@@ -2,14 +2,7 @@
 // Chat Domain Types
 // ============================================
 
-export type ToolType = 
-  | 'read_file' 
-  | 'edit_file' 
-  | 'write_file' 
-  | 'bash' 
-  | 'search' 
-  | 'thinking'
-  | 'web_browse'
+export type ToolType = 'read_file' | 'edit_file' | 'write_file' | 'bash' | 'search' | 'thinking' | 'web_browse'
 
 export type ToolStatus = 'pending' | 'running' | 'done' | 'error' | 'waiting_approval'
 
@@ -17,16 +10,17 @@ export interface ToolCall {
   id: string
   tool: ToolType
   title: string
-  input?: string  // 原始输入（如 bash 命令）
+  input?: string // 原始输入（如 bash 命令）
   args?: Record<string, unknown>
   status: ToolStatus
   result?: string
-  error?: string   // 错误信息（如拒绝权限）
+  error?: string // 错误信息（如拒绝权限）
   duration?: number // ms
   requiresApproval?: boolean
   // File diff 相关（edit/write 工具）
-  diff?: string           // unified diff 格式
-  fileDiff?: {            // 结构化 diff 信息
+  diff?: string // unified diff 格式
+  fileDiff?: {
+    // 结构化 diff 信息
     file: string
     before: string
     after: string
@@ -35,7 +29,7 @@ export interface ToolCall {
   }
   // 文件内容（read 工具）
   fileContent?: string
-  filePath?: string       // 文件路径
+  filePath?: string // 文件路径
 }
 
 // ============================================
@@ -49,7 +43,7 @@ export interface ThinkingBlock {
   type: 'thinking'
   id: string
   content: string
-  isStreaming: boolean  // 是否还在思考中
+  isStreaming: boolean // 是否还在思考中
 }
 
 export interface ToolCallsBlock {
@@ -94,7 +88,7 @@ import type { Attachment } from '../features/attachment'
 export interface Message {
   id: string
   role: 'user' | 'assistant'
-  content: string  // 用户消息内容，或 assistant 最终文本
+  content: string // 用户消息内容，或 assistant 最终文本
   timestamp: Date
   // 附件（用户消息的文件/图片/agent引用）
   attachments?: Attachment[]
@@ -109,19 +103,19 @@ export interface Message {
 // Permission Types
 // ============================================
 
-export type PermissionDecision = 
-  | 'pending'           // 等待用户决定
-  | 'approved_once'     // 仅本次批准
-  | 'approved_session'  // 本次会话永久批准
-  | 'rejected'          // 拒绝
+export type PermissionDecision =
+  | 'pending' // 等待用户决定
+  | 'approved_once' // 仅本次批准
+  | 'approved_session' // 本次会话永久批准
+  | 'rejected' // 拒绝
 
 export interface PermissionRequest {
   id: string
   tool: ToolType
   title: string
   description?: string
-  sites?: string[]      // 涉及的站点 (可选)
-  steps?: string[]      // 执行步骤
+  sites?: string[] // 涉及的站点 (可选)
+  steps?: string[] // 执行步骤
 }
 
 // ============================================

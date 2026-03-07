@@ -103,7 +103,7 @@ export function getDetectedPathStyle(): DetectedPathStyle {
   if (_detectedStyle === null) {
     try {
       const saved = serverStorage.get(STORAGE_KEY_DETECTED_STYLE)
-      _detectedStyle = (saved === 'windows') ? 'windows' : 'unix'
+      _detectedStyle = saved === 'windows' ? 'windows' : 'unix'
     } catch {
       _detectedStyle = 'unix'
     }
@@ -155,16 +155,16 @@ export function isWindowsPathMode(): boolean {
  */
 export function formatPathForApi(dir: string | undefined | null): string | undefined {
   if (!dir) return undefined
-  
+
   let trimmed = dir.replace(/[/\\]+$/, '') // 移除末尾斜杠
-  
+
   // 根路径保护：/ → ""，C:/ → "C:"，需要恢复斜杠
   if (!trimmed) {
     trimmed = '/'
   } else if (/^[a-zA-Z]:$/.test(trimmed)) {
     trimmed = trimmed + '/'
   }
-  
+
   if (isWindowsPathMode()) {
     return trimmed.replace(/\//g, '\\')
   } else {
@@ -178,10 +178,10 @@ export function formatPathForApi(dir: string | undefined | null): string | undef
  */
 export function detectPathStyleFromResponse(path: string | undefined | null): DetectedPathStyle | null {
   if (!path) return null
-  
+
   const backslashCount = (path.match(/\\/g) || []).length
   const forwardSlashCount = (path.match(/\//g) || []).length
-  
+
   // 如果有反斜杠且多于正斜杠，判定为 Windows 风格
   if (backslashCount > 0 && backslashCount >= forwardSlashCount) {
     return 'windows'
@@ -190,7 +190,7 @@ export function detectPathStyleFromResponse(path: string | undefined | null): De
   if (forwardSlashCount > 0) {
     return 'unix'
   }
-  
+
   return null
 }
 
@@ -212,7 +212,7 @@ export function autoDetectPathStyle(path: string | undefined | null): void {
 /**
  * 规范化目录路径为正斜杠格式
  * 用于前端内部存储和 URL
- * 
+ *
  * @example
  * normalizeToForwardSlash('E:\\dev\\project') // 'E:/dev/project'
  * normalizeToForwardSlash('E:/dev/project/') // 'E:/dev/project'
@@ -220,8 +220,8 @@ export function autoDetectPathStyle(path: string | undefined | null): void {
 export function normalizeToForwardSlash(dir: string | undefined | null): string {
   if (!dir) return ''
   return dir
-    .replace(/\\/g, '/')    // 反斜杠 → 正斜杠
-    .replace(/\/+$/, '')    // 移除末尾斜杠
+    .replace(/\\/g, '/') // 反斜杠 → 正斜杠
+    .replace(/\/+$/, '') // 移除末尾斜杠
 }
 
 /**
@@ -229,36 +229,33 @@ export function normalizeToForwardSlash(dir: string | undefined | null): string 
  * - 统一使用正斜杠
  * - 移除末尾斜杠
  * - 转小写（Windows 路径不区分大小写）
- * 
+ *
  * @example
  * normalizeForComparison('E:\\Dev\\Project') // 'e:/dev/project'
  */
 export function normalizeForComparison(dir: string | undefined | null): string {
   if (!dir) return ''
   return dir
-    .replace(/\\/g, '/')    // 反斜杠 → 正斜杠
-    .replace(/\/+$/, '')    // 移除末尾斜杠
-    .toLowerCase()          // Windows 路径不区分大小写
+    .replace(/\\/g, '/') // 反斜杠 → 正斜杠
+    .replace(/\/+$/, '') // 移除末尾斜杠
+    .toLowerCase() // Windows 路径不区分大小写
 }
 
 /**
  * 比较两个目录路径是否相同
  * 处理斜杠、大小写差异
- * 
+ *
  * @example
  * isSameDirectory('E:\\dev\\project', 'E:/dev/project') // true
  * isSameDirectory('E:/Dev/Project', 'e:/dev/project') // true
  */
-export function isSameDirectory(
-  dir1: string | undefined | null, 
-  dir2: string | undefined | null
-): boolean {
+export function isSameDirectory(dir1: string | undefined | null, dir2: string | undefined | null): boolean {
   return normalizeForComparison(dir1) === normalizeForComparison(dir2)
 }
 
 /**
  * 从路径中提取目录名（最后一个部分）
- * 
+ *
  * @example
  * getDirectoryName('E:/dev/my-project') // 'my-project'
  * getDirectoryName('E:\\dev\\my-project\\') // 'my-project'
@@ -278,7 +275,7 @@ export function getDirectoryName(dir: string | undefined | null): string {
 
 /**
  * 检查路径是否是 Windows 绝对路径
- * 
+ *
  * @example
  * isWindowsAbsolutePath('E:/dev') // true
  * isWindowsAbsolutePath('/home/user') // false

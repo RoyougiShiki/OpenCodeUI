@@ -25,28 +25,14 @@ export function ConfirmDialog({
   isLoading = false,
 }: ConfirmDialogProps) {
   return (
-    <Dialog 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title={title} 
-      width={400}
-      showCloseButton={false}
-    >
-      {description && (
-        <div className="text-sm text-text-300 leading-relaxed mb-6">
-          {description}
-        </div>
-      )}
-      
+    <Dialog isOpen={isOpen} onClose={onClose} title={title} width={400} showCloseButton={false}>
+      {description && <div className="text-sm text-text-300 leading-relaxed mb-6">{description}</div>}
+
       <div className="flex items-center justify-end gap-3">
-        <Button 
-          variant="secondary" 
-          onClick={onClose}
-          disabled={isLoading}
-        >
+        <Button variant="secondary" onClick={onClose} disabled={isLoading}>
           {cancelText}
         </Button>
-        <Button 
+        <Button
           variant={variant === 'danger' ? 'danger' : 'primary'}
           onClick={() => {
             onConfirm()

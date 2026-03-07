@@ -5,12 +5,7 @@
 
 import { get, patch } from './http'
 import { formatPathForApi } from '../utils/directoryUtils'
-import type {
-  ProvidersResponse,
-  ModelInfo,
-  ApiProject,
-  ApiPath,
-} from './types'
+import type { ProvidersResponse, ModelInfo, ApiProject, ApiPath } from './types'
 
 // Re-export API_BASE for backward compatibility
 export { API_BASE } from './http'
@@ -45,8 +40,8 @@ export * from './lsp'
 // ============================================
 
 export async function getActiveModels(directory?: string): Promise<ModelInfo[]> {
-  const data = await get<ProvidersResponse>('/config/providers', { 
-    directory: formatPathForApi(directory) 
+  const data = await get<ProvidersResponse>('/config/providers', {
+    directory: formatPathForApi(directory),
   })
   const models: ModelInfo[] = []
 
@@ -54,7 +49,7 @@ export async function getActiveModels(directory?: string): Promise<ModelInfo[]> 
     for (const [, model] of Object.entries(provider.models)) {
       if (model.status === 'active') {
         const variants = model.variants ? Object.keys(model.variants) : []
-        
+
         models.push({
           id: model.id,
           name: model.name || model.id,
@@ -79,8 +74,8 @@ export async function getActiveModels(directory?: string): Promise<ModelInfo[]> 
 }
 
 export async function getDefaultModels(directory?: string): Promise<Record<string, string>> {
-  const data = await get<ProvidersResponse>('/config/providers', { 
-    directory: formatPathForApi(directory) 
+  const data = await get<ProvidersResponse>('/config/providers', {
+    directory: formatPathForApi(directory),
   })
   return data.default
 }
@@ -108,16 +103,20 @@ export async function getProjects(directory?: string): Promise<ApiProject[]> {
  * PATCH /project/{projectID} - 更新项目
  */
 export async function updateProject(
-  projectId: string, 
+  projectId: string,
   params: {
     name?: string
     icon?: { url?: string; override?: string; color?: string }
   },
-  directory?: string
+  directory?: string,
 ): Promise<ApiProject> {
-  return patch<ApiProject>(`/project/${projectId}`, { 
-    directory: formatPathForApi(directory) 
-  }, params)
+  return patch<ApiProject>(
+    `/project/${projectId}`,
+    {
+      directory: formatPathForApi(directory),
+    },
+    params,
+  )
 }
 
 // ============================================

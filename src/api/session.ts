@@ -20,11 +20,7 @@ export async function getSessionStatus(directory?: string): Promise<SessionStatu
 /**
  * GET /session/{sessionID}/diff - 获取 session 的 diff
  */
-export async function getSessionDiff(
-  sessionId: string, 
-  directory?: string,
-  messageId?: string
-): Promise<FileDiff[]> {
+export async function getSessionDiff(sessionId: string, directory?: string, messageId?: string): Promise<FileDiff[]> {
   const params: Record<string, string> = {}
   const formattedDir = formatPathForApi(directory)
   if (formattedDir) {
@@ -48,12 +44,12 @@ export async function getSessionDiff(
  */
 export async function getSessions(params: SessionListParams = {}): Promise<ApiSession[]> {
   const { directory, roots, start, search, limit } = params
-  return get<ApiSession[]>('/session', { 
-    directory: formatPathForApi(directory), 
-    roots, 
-    start, 
-    search, 
-    limit 
+  return get<ApiSession[]>('/session', {
+    directory: formatPathForApi(directory),
+    roots,
+    start,
+    search,
+    limit,
   })
 }
 
@@ -67,11 +63,13 @@ export async function getSession(sessionId: string, directory?: string): Promise
 /**
  * POST /session - 创建 session
  */
-export async function createSession(params: {
-  directory?: string
-  title?: string
-  parentID?: string
-} = {}): Promise<ApiSession> {
+export async function createSession(
+  params: {
+    directory?: string
+    title?: string
+    parentID?: string
+  } = {},
+): Promise<ApiSession> {
   const { directory, title, parentID } = params
   return post<ApiSession>('/session', { directory: formatPathForApi(directory) }, { title, parentID })
 }
@@ -82,7 +80,7 @@ export async function createSession(params: {
 export async function updateSession(
   sessionId: string,
   params: { title?: string; time?: { archived?: number } },
-  directory?: string
+  directory?: string,
 ): Promise<ApiSession> {
   return patch<ApiSession>(`/session/${sessionId}`, { directory: formatPathForApi(directory) }, params)
 }
@@ -112,7 +110,7 @@ export async function revertMessage(
   sessionId: string,
   messageId: string,
   partId?: string,
-  directory?: string
+  directory?: string,
 ): Promise<ApiSession> {
   const body: { messageID: string; partID?: string } = { messageID: messageId }
   if (partId) {
@@ -145,12 +143,12 @@ export async function unshareSession(sessionId: string, directory?: string): Pro
 /**
  * POST /session/{sessionID}/fork - Fork session
  */
-export async function forkSession(
-  sessionId: string,
-  messageId?: string,
-  directory?: string
-): Promise<ApiSession> {
-  return post<ApiSession>(`/session/${sessionId}/fork`, { directory: formatPathForApi(directory) }, { messageID: messageId })
+export async function forkSession(sessionId: string, messageId?: string, directory?: string): Promise<ApiSession> {
+  return post<ApiSession>(
+    `/session/${sessionId}/fork`,
+    { directory: formatPathForApi(directory) },
+    { messageID: messageId },
+  )
 }
 
 /**
@@ -159,7 +157,7 @@ export async function forkSession(
 export async function summarizeSession(
   sessionId: string,
   params: { providerID: string; modelID: string; auto?: boolean },
-  directory?: string
+  directory?: string,
 ): Promise<boolean> {
   return post<boolean>(`/session/${sessionId}/summarize`, { directory: formatPathForApi(directory) }, params)
 }

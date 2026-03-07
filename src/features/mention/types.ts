@@ -8,9 +8,9 @@ export type MentionType = 'agent' | 'file' | 'folder'
 /** Mention 项目 */
 export interface MentionItem {
   type: MentionType
-  value: string           // 完整值（绝对路径或 agent name）
-  displayName: string     // 显示名称（文件名或 agent name）
-  relativePath?: string   // 相对路径（用于显示）
+  value: string // 完整值（绝对路径或 agent name）
+  displayName: string // 显示名称（文件名或 agent name）
+  relativePath?: string // 相对路径（用于显示）
 }
 
 /** 解析后的文本片段 */
@@ -18,14 +18,14 @@ export interface ParsedSegment {
   type: 'text' | 'mention'
   content: string
   mentionType?: MentionType
-  mentionValue?: string   // mention 的完整值
+  mentionValue?: string // mention 的完整值
 }
 
 /** Mention 菜单状态 */
 export interface MentionMenuState {
   isOpen: boolean
-  query: string           // @ 后面的搜索词
-  startIndex: number      // @ 在文本中的位置
+  query: string // @ 后面的搜索词
+  startIndex: number // @ 在文本中的位置
   position?: { x: number; y: number }
 }
 

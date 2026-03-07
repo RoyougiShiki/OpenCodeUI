@@ -14,29 +14,29 @@ interface CodeBlockProps {
   maxHeight?: number
 }
 
-export const CodeBlock = memo(function CodeBlock({ 
-  code, 
-  language, 
-  className = '', 
+export const CodeBlock = memo(function CodeBlock({
+  code,
+  language,
+  className = '',
   style,
   showHeader = true,
   maxHeight,
 }: CodeBlockProps) {
   // Lazy load highlighting when close to viewport
   const { ref, inView } = useInView({ triggerOnce: true, rootMargin: '200px' })
-  
+
   // Auto-detect tree structure if language is missing or text
   const effectiveLanguage = useMemo(() => {
     if (language && language !== 'text') return language
-    
+
     // Check for tree structure characters
     if (code.includes('├──') || code.includes('└──') || (code.includes('│') && code.includes('──'))) {
       return 'yaml' // YAML formatting often looks good for trees
     }
-    
+
     return language || 'text'
   }, [code, language])
-  
+
   const { output: html } = useSyntaxHighlight(code, { lang: effectiveLanguage, enabled: inView })
 
   const containerStyle = maxHeight ? { ...style, maxHeight } : style
@@ -44,22 +44,18 @@ export const CodeBlock = memo(function CodeBlock({
   if (!showHeader) {
     // 无 header 的紧凑模式
     return (
-      <div 
-        ref={ref}
-        className={`rounded-lg overflow-hidden bg-bg-300/50 ${className}`} 
-        style={containerStyle}
-      >
+      <div ref={ref} className={`rounded-lg overflow-hidden bg-bg-300/50 ${className}`} style={containerStyle}>
         <div className="overflow-auto custom-scrollbar" style={maxHeight ? { maxHeight } : undefined}>
           {!html ? (
             <pre className="p-2 m-0 font-mono text-text-200 text-xs leading-relaxed">
               <code>{code}</code>
             </pre>
           ) : (
-          <div
-            className="shiki-wrapper text-xs leading-relaxed [&_pre]:p-2 [&_pre]:m-0 [&_pre]:bg-transparent! [&_code]:font-mono"
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{ __html: html as string }}
-          />
+            <div
+              className="shiki-wrapper text-xs leading-relaxed [&_pre]:p-2 [&_pre]:m-0 [&_pre]:bg-transparent! [&_code]:font-mono"
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{ __html: html as string }}
+            />
           )}
         </div>
       </div>
@@ -67,19 +63,17 @@ export const CodeBlock = memo(function CodeBlock({
   }
 
   return (
-    <div 
+    <div
       ref={ref}
-      className={`rounded-lg overflow-hidden border border-border-200/50 bg-bg-300 w-full max-w-full flex flex-col ${className}`} 
+      className={`rounded-lg overflow-hidden border border-border-200/50 bg-bg-300 w-full max-w-full flex flex-col ${className}`}
       style={style}
     >
       {/* Header with Language and Copy */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-bg-200/50 border-b border-border-200/50 select-none">
-        <span className="text-xs text-text-400 font-medium uppercase tracking-wider">
-          {language || 'text'}
-        </span>
+        <span className="text-xs text-text-400 font-medium uppercase tracking-wider">{language || 'text'}</span>
         <CopyButton text={code} position="static" className="!p-1" />
       </div>
-      
+
       {/* Scrollable Content */}
       <div className="overflow-auto custom-scrollbar" style={maxHeight ? { maxHeight } : undefined}>
         {!html ? (

@@ -73,11 +73,7 @@ export async function executeCommand(
   sessionId: string,
   command: string,
   args: string = '',
-  directory?: string
+  directory?: string,
 ): Promise<unknown> {
-  return post(
-    `/session/${sessionId}/command`,
-    { directory: formatPathForApi(directory) },
-    { command, arguments: args }
-  )
+  return post(`/session/${sessionId}/command`, { directory: formatPathForApi(directory) }, { command, arguments: args })
 }

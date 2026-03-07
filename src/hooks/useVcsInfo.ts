@@ -27,7 +27,7 @@ export function useVcsInfo(directory?: string): UseVcsInfoResult {
       setVcsInfo(null)
       return
     }
-    
+
     setIsLoading(true)
     try {
       const info = await getVcsInfo(directory)
@@ -51,7 +51,9 @@ export function useVcsInfo(directory?: string): UseVcsInfoResult {
   useEffect(() => {
     mountedRef.current = true
     fetchVcs()
-    return () => { mountedRef.current = false }
+    return () => {
+      mountedRef.current = false
+    }
   }, [fetchVcs])
 
   // 轮询

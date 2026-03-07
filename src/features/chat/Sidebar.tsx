@@ -7,8 +7,8 @@ import type { ThemeMode } from '../../hooks'
 
 const MIN_WIDTH = 240
 const MAX_WIDTH = 480
-const DEFAULT_WIDTH = 288  // 18rem = 288px
-const RAIL_WIDTH = 49      // 3.05rem ≈ 49px
+const DEFAULT_WIDTH = 288 // 18rem = 288px
+const RAIL_WIDTH = 49 // 3.05rem ≈ 49px
 
 interface SidebarProps {
   isOpen: boolean
@@ -53,7 +53,7 @@ export const Sidebar = memo(function Sidebar({
       setIsProjectDialogOpen(true)
     }
   }, [projectDialogOpen])
-  
+
   // Resizable state
   const [width, setWidth] = useState(() => {
     try {
@@ -66,12 +66,15 @@ export const Sidebar = memo(function Sidebar({
   const [isResizing, setIsResizing] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
 
-  const handleAddProject = useCallback((path: string) => {
-    addDirectory(path)
-    if (!isMobile) {
-      onOpen()
-    }
-  }, [addDirectory, isMobile, onOpen])
+  const handleAddProject = useCallback(
+    (path: string) => {
+      addDirectory(path)
+      if (!isMobile) {
+        onOpen()
+      }
+    },
+    [addDirectory, isMobile, onOpen],
+  )
 
   const openProjectDialog = useCallback(() => {
     setIsProjectDialogOpen(true)
@@ -114,7 +117,7 @@ export const Sidebar = memo(function Sidebar({
       document.removeEventListener('mouseup', handleMouseUp)
     }
   }, [isResizing, width, isMobile])
-  
+
   // Save width
   useEffect(() => {
     if (!isResizing && !isMobile) {
@@ -122,13 +125,16 @@ export const Sidebar = memo(function Sidebar({
     }
   }, [width, isResizing, isMobile])
 
-  const startResizing = useCallback((e: React.MouseEvent) => {
-    if (isMobile) return
-    e.preventDefault()
-    setIsResizing(true)
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-  }, [isMobile])
+  const startResizing = useCallback(
+    (e: React.MouseEvent) => {
+      if (isMobile) return
+      e.preventDefault()
+      setIsResizing(true)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+    },
+    [isMobile],
+  )
 
   // 移动端遮罩点击关闭
   const handleBackdropClick = useCallback(() => {
@@ -146,18 +152,21 @@ export const Sidebar = memo(function Sidebar({
   }, [isOpen, onClose, onOpen])
 
   // 选择 session 后在移动端关闭侧边栏
-  const handleSelectSession = useCallback((session: ApiSession) => {
-    onSelectSession(session)
-    if (isMobile) {
-      onClose()
-    }
-  }, [onSelectSession, isMobile, onClose])
+  const handleSelectSession = useCallback(
+    (session: ApiSession) => {
+      onSelectSession(session)
+      if (isMobile) {
+        onClose()
+      }
+    },
+    [onSelectSession, isMobile, onClose],
+  )
 
   // ============================================
   // 移动端：Sidebar 完全不占位，作为 overlay 显示
   // 支持触摸滑动关闭
   // ============================================
-  
+
   // 滑动关闭手势状态
   const touchStartX = useRef(0)
   const touchDeltaX = useRef(0)
@@ -194,7 +203,7 @@ export const Sidebar = memo(function Sidebar({
     return (
       <>
         {/* Mobile Backdrop */}
-        <div 
+        <div
           className={`
             fixed left-0 right-0 bg-[hsl(var(--always-black)/0.4)] z-30
             transition-opacity duration-300
@@ -205,7 +214,7 @@ export const Sidebar = memo(function Sidebar({
         />
 
         {/* Mobile Sidebar Overlay */}
-        <div 
+        <div
           onTouchStart={handleSidebarTouchStart}
           onTouchMove={handleSidebarTouchMove}
           onTouchEnd={handleSidebarTouchEnd}
@@ -215,11 +224,9 @@ export const Sidebar = memo(function Sidebar({
             ${isSwiping.current ? '' : 'transition-transform duration-300 ease-out'}
             ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           `}
-          style={{ 
+          style={{
             width: `${DEFAULT_WIDTH}px`,
-            transform: isOpen 
-              ? `translateX(${Math.min(0, swipeX)}px)` 
-              : `translateX(-100%)`,
+            transform: isOpen ? `translateX(${Math.min(0, swipeX)}px)` : `translateX(-100%)`,
             top: 'var(--safe-area-inset-top)',
             height: 'calc(100% - var(--safe-area-inset-top))',
           }}
@@ -232,8 +239,8 @@ export const Sidebar = memo(function Sidebar({
             selectedSessionId={selectedSessionId}
             onAddProject={openProjectDialog}
             isMobile={true}
-            isExpanded={true}  // 移动端展开时始终是 expanded 状态
-            onToggleSidebar={onClose}  // 移动端 toggle 就是关闭
+            isExpanded={true} // 移动端展开时始终是 expanded 状态
+            onToggleSidebar={onClose} // 移动端 toggle 就是关闭
             contextLimit={contextLimit}
             onOpenSettings={onOpenSettings}
             themeMode={themeMode}
@@ -259,7 +266,7 @@ export const Sidebar = memo(function Sidebar({
   // ============================================
   return (
     <>
-      <div 
+      <div
         ref={sidebarRef}
         style={{ width: isOpen ? `${width}px` : `${RAIL_WIDTH}px` }}
         className={`

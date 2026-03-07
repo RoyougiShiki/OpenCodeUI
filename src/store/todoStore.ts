@@ -142,7 +142,7 @@ export const todoStore = new TodoStore()
  */
 function useStoreSubscription() {
   return useSyncExternalStore(
-    useCallback((callback) => todoStore.subscribe(callback), []),
+    useCallback(callback => todoStore.subscribe(callback), []),
     useCallback(() => todoStore.getVersion(), []),
   )
 }
@@ -152,10 +152,7 @@ function useStoreSubscription() {
  */
 export function useTodos(sessionId: string | null): TodoItem[] {
   useStoreSubscription()
-  return useMemo(
-    () => sessionId ? todoStore.getTodos(sessionId) : EMPTY_TODOS,
-    [sessionId, todoStore.getVersion()]
-  )
+  return useMemo(() => (sessionId ? todoStore.getTodos(sessionId) : EMPTY_TODOS), [sessionId, todoStore.getVersion()])
 }
 
 /**
@@ -163,10 +160,7 @@ export function useTodos(sessionId: string | null): TodoItem[] {
  */
 export function useTodoStats(sessionId: string | null): TodoStats {
   useStoreSubscription()
-  return useMemo(
-    () => sessionId ? todoStore.getStats(sessionId) : EMPTY_STATS,
-    [sessionId, todoStore.getVersion()]
-  )
+  return useMemo(() => (sessionId ? todoStore.getStats(sessionId) : EMPTY_STATS), [sessionId, todoStore.getVersion()])
 }
 
 /**
@@ -174,8 +168,5 @@ export function useTodoStats(sessionId: string | null): TodoStats {
  */
 export function useCurrentTask(sessionId: string | null): TodoItem | null {
   useStoreSubscription()
-  return useMemo(
-    () => sessionId ? todoStore.getCurrentTask(sessionId) : null,
-    [sessionId, todoStore.getVersion()]
-  )
+  return useMemo(() => (sessionId ? todoStore.getCurrentTask(sessionId) : null), [sessionId, todoStore.getVersion()])
 }

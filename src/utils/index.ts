@@ -4,4 +4,3 @@ export { getInitials } from './stringUtils'
 export * from './directoryUtils'
 export { serverStorage } from './perServerStorage'
 export * from './mimeUtils'
-

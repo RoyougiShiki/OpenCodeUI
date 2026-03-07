@@ -27,16 +27,16 @@ export function getFileName(path: string): string {
 export function toAbsolutePath(relativePath: string, rootPath: string): string {
   const normalizedRoot = normalizePath(rootPath).replace(/\/$/, '')
   const normalizedRel = normalizePath(relativePath).replace(/^\/+/, '') // 移除开头的斜杠
-  
+
   if (/^[a-zA-Z]:/.test(normalizedRel)) {
     // 已经是 Windows 绝对路径
     return normalizedRel
   }
-  
+
   if (normalizedRel === '.' || normalizedRel === '') {
     return normalizedRoot
   }
-  
+
   return `${normalizedRoot}/${normalizedRel}`
 }
 
@@ -89,7 +89,7 @@ export function parseMentions(text: string): ParsedSegment[] {
   const segments: ParsedSegment[] = []
   let lastIndex = 0
   let match
-  
+
   while ((match = pattern.exec(text)) !== null) {
     // 添加 match 之前的文本
     if (match.index > lastIndex) {
@@ -98,7 +98,7 @@ export function parseMentions(text: string): ParsedSegment[] {
         content: text.slice(lastIndex, match.index),
       })
     }
-    
+
     // 添加 mention
     segments.push({
       type: 'mention',
@@ -106,10 +106,10 @@ export function parseMentions(text: string): ParsedSegment[] {
       mentionType: match[1] as MentionType,
       mentionValue: match[2],
     })
-    
+
     lastIndex = match.index + match[0].length
   }
-  
+
   // 添加剩余文本
   if (lastIndex < text.length) {
     segments.push({
@@ -117,7 +117,7 @@ export function parseMentions(text: string): ParsedSegment[] {
       content: text.slice(lastIndex),
     })
   }
-  
+
   return segments
 }
 
@@ -128,7 +128,7 @@ export function extractMentions(text: string): MentionItem[] {
   const pattern = getMentionPattern()
   const mentions: MentionItem[] = []
   let match
-  
+
   while ((match = pattern.exec(text)) !== null) {
     mentions.push({
       type: match[1] as MentionType,
@@ -136,7 +136,7 @@ export function extractMentions(text: string): MentionItem[] {
       displayName: getFileName(match[2]),
     })
   }
-  
+
   return mentions
 }
 
@@ -154,28 +154,28 @@ export function stripMentions(text: string): string {
 export function detectMentionTrigger(
   text: string,
   cursorPos: number,
-  trigger = '@'
+  trigger = '@',
 ): { startIndex: number; query: string } | null {
   const textBeforeCursor = text.slice(0, cursorPos)
   const lastTriggerIndex = textBeforeCursor.lastIndexOf(trigger)
-  
+
   if (lastTriggerIndex === -1) {
     return null
   }
-  
+
   // 检查触发字符之前是否是空格或开头
   const charBefore = lastTriggerIndex > 0 ? textBeforeCursor[lastTriggerIndex - 1] : ' '
   // 支持普通空格和 NBSP (\u00A0)
   if (charBefore !== ' ' && charBefore !== '\u00A0' && charBefore !== '\n' && lastTriggerIndex !== 0) {
     return null
   }
-  
+
   // 检查触发字符之后是否有空格（如果有则关闭）
   const textAfterTrigger = textBeforeCursor.slice(lastTriggerIndex + 1)
   if (textAfterTrigger.includes(' ') || textAfterTrigger.includes('\u00A0')) {
     return null
   }
-  
+
   return {
     startIndex: lastTriggerIndex,
     query: textAfterTrigger,
@@ -185,12 +185,15 @@ export function detectMentionTrigger(
 /**
  * Mention 类型对应的颜色配置
  */
-export const MENTION_COLORS: Record<MentionType, {
-  bg: string
-  text: string
-  border: string
-  darkText: string
-}> = {
+export const MENTION_COLORS: Record<
+  MentionType,
+  {
+    bg: string
+    text: string
+    border: string
+    darkText: string
+  }
+> = {
   agent: {
     bg: 'bg-warning-bg',
     text: 'text-warning-100',

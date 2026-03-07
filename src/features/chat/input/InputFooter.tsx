@@ -13,7 +13,7 @@ import type { TodoItem } from '../../../types/api/event'
 
 function useFullAuto(): boolean {
   return useSyncExternalStore(
-    (cb) => autoApproveStore.onFullAutoChange(cb),
+    cb => autoApproveStore.onFullAutoChange(cb),
     () => autoApproveStore.fullAuto,
   )
 }
@@ -28,11 +28,7 @@ interface InputFooterProps {
   inputContainerRef?: RefObject<HTMLDivElement | null>
 }
 
-export const InputFooter = memo(function InputFooter({
-  sessionId,
-  onNewChat,
-  inputContainerRef,
-}: InputFooterProps) {
+export const InputFooter = memo(function InputFooter({ sessionId, onNewChat, inputContainerRef }: InputFooterProps) {
   const todos = useTodos(sessionId ?? null)
   const stats = useTodoStats(sessionId ?? null)
   const currentTask = useCurrentTask(sessionId ?? null)
@@ -46,11 +42,13 @@ export const InputFooter = memo(function InputFooter({
     if (!sessionId || loadedRef.current === sessionId) return
     loadedRef.current = sessionId
 
-    getSessionTodos(sessionId).then(apiTodos => {
-      if (apiTodos.length > 0) {
-        todoStore.setTodos(sessionId, apiTodos)
-      }
-    }).catch(() => {})
+    getSessionTodos(sessionId)
+      .then(apiTodos => {
+        if (apiTodos.length > 0) {
+          todoStore.setTodos(sessionId, apiTodos)
+        }
+      })
+      .catch(() => {})
   }, [sessionId])
 
   // 点击外部关闭 popover
@@ -89,9 +87,7 @@ export const InputFooter = memo(function InputFooter({
         <FastForwardIcon
           size={11}
           className={`transition-colors ${
-            fullAuto
-              ? 'text-warning-100 drop-shadow-[0_0_4px_var(--color-warning-100)]'
-              : ''
+            fullAuto ? 'text-warning-100 drop-shadow-[0_0_4px_var(--color-warning-100)]' : ''
           }`}
         />
       </button>
@@ -100,10 +96,7 @@ export const InputFooter = memo(function InputFooter({
 
       {/* disclaimer / todos */}
       {!hasTodos ? (
-        <button
-          onClick={onNewChat}
-          className="hover:text-text-300 transition-colors"
-        >
+        <button onClick={onNewChat} className="hover:text-text-300 transition-colors">
           Please verify AI responses.
         </button>
       ) : (
@@ -115,17 +108,16 @@ export const InputFooter = memo(function InputFooter({
             }`}
           >
             <MiniProgress size={11} progress={progress} done={isAllDone} />
-            <span className="tabular-nums shrink-0">{stats.completed}/{stats.total}</span>
+            <span className="tabular-nums shrink-0">
+              {stats.completed}/{stats.total}
+            </span>
             <span className="text-text-500/50 shrink-0">·</span>
             <span className="truncate max-w-[120px] sm:max-w-[200px]">{taskLabel}</span>
           </button>
 
           <span className="text-text-500/30 shrink-0">·</span>
 
-          <button
-            onClick={onNewChat}
-            className="hover:text-text-300 transition-colors shrink-0"
-          >
+          <button onClick={onNewChat} className="hover:text-text-300 transition-colors shrink-0">
             New Chat
           </button>
         </>
@@ -145,9 +137,11 @@ export const InputFooter = memo(function InputFooter({
                   trackClassName="text-border-200/40"
                   progressClassName={`transition-all duration-700 ease-out ${isAllDone ? 'text-accent-secondary-100' : 'text-accent-main-100'}`}
                 />
-                <span className={`absolute inset-0 flex items-center justify-center text-sm font-semibold ${
-                  isAllDone ? 'text-accent-secondary-100' : 'text-text-200'
-                }`}>
+                <span
+                  className={`absolute inset-0 flex items-center justify-center text-sm font-semibold ${
+                    isAllDone ? 'text-accent-secondary-100' : 'text-text-200'
+                  }`}
+                >
                   {isAllDone ? <CheckIcon size={20} strokeWidth={2.5} /> : `${Math.round(progress * 100)}%`}
                 </span>
               </div>
@@ -160,8 +154,7 @@ export const InputFooter = memo(function InputFooter({
                     ? 'Great work!'
                     : stats.inProgress > 0
                       ? `${stats.inProgress} in progress`
-                      : `${stats.total - stats.completed} remaining`
-                  }
+                      : `${stats.total - stats.completed} remaining`}
                 </div>
               </div>
             </div>
@@ -170,7 +163,7 @@ export const InputFooter = memo(function InputFooter({
           <div className="h-px bg-border-200/40 mx-3" />
 
           <div className="max-h-56 overflow-y-auto custom-scrollbar p-2">
-            {todos.map((todo) => (
+            {todos.map(todo => (
               <TodoRow key={todo.id} todo={todo} />
             ))}
           </div>
@@ -184,7 +177,10 @@ export const InputFooter = memo(function InputFooter({
 // PopoverPanel - 宽度对齐输入框的弹出面板
 // ============================================
 
-function PopoverPanel({ inputContainerRef, children }: {
+function PopoverPanel({
+  inputContainerRef,
+  children,
+}: {
   inputContainerRef?: RefObject<HTMLDivElement | null>
   children: React.ReactNode
 }) {
@@ -249,18 +245,18 @@ const TodoRow = memo(function TodoRow({ todo }: { todo: TodoItem }) {
   const isCancelled = todo.status === 'cancelled'
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-1.5 text-xs ${
-      isCompleted ? 'text-text-500' : isInProgress ? 'text-text-100' : 'text-text-300'
-    }`}>
+    <div
+      className={`flex items-center gap-2 px-3 py-1.5 text-xs ${
+        isCompleted ? 'text-text-500' : isInProgress ? 'text-text-100' : 'text-text-300'
+      }`}
+    >
       <span className="shrink-0 flex items-center justify-center w-[13px] h-[13px]">
         {isCompleted && <CheckIcon size={13} className="text-accent-secondary-100" strokeWidth={2.5} />}
         {isInProgress && <ClockIcon size={13} className="text-accent-main-100" />}
         {isCancelled && <CloseIcon size={13} className="text-text-500" />}
         {todo.status === 'pending' && <CircleIcon size={13} className="text-text-500" />}
       </span>
-      <span className={`flex-1 ${isCompleted ? 'line-through' : ''}`}>
-        {todo.content}
-      </span>
+      <span className={`flex-1 ${isCompleted ? 'line-through' : ''}`}>{todo.content}</span>
       {todo.priority === 'high' && !isCompleted && (
         <span className="text-[10px] text-warning-100 bg-warning-100/10 px-1 rounded shrink-0">!</span>
       )}

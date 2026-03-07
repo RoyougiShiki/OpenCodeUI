@@ -15,10 +15,12 @@ import type { KeybindingConfig, KeybindingAction } from '../../store/keybindingS
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5
+    <kbd
+      className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5
                     text-[11px] font-mono font-medium leading-none
                     bg-bg-100 text-text-300 border border-border-200 rounded
-                    shadow-[0_1px_0_0_var(--border-200)]">
+                    shadow-[0_1px_0_0_var(--border-200)]"
+    >
       {children}
     </kbd>
   )
@@ -30,7 +32,9 @@ function ShortcutDisplay({ shortcut, className }: { shortcut: string; className?
   const parts = formatted.split(' + ')
   return (
     <span className={`inline-flex items-center gap-0.5 ${className || ''}`}>
-      {parts.map((p, i) => <Kbd key={i}>{p}</Kbd>)}
+      {parts.map((p, i) => (
+        <Kbd key={i}>{p}</Kbd>
+      ))}
     </span>
   )
 }
@@ -57,15 +61,18 @@ function KeybindingRow({ config, onEdit, onReset, isKeyUsed }: KeybindingRowProp
     if (isEditing) captureRef.current?.focus()
   }, [isEditing])
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
 
-    const newKey = keyEventToString(e)
-    setTempKey(newKey)
-    setError(isKeyUsed(newKey, config.action) ? 'Already in use' : '')
-  }, [isKeyUsed, config.action])
+      const newKey = keyEventToString(e)
+      setTempKey(newKey)
+      setError(isKeyUsed(newKey, config.action) ? 'Already in use' : '')
+    },
+    [isKeyUsed, config.action],
+  )
 
   const confirm = useCallback(() => {
     if (tempKey && !error) onEdit(config.action, tempKey)
@@ -83,8 +90,16 @@ function KeybindingRow({ config, onEdit, onReset, isKeyUsed }: KeybindingRowProp
   useEffect(() => {
     if (!isEditing) return
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); cancel(); return }
-      if (e.key === 'Enter' && tempKey && !error) { e.preventDefault(); confirm(); return }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        cancel()
+        return
+      }
+      if (e.key === 'Enter' && tempKey && !error) {
+        e.preventDefault()
+        confirm()
+        return
+      }
       handleKeyDown(e)
     }
     document.addEventListener('keydown', handler, { capture: true })
@@ -92,12 +107,12 @@ function KeybindingRow({ config, onEdit, onReset, isKeyUsed }: KeybindingRowProp
   }, [isEditing, tempKey, error, handleKeyDown, confirm, cancel])
 
   return (
-    <div className={`
+    <div
+      className={`
       flex items-center h-9 px-3 rounded-md transition-colors group
-      ${isEditing 
-        ? 'bg-accent-main-100/5 ring-1 ring-accent-main-100/20' 
-        : 'hover:bg-bg-100/60'}
-    `}>
+      ${isEditing ? 'bg-accent-main-100/5 ring-1 ring-accent-main-100/20' : 'hover:bg-bg-100/60'}
+    `}
+    >
       {/* Label */}
       <span className="flex-1 text-[13px] text-text-200 truncate">{config.label}</span>
 
@@ -122,9 +137,11 @@ function KeybindingRow({ config, onEdit, onReset, isKeyUsed }: KeybindingRowProp
             className={`
               min-w-[120px] h-7 flex items-center justify-center px-3 
               text-xs font-mono rounded border-2 outline-none
-              ${error
-                ? 'border-danger-100/60 bg-danger-100/5 text-danger-100'
-                : 'border-accent-main-100/60 bg-accent-main-100/5 text-accent-main-100'}
+              ${
+                error
+                  ? 'border-danger-100/60 bg-danger-100/5 text-danger-100'
+                  : 'border-accent-main-100/60 bg-accent-main-100/5 text-accent-main-100'
+              }
             `}
           >
             {tempKey || <span className="text-text-400">...</span>}
@@ -133,15 +150,17 @@ function KeybindingRow({ config, onEdit, onReset, isKeyUsed }: KeybindingRowProp
         </div>
       ) : (
         <button
-          onClick={() => { setIsEditing(true); setTempKey(''); setError('') }}
+          onClick={() => {
+            setIsEditing(true)
+            setTempKey('')
+            setError('')
+          }}
           className={`
             h-7 flex items-center gap-0.5 px-1 rounded transition-colors
-            ${isModified
-              ? 'hover:bg-accent-main-100/10'
-              : 'hover:bg-bg-200/60'}
+            ${isModified ? 'hover:bg-accent-main-100/10' : 'hover:bg-bg-200/60'}
           `}
         >
-          <ShortcutDisplay 
+          <ShortcutDisplay
             shortcut={config.currentKey}
             className={isModified ? '[&_kbd]:border-accent-main-100/40 [&_kbd]:text-accent-main-100' : ''}
           />
@@ -155,7 +174,14 @@ function KeybindingRow({ config, onEdit, onReset, isKeyUsed }: KeybindingRowProp
 // Main
 // ============================================
 
-const CATEGORY_ORDER: KeybindingConfig['category'][] = ['general', 'session', 'terminal', 'model', 'message', 'permission']
+const CATEGORY_ORDER: KeybindingConfig['category'][] = [
+  'general',
+  'session',
+  'terminal',
+  'model',
+  'message',
+  'permission',
+]
 
 const CATEGORY_LABELS: Record<KeybindingConfig['category'], string> = {
   general: 'General',
@@ -175,24 +201,28 @@ export function KeybindingsSection() {
   const filtered = useMemo(() => {
     if (!search.trim()) return keybindings
     const q = search.toLowerCase()
-    return keybindings.filter(kb =>
-      kb.label.toLowerCase().includes(q) ||
-      kb.description.toLowerCase().includes(q) ||
-      kb.currentKey.toLowerCase().includes(q)
+    return keybindings.filter(
+      kb =>
+        kb.label.toLowerCase().includes(q) ||
+        kb.description.toLowerCase().includes(q) ||
+        kb.currentKey.toLowerCase().includes(q),
     )
   }, [keybindings, search])
 
-  const grouped = useMemo(() =>
-    CATEGORY_ORDER
-      .map(cat => ({ category: cat, items: filtered.filter(kb => kb.category === cat) }))
-      .filter(g => g.items.length > 0),
-    [filtered]
+  const grouped = useMemo(
+    () =>
+      CATEGORY_ORDER.map(cat => ({ category: cat, items: filtered.filter(kb => kb.category === cat) })).filter(
+        g => g.items.length > 0,
+      ),
+    [filtered],
   )
 
   const hasModifications = keybindings.some(kb => kb.currentKey !== kb.defaultKey)
 
   // 自动聚焦搜索
-  useEffect(() => { searchRef.current?.focus() }, [])
+  useEffect(() => {
+    searchRef.current?.focus()
+  }, [])
 
   return (
     <div className="flex flex-col h-full">
@@ -250,7 +280,8 @@ export function KeybindingsSection() {
 
       {/* Help */}
       <div className="pt-3 mt-2 border-t border-border-100/50 text-[11px] text-text-400">
-        Click a shortcut to rebind. <kbd className="px-1 py-0.5 bg-bg-100 rounded font-mono text-text-300">Enter</kbd> confirm, <kbd className="px-1 py-0.5 bg-bg-100 rounded font-mono text-text-300">Esc</kbd> cancel.
+        Click a shortcut to rebind. <kbd className="px-1 py-0.5 bg-bg-100 rounded font-mono text-text-300">Enter</kbd>{' '}
+        confirm, <kbd className="px-1 py-0.5 bg-bg-100 rounded font-mono text-text-300">Esc</kbd> cancel.
       </div>
     </div>
   )

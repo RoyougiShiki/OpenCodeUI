@@ -3,13 +3,7 @@
 // ============================================
 
 // Types
-export type {
-  MentionType,
-  MentionItem,
-  ParsedSegment,
-  MentionMenuState,
-  MentionConfig,
-} from './types'
+export type { MentionType, MentionItem, ParsedSegment, MentionMenuState, MentionConfig } from './types'
 
 export { MENTION_PATTERN, getMentionPattern } from './types'
 

@@ -9,9 +9,7 @@ interface UseDropdownOptions {
 /**
  * Hook to manage dropdown state and behavior
  */
-export function useDropdown<T extends HTMLElement = HTMLDivElement>(
-  options: UseDropdownOptions = {}
-) {
+export function useDropdown<T extends HTMLElement = HTMLDivElement>(options: UseDropdownOptions = {}) {
   const [isOpen, setIsOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
 

@@ -22,8 +22,8 @@ services:
     container_name: opencode-gateway
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${GATEWAY_PORT:-6658}:6658"
-      - "127.0.0.1:${PREVIEW_PORT:-6659}:6659"
+      - '127.0.0.1:${GATEWAY_PORT:-6658}:6658'
+      - '127.0.0.1:${PREVIEW_PORT:-6659}:6659'
     volumes:
       - opencode-router-data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro

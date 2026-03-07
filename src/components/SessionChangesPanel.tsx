@@ -103,7 +103,7 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
 
   // 选中文件
   const handleSelectFile = useCallback((file: string) => {
-    setSelectedFile(prev => prev === file ? prev : file)
+    setSelectedFile(prev => (prev === file ? prev : file))
   }, [])
 
   // 切换目录展开/折叠
@@ -248,7 +248,7 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
       additions: acc.additions + d.additions,
       deletions: acc.deletions + d.deletions,
     }),
-    { additions: 0, deletions: 0 }
+    { additions: 0, deletions: 0 },
   )
 
   return (
@@ -257,11 +257,13 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
       <div
         ref={listRef}
         className="overflow-hidden flex flex-col shrink-0"
-        style={{
-          '--list-height': listHeight !== null ? `${listHeight}px` : '40%',
-          height: showPreview ? 'var(--list-height)' : '100%',
-          minHeight: showPreview ? MIN_LIST_HEIGHT : undefined,
-        } as React.CSSProperties}
+        style={
+          {
+            '--list-height': listHeight !== null ? `${listHeight}px` : '40%',
+            height: showPreview ? 'var(--list-height)' : '100%',
+            minHeight: showPreview ? MIN_LIST_HEIGHT : undefined,
+          } as React.CSSProperties
+        }
       >
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-border-100 bg-bg-100/30 shrink-0">
@@ -281,9 +283,7 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
               <button
                 onClick={() => setListMode('flat')}
                 className={`px-2 py-0.5 text-[10px] transition-colors ${
-                  listMode === 'flat'
-                    ? 'bg-bg-000 text-text-100 shadow-sm'
-                    : 'text-text-400 hover:text-text-200'
+                  listMode === 'flat' ? 'bg-bg-000 text-text-100 shadow-sm' : 'text-text-400 hover:text-text-200'
                 }`}
                 title="Flat list"
               >
@@ -292,9 +292,7 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
               <button
                 onClick={() => setListMode('tree')}
                 className={`px-2 py-0.5 text-[10px] transition-colors ${
-                  listMode === 'tree'
-                    ? 'bg-bg-000 text-text-100 shadow-sm'
-                    : 'text-text-400 hover:text-text-200'
+                  listMode === 'tree' ? 'bg-bg-000 text-text-100 shadow-sm' : 'text-text-400 hover:text-text-200'
                 }`}
                 title="Tree view"
               >
@@ -307,9 +305,7 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
               <button
                 onClick={() => setViewMode('unified')}
                 className={`px-2 py-0.5 text-[10px] transition-colors ${
-                  viewMode === 'unified'
-                    ? 'bg-bg-000 text-text-100 shadow-sm'
-                    : 'text-text-400 hover:text-text-200'
+                  viewMode === 'unified' ? 'bg-bg-000 text-text-100 shadow-sm' : 'text-text-400 hover:text-text-200'
                 }`}
               >
                 Unified
@@ -317,9 +313,7 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
               <button
                 onClick={() => setViewMode('split')}
                 className={`px-2 py-0.5 text-[10px] transition-colors ${
-                  viewMode === 'split'
-                    ? 'bg-bg-000 text-text-100 shadow-sm'
-                    : 'text-text-400 hover:text-text-200'
+                  viewMode === 'split' ? 'bg-bg-000 text-text-100 shadow-sm' : 'text-text-400 hover:text-text-200'
                 }`}
               >
                 Split
@@ -341,51 +335,56 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
         {/* File List */}
         <div className="flex-1 overflow-auto panel-scrollbar-y">
           <div className="py-0.5">
-            {listMode === 'tree' ? (
-              // Tree view
-              changesTree.map(node => (
-                <ChangesTreeItem
-                  key={node.path}
-                  node={node}
-                  depth={0}
-                  selectedFile={selectedFile}
-                  expandedDirs={expandedDirs}
-                  onSelectFile={handleSelectFile}
-                  onToggleDir={handleToggleDir}
-                />
-              ))
-            ) : (
-              // Flat list view
-              diffs.map((diff) => {
-                const isSelected = selectedFile === diff.file
-                const fileStatus = getFileStatus(diff)
+            {listMode === 'tree'
+              ? // Tree view
+                changesTree.map(node => (
+                  <ChangesTreeItem
+                    key={node.path}
+                    node={node}
+                    depth={0}
+                    selectedFile={selectedFile}
+                    expandedDirs={expandedDirs}
+                    onSelectFile={handleSelectFile}
+                    onToggleDir={handleToggleDir}
+                  />
+                ))
+              : // Flat list view
+                diffs.map(diff => {
+                  const isSelected = selectedFile === diff.file
+                  const fileStatus = getFileStatus(diff)
 
-                return (
-                  <button
-                    key={diff.file}
-                    onClick={() => handleSelectFile(diff.file)}
-                    className={`
+                  return (
+                    <button
+                      key={diff.file}
+                      onClick={() => handleSelectFile(diff.file)}
+                      className={`
                       w-full min-w-0 flex items-center gap-2 px-3 py-1 text-left
                       hover:bg-bg-200/50 transition-colors text-[12px]
                       ${isSelected ? 'bg-bg-200/70 text-text-100' : 'text-text-300'}
                     `}
-                  >
-                    <img
-                      src={getMaterialIconUrl(diff.file, 'file')}
-                      alt="" width={16} height={16}
-                      className="shrink-0"
-                      loading="lazy" decoding="async"
-                      onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
-                    />
-                    <span className={`flex-1 min-w-0 font-mono truncate ${FILE_STATUS_COLOR[fileStatus]}`}>{diff.file}</span>
-                    <div className="flex items-center gap-2 text-[10px] font-mono shrink-0">
-                      {diff.additions > 0 && <span className="text-success-100">+{diff.additions}</span>}
-                      {diff.deletions > 0 && <span className="text-danger-100">-{diff.deletions}</span>}
-                    </div>
-                  </button>
-                )
-              })
-            )}
+                    >
+                      <img
+                        src={getMaterialIconUrl(diff.file, 'file')}
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="shrink-0"
+                        loading="lazy"
+                        decoding="async"
+                        onError={e => {
+                          e.currentTarget.style.visibility = 'hidden'
+                        }}
+                      />
+                      <span className={`flex-1 min-w-0 font-mono truncate ${FILE_STATUS_COLOR[fileStatus]}`}>
+                        {diff.file}
+                      </span>
+                      <div className="flex items-center gap-2 text-[10px] font-mono shrink-0">
+                        {diff.additions > 0 && <span className="text-success-100">+{diff.additions}</span>}
+                        {diff.deletions > 0 && <span className="text-danger-100">-{diff.deletions}</span>}
+                      </div>
+                    </button>
+                  )
+                })}
           </div>
         </div>
       </div>
@@ -446,9 +445,13 @@ const DiffPreviewPanel = memo(function DiffPreviewPanel({
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <img
             src={getMaterialIconUrl(diff.file, 'file')}
-            alt="" width={14} height={14}
+            alt=""
+            width={14}
+            height={14}
             className="shrink-0"
-            onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+            onError={e => {
+              e.currentTarget.style.visibility = 'hidden'
+            }}
           />
           <span className="text-[11px] font-mono text-text-200 truncate flex-1 min-w-0">{fileName}</span>
           <div className="flex items-center gap-2 text-[10px] font-mono shrink-0">
@@ -568,8 +571,8 @@ function buildChangesTree(diffs: FileDiff[]): ChangesTreeNode[] {
           else if (hasModified) dirStatus = 'modified'
           else if (hasDeleted) dirStatus = 'deleted'
         }
-        return { 
-          ...n, 
+        return {
+          ...n,
           children: processedChildren,
           status: n.type === 'directory' ? dirStatus : n.status,
         }
@@ -619,16 +622,18 @@ const ChangesTreeItem = memo(function ChangesTreeItem({
           className="w-full min-w-0 flex items-center gap-1.5 py-1 hover:bg-bg-200/50 transition-colors text-[12px] text-text-300"
           style={{ paddingLeft }}
         >
-          <ChevronRightIcon
-            size={12}
-            className={`shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-          />
+          <ChevronRightIcon size={12} className={`shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
           <img
             src={getMaterialIconUrl(node.path, 'directory', isExpanded)}
-            alt="" width={16} height={16}
+            alt=""
+            width={16}
+            height={16}
             className="shrink-0"
-            loading="lazy" decoding="async"
-            onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+            loading="lazy"
+            decoding="async"
+            onError={e => {
+              e.currentTarget.style.visibility = 'hidden'
+            }}
           />
           <span className={`flex-1 min-w-0 truncate text-left ${node.status ? statusColor : ''}`}>{node.name}</span>
           <div className="flex items-center gap-1.5 text-[10px] font-mono pr-3 shrink-0">
@@ -636,17 +641,18 @@ const ChangesTreeItem = memo(function ChangesTreeItem({
             {node.deletions > 0 && <span className="text-danger-100">-{node.deletions}</span>}
           </div>
         </button>
-        {isExpanded && node.children.map(child => (
-          <ChangesTreeItem
-            key={child.path}
-            node={child}
-            depth={depth + 1}
-            selectedFile={selectedFile}
-            expandedDirs={expandedDirs}
-            onSelectFile={onSelectFile}
-            onToggleDir={onToggleDir}
-          />
-        ))}
+        {isExpanded &&
+          node.children.map(child => (
+            <ChangesTreeItem
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              selectedFile={selectedFile}
+              expandedDirs={expandedDirs}
+              onSelectFile={onSelectFile}
+              onToggleDir={onToggleDir}
+            />
+          ))}
       </>
     )
   }
@@ -664,12 +670,21 @@ const ChangesTreeItem = memo(function ChangesTreeItem({
     >
       <img
         src={getMaterialIconUrl(node.name, 'file')}
-        alt="" width={16} height={16}
+        alt=""
+        width={16}
+        height={16}
         className="shrink-0"
-        loading="lazy" decoding="async"
-        onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+        loading="lazy"
+        decoding="async"
+        onError={e => {
+          e.currentTarget.style.visibility = 'hidden'
+        }}
       />
-      <span className={`flex-1 min-w-0 font-mono truncate text-left ${node.status ? FILE_STATUS_COLOR[node.status] : ''}`}>{node.name}</span>
+      <span
+        className={`flex-1 min-w-0 font-mono truncate text-left ${node.status ? FILE_STATUS_COLOR[node.status] : ''}`}
+      >
+        {node.name}
+      </span>
       <div className="flex items-center gap-1.5 text-[10px] font-mono pr-3 shrink-0">
         {node.additions > 0 && <span className="text-success-100">+{node.additions}</span>}
         {node.deletions > 0 && <span className="text-danger-100">-{node.deletions}</span>}

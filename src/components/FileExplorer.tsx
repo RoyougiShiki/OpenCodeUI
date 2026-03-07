@@ -7,18 +7,20 @@
 import { memo, useCallback, useMemo, useEffect, useRef, useState, useLayoutEffect, type DragEvent } from 'react'
 import { useFileExplorer, type FileTreeNode } from '../hooks'
 import { layoutStore, type PreviewFile } from '../store/layoutStore'
-import { 
-  ChevronRightIcon, 
-  ChevronDownIcon,
-  RetryIcon,
-  CloseIcon,
-  AlertCircleIcon,
-  DownloadIcon,
-} from './Icons'
+import { ChevronRightIcon, ChevronDownIcon, RetryIcon, CloseIcon, AlertCircleIcon, DownloadIcon } from './Icons'
 import { getMaterialIconUrl } from '../utils/materialIcons'
 import { detectLanguage } from '../utils/languageUtils'
 import { useSyntaxHighlight } from '../hooks/useSyntaxHighlight'
-import { getPreviewCategory, isBinaryContent, isTextualMedia, buildDataUrl, buildTextDataUrl, decodeBase64Text, formatMimeType, type PreviewCategory } from '../utils/mimeUtils'
+import {
+  getPreviewCategory,
+  isBinaryContent,
+  isTextualMedia,
+  buildDataUrl,
+  buildTextDataUrl,
+  decodeBase64Text,
+  formatMimeType,
+  type PreviewCategory,
+} from '../utils/mimeUtils'
 import { downloadFileContent } from '../utils/downloadUtils'
 import type { FileContent } from '../api/types'
 
@@ -37,8 +39,8 @@ interface FileExplorerProps {
   sessionId?: string | null
 }
 
-export const FileExplorer = memo(function FileExplorer({ 
-  directory, 
+export const FileExplorer = memo(function FileExplorer({
+  directory,
   previewFile,
   position = 'right',
   isPanelResizing = false,
@@ -50,10 +52,10 @@ export const FileExplorer = memo(function FileExplorer({
   const [isResizing, setIsResizing] = useState(false)
   const rafRef = useRef<number>(0)
   const currentHeightRef = useRef<number | null>(null)
-  
+
   // 综合 resize 状态 - 外部面板 resize 或内部 resize
   const isAnyResizing = isPanelResizing || isResizing
-  
+
   const {
     tree,
     isLoading,
@@ -88,15 +90,18 @@ export const FileExplorer = memo(function FileExplorer({
   }, [previewFile, selectFile, loadPreview])
 
   // 处理文件点击
-  const handleFileClick = useCallback((node: FileTreeNode) => {
-    if (node.type === 'directory') {
-      toggleExpand(node.path)
-    } else {
-      selectFile(node.path)
-      loadPreview(node.path)
-      layoutStore.openFilePreview({ path: node.path, name: node.name }, position)
-    }
-  }, [toggleExpand, selectFile, loadPreview, position])
+  const handleFileClick = useCallback(
+    (node: FileTreeNode) => {
+      if (node.type === 'directory') {
+        toggleExpand(node.path)
+      } else {
+        selectFile(node.path)
+        loadPreview(node.path)
+        layoutStore.openFilePreview({ path: node.path, name: node.name }, position)
+      }
+    },
+    [toggleExpand, selectFile, loadPreview, position],
+  )
 
   // 关闭预览
   const handleClosePreview = useCallback(() => {
@@ -109,22 +114,22 @@ export const FileExplorer = memo(function FileExplorer({
   // 拖拽调整高度 - 使用 CSS 变量 + requestAnimationFrame 优化
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
-    
+
     const container = containerRef.current
     const treeEl = treeRef.current
     if (!container || !treeEl) return
-    
+
     setIsResizing(true)
-    
+
     const containerRect = container.getBoundingClientRect()
     const startY = e.clientY
     const startHeight = currentHeightRef.current ?? containerRect.height * 0.4
-    
+
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current)
       }
-      
+
       rafRef.current = requestAnimationFrame(() => {
         const deltaY = moveEvent.clientY - startY
         const newHeight = startHeight + deltaY
@@ -135,24 +140,24 @@ export const FileExplorer = memo(function FileExplorer({
         currentHeightRef.current = clampedHeight
       })
     }
-    
+
     const handleMouseUp = () => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current)
       }
-      
+
       setIsResizing(false)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
-      
+
       // 更新 state 以持久化
       if (currentHeightRef.current !== null) {
         setTreeHeight(currentHeightRef.current)
       }
     }
-    
+
     document.body.style.cursor = 'row-resize'
     document.body.style.userSelect = 'none'
     document.addEventListener('mousemove', handleMouseMove)
@@ -212,13 +217,15 @@ export const FileExplorer = memo(function FileExplorer({
   if (!directory) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-400 text-sm gap-2 p-4">
-        <img 
-          src={getMaterialIconUrl('folder', 'directory', false)} 
-          alt="" 
-          width={32} 
-          height={32} 
+        <img
+          src={getMaterialIconUrl('folder', 'directory', false)}
+          alt=""
+          width={32}
+          height={32}
           className="opacity-30"
-          onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+          onError={e => {
+            e.currentTarget.style.visibility = 'hidden'
+          }}
         />
         <span className="text-center">Select a project to browse files</span>
       </div>
@@ -228,20 +235,20 @@ export const FileExplorer = memo(function FileExplorer({
   return (
     <div ref={containerRef} className="flex flex-col h-full">
       {/* File Tree - 使用 CSS 变量控制高度 */}
-      <div 
+      <div
         ref={treeRef}
         className="overflow-hidden flex flex-col shrink-0"
-        style={{ 
-          '--tree-height': treeHeight !== null ? `${treeHeight}px` : '40%',
-          height: showPreview ? 'var(--tree-height)' : '100%',
-          minHeight: showPreview ? MIN_TREE_HEIGHT : undefined,
-        } as React.CSSProperties}
+        style={
+          {
+            '--tree-height': treeHeight !== null ? `${treeHeight}px` : '40%',
+            height: showPreview ? 'var(--tree-height)' : '100%',
+            minHeight: showPreview ? MIN_TREE_HEIGHT : undefined,
+          } as React.CSSProperties
+        }
       >
         {/* Tree Header */}
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-border-100/50 shrink-0">
-          <span className="text-[10px] font-bold text-text-400 uppercase tracking-wider">
-            Explorer
-          </span>
+          <span className="text-[10px] font-bold text-text-400 uppercase tracking-wider">Explorer</span>
           <button
             onClick={refresh}
             disabled={isLoading}
@@ -255,18 +262,14 @@ export const FileExplorer = memo(function FileExplorer({
         {/* Tree Content */}
         <div className="flex-1 overflow-auto panel-scrollbar-y">
           {isLoading && tree.length === 0 ? (
-            <div className="flex items-center justify-center h-20 text-text-400 text-xs">
-              Loading...
-            </div>
+            <div className="flex items-center justify-center h-20 text-text-400 text-xs">Loading...</div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-20 text-danger-100 text-xs gap-1 px-4">
               <AlertCircleIcon size={16} />
               <span className="text-center">{error}</span>
             </div>
           ) : tree.length === 0 ? (
-            <div className="flex items-center justify-center h-20 text-text-400 text-xs">
-              No files found
-            </div>
+            <div className="flex items-center justify-center h-20 text-text-400 text-xs">No files found</div>
           ) : (
             <div className="py-1">
               {tree.map(node => (
@@ -347,24 +350,31 @@ const FileTreeItem = memo(function FileTreeItem({
   const statusColor = useMemo(() => {
     if (!status) return null
     switch (status.status) {
-      case 'added': return 'text-success-100'
-      case 'modified': return 'text-warning-100'
-      case 'deleted': return 'text-danger-100'
-      default: return null
+      case 'added':
+        return 'text-success-100'
+      case 'modified':
+        return 'text-warning-100'
+      case 'deleted':
+        return 'text-danger-100'
+      default:
+        return null
     }
   }, [status])
 
   // 拖拽到输入框实现 @mention
-  const handleDragStart = useCallback((e: DragEvent<HTMLButtonElement>) => {
-    const fileData = {
-      type: (isDirectory ? 'folder' : 'file') as 'file' | 'folder',
-      path: node.path,        // 相对路径
-      absolute: node.absolute, // 绝对路径
-      name: node.name,
-    }
-    e.dataTransfer.setData('application/opencode-file', JSON.stringify(fileData))
-    e.dataTransfer.effectAllowed = 'copy'
-  }, [node.path, node.absolute, node.name, isDirectory])
+  const handleDragStart = useCallback(
+    (e: DragEvent<HTMLButtonElement>) => {
+      const fileData = {
+        type: (isDirectory ? 'folder' : 'file') as 'file' | 'folder',
+        path: node.path, // 相对路径
+        absolute: node.absolute, // 绝对路径
+        name: node.name,
+      }
+      e.dataTransfer.setData('application/opencode-file', JSON.stringify(fileData))
+      e.dataTransfer.effectAllowed = 'copy'
+    },
+    [node.path, node.absolute, node.name, isDirectory],
+  )
 
   return (
     <div>
@@ -398,13 +408,13 @@ const FileTreeItem = memo(function FileTreeItem({
           className="shrink-0"
           loading="lazy"
           decoding="async"
-          onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+          onError={e => {
+            e.currentTarget.style.visibility = 'hidden'
+          }}
         />
 
         {/* Name */}
-        <span className={`truncate flex-1 ${statusColor || ''}`}>
-          {node.name}
-        </span>
+        <span className={`truncate flex-1 ${statusColor || ''}`}>{node.name}</span>
 
         {/* Loading Indicator */}
         {node.isLoading && (
@@ -447,7 +457,7 @@ interface FilePreviewProps {
 
 function FilePreview({ path, content, isLoading, error, onClose, isResizing = false }: FilePreviewProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  
+
   // 获取文件名
   const fileName = path?.split(/[/\\]/).pop() || 'Untitled'
   const language = path ? detectLanguage(path) : 'text'
@@ -499,7 +509,7 @@ function FilePreview({ path, content, isLoading, error, onClose, isResizing = fa
         mimeType: content.mimeType || 'application/octet-stream',
       }
     }
-    
+
     // diff 渲染交给 Changes 面板，Files 预览只显示文件内容
     // if (content.patch && content.patch.hunks.length > 0) {
     //   return {
@@ -507,7 +517,7 @@ function FilePreview({ path, content, isLoading, error, onClose, isResizing = fa
     //     hunks: content.patch.hunks,
     //   }
     // }
-    
+
     // 显示文件内容
     return {
       type: 'text' as const,
@@ -526,7 +536,9 @@ function FilePreview({ path, content, isLoading, error, onClose, isResizing = fa
             width={14}
             height={14}
             className="shrink-0"
-            onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+            onError={e => {
+              e.currentTarget.style.visibility = 'hidden'
+            }}
           />
           <span className="text-[11px] font-mono text-text-200 truncate">{fileName}</span>
           {/* Modified 标签暂不在 Files 预览显示 */}
@@ -557,14 +569,9 @@ function FilePreview({ path, content, isLoading, error, onClose, isResizing = fa
       </div>
 
       {/* Preview Content */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-auto panel-scrollbar"
-      >
+      <div ref={scrollRef} className="flex-1 overflow-auto panel-scrollbar">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full text-text-400 text-xs">
-            Loading...
-          </div>
+          <div className="flex items-center justify-center h-full text-text-400 text-xs">Loading...</div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full text-danger-100 text-xs gap-1 px-4">
             <AlertCircleIcon size={16} />
@@ -587,18 +594,15 @@ function FilePreview({ path, content, isLoading, error, onClose, isResizing = fa
             fileName={fileName}
             isResizing={isResizing}
           />
-        // diff 渲染已移至 Changes 面板
+        ) : // diff 渲染已移至 Changes 面板
         // ) : displayContent?.type === 'diff' ? (
         //   <DiffPreview hunks={displayContent.hunks} isResizing={isResizing} />
-        ) : displayContent?.type === 'text' ? (
+        displayContent?.type === 'text' ? (
           <CodePreview code={displayContent.text} language={language || 'text'} isResizing={isResizing} />
         ) : (
-          <div className="flex items-center justify-center h-full text-text-400 text-xs">
-            No content
-          </div>
+          <div className="flex items-center justify-center h-full text-text-400 text-xs">No content</div>
         )}
       </div>
-
     </div>
   )
 }
@@ -774,9 +778,7 @@ function ImagePreview({ dataUrl, fileName }: ImagePreviewProps) {
         >
           −
         </button>
-        <span className="w-10 text-center text-text-400 tabular-nums">
-          {Math.round(scale * 100)}%
-        </span>
+        <span className="w-10 text-center text-text-400 tabular-nums">{Math.round(scale * 100)}%</span>
         <button
           onClick={zoomIn}
           className="px-1.5 py-0.5 rounded hover:bg-bg-200 text-text-300 hover:text-text-100 transition-colors"
@@ -812,7 +814,7 @@ function ImagePreview({ dataUrl, fileName }: ImagePreviewProps) {
             transform: `translate(-50%, -50%) translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
             transformOrigin: 'center center',
           }}
-          onLoad={(e) => {
+          onLoad={e => {
             setNaturalSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
           }}
         />
@@ -883,7 +885,9 @@ function BinaryPlaceholder({ mimeType, fileName, onDownload }: BinaryPlaceholder
         width={32}
         height={32}
         className="opacity-50"
-        onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
+        onError={e => {
+          e.currentTarget.style.visibility = 'hidden'
+        }}
       />
       <span className="font-medium text-text-300">{fileName}</span>
       <span>{formatMimeType(mimeType)}</span>
@@ -919,8 +923,8 @@ interface DiffPreviewProps {
 // 当前未在 Files 预览中使用，保留供 Changes 面板等复用
 export function DiffPreview({ hunks, isResizing = false }: DiffPreviewProps) {
   return (
-    <div 
-      className={`font-mono text-[11px] leading-relaxed ${isResizing ? 'whitespace-pre overflow-hidden' : ''}`} 
+    <div
+      className={`font-mono text-[11px] leading-relaxed ${isResizing ? 'whitespace-pre overflow-hidden' : ''}`}
       style={{ contain: 'content' }}
     >
       {hunks.map((hunk, hunkIdx) => (
@@ -935,7 +939,7 @@ export function DiffPreview({ hunks, isResizing = false }: DiffPreviewProps) {
               const type = line[0]
               let bgClass = ''
               let textClass = 'text-text-300'
-              
+
               if (type === '+') {
                 bgClass = 'bg-success-100/10'
                 textClass = 'text-success-100'
@@ -943,7 +947,7 @@ export function DiffPreview({ hunks, isResizing = false }: DiffPreviewProps) {
                 bgClass = 'bg-danger-100/10'
                 textClass = 'text-danger-100'
               }
-              
+
               return (
                 <div key={lineIdx} className={`px-3 py-0.5 ${bgClass} ${textClass}`}>
                   <span className="select-none opacity-50 w-4 inline-block">{type || ' '}</span>
@@ -979,9 +983,9 @@ function truncateLine(line: string): { text: string; truncated: boolean } {
   if (line.length <= MAX_LINE_LENGTH) {
     return { text: line, truncated: false }
   }
-  return { 
-    text: line.slice(0, MAX_LINE_LENGTH), 
-    truncated: true 
+  return {
+    text: line.slice(0, MAX_LINE_LENGTH),
+    truncated: true,
   }
 }
 
@@ -998,13 +1002,7 @@ function truncateHtml(html: string): { html: string; truncated: boolean } {
   return { html: truncated, truncated: true }
 }
 
-export function CodePreview({
-  code,
-  language,
-  truncateLines = true,
-  maxHeight,
-  isResizing = false,
-}: CodePreviewProps) {
+export function CodePreview({ code, language, truncateLines = true, maxHeight, isResizing = false }: CodePreviewProps) {
   const lines = useMemo(() => {
     const raw = code.split('\n')
     if (raw.length > 1 && raw[raw.length - 1] === '' && code.endsWith('\n')) {
@@ -1013,15 +1011,15 @@ export function CodePreview({
     return raw
   }, [code])
   const totalHeight = lines.length * LINE_HEIGHT
-  
+
   // text 类型不走高亮，resize 时也禁用以提高性能
   const enableHighlight = language !== 'text' && !isResizing
   const { output: html, isLoading } = useSyntaxHighlight(code, { lang: language, enabled: enableHighlight })
-  
+
   const containerRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [containerHeight, setContainerHeight] = useState(0)
-  
+
   // 缓存高亮结果 - 仅在同一段 code 的高亮加载期间保留旧结果
   const highlightedLinesRef = useRef<string[] | null>(null)
   const highlightedCodeRef = useRef(code)
@@ -1031,22 +1029,22 @@ export function CodePreview({
     highlightedLinesRef.current = null
     highlightedCodeRef.current = code
   }
-  
+
   // 解析高亮后的行
   const highlightedLines = useMemo(() => {
     if (isLoading || !html) return highlightedLinesRef.current
-    
+
     const parser = new DOMParser()
     const doc = parser.parseFromString(html as string, 'text/html')
     const lineElements = doc.querySelectorAll('.line')
-    
+
     if (lineElements.length === 0) return highlightedLinesRef.current
-    
+
     const result = Array.from(lineElements).map(el => el.innerHTML || '')
     highlightedLinesRef.current = result
     return result
   }, [html, isLoading])
-  
+
   // 计算可见范围
   const { startIndex, endIndex, offsetY } = useMemo(() => {
     const start = Math.max(0, Math.floor(scrollTop / LINE_HEIGHT) - OVERSCAN)
@@ -1058,15 +1056,15 @@ export function CodePreview({
       offsetY: start * LINE_HEIGHT,
     }
   }, [scrollTop, containerHeight, lines.length])
-  
+
   // 监听容器大小变化 - resize 时完全跳过
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-    
+
     // resize 时跳过 ResizeObserver
     if (isResizing) return
-    
+
     let rafId: number | null = null
     const updateHeight = () => {
       if (rafId) cancelAnimationFrame(rafId)
@@ -1074,109 +1072,85 @@ export function CodePreview({
         setContainerHeight(container.clientHeight)
       })
     }
-    
+
     // 初始化立即执行
     setContainerHeight(container.clientHeight)
-    
+
     const resizeObserver = new ResizeObserver(updateHeight)
     resizeObserver.observe(container)
-    
+
     return () => {
       if (rafId) cancelAnimationFrame(rafId)
       resizeObserver.disconnect()
     }
   }, [isResizing])
-  
+
   // 处理滚动
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop)
   }, [])
-  
+
   // 渲染可见行
   const visibleLines = useMemo(() => {
     const result: React.ReactNode[] = []
-    
+
     for (let i = startIndex; i < endIndex; i++) {
       const rawLine = lines[i] || ' '
       const highlighted = highlightedLines?.[i]
       const isHtml = highlighted && highlighted.includes('<')
-      
+
       // 截断处理
       let displayContent: React.ReactNode
       let isTruncated = false
-      
+
       if (isHtml && highlighted) {
         if (truncateLines) {
           const { html: truncatedHtml, truncated } = truncateHtml(highlighted)
           isTruncated = truncated
-          displayContent = (
-            <span 
-              className="whitespace-pre"
-              dangerouslySetInnerHTML={{ __html: truncatedHtml }}
-            />
-          )
+          displayContent = <span className="whitespace-pre" dangerouslySetInnerHTML={{ __html: truncatedHtml }} />
         } else {
-          displayContent = (
-            <span 
-              className="whitespace-pre"
-              dangerouslySetInnerHTML={{ __html: highlighted }}
-            />
-          )
+          displayContent = <span className="whitespace-pre" dangerouslySetInnerHTML={{ __html: highlighted }} />
         }
       } else {
         if (truncateLines) {
           const { text, truncated } = truncateLine(highlighted || rawLine)
           isTruncated = truncated
-          displayContent = (
-            <span className="text-text-200 whitespace-pre">
-              {text}
-            </span>
-          )
+          displayContent = <span className="text-text-200 whitespace-pre">{text}</span>
         } else {
-          displayContent = (
-            <span className="text-text-200 whitespace-pre">
-              {highlighted || rawLine}
-            </span>
-          )
+          displayContent = <span className="text-text-200 whitespace-pre">{highlighted || rawLine}</span>
         }
       }
-      
+
       result.push(
-        <div 
-          key={i} 
-          className="flex hover:bg-bg-200/30"
-          style={{ height: LINE_HEIGHT }}
-        >
+        <div key={i} className="flex hover:bg-bg-200/30" style={{ height: LINE_HEIGHT }}>
           <span className="select-none text-text-500 w-10 text-right pr-3 shrink-0 border-r border-border-100/30 mr-3 leading-5">
             {i + 1}
           </span>
           <span className="leading-5 pr-4">
             {displayContent}
-            {isTruncated && (
-              <span className="text-text-500 ml-1">… (truncated)</span>
-            )}
+            {isTruncated && <span className="text-text-500 ml-1">… (truncated)</span>}
           </span>
-        </div>
+        </div>,
       )
     }
     return result
   }, [startIndex, endIndex, lines, highlightedLines])
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="overflow-auto code-scrollbar"
       onScroll={handleScroll}
       style={maxHeight !== undefined ? { maxHeight } : undefined}
     >
       <div style={{ height: totalHeight, position: 'relative' }}>
-        <div 
-          style={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            transform: `translateY(${offsetY}px)` 
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            transform: `translateY(${offsetY}px)`,
           }}
           className="font-mono text-[11px] leading-relaxed"
         >

@@ -31,9 +31,7 @@ export function CloseServiceDialog({ isOpen, onConfirm, onCancel }: CloseService
         </div>
 
         {/* Title */}
-        <h3 className="text-[15px] font-semibold text-text-100 mb-2">
-          Close OpenCode
-        </h3>
+        <h3 className="text-[15px] font-semibold text-text-100 mb-2">Close OpenCode</h3>
 
         {/* Description */}
         <p className="text-[13px] text-text-300 leading-relaxed mb-6 max-w-[320px]">
@@ -48,24 +46,13 @@ export function CloseServiceDialog({ isOpen, onConfirm, onCancel }: CloseService
           </div>
         ) : (
           <div className="flex flex-col w-full gap-2">
-            <Button
-              onClick={() => handleConfirm(true)}
-              className="w-full justify-center"
-            >
+            <Button onClick={() => handleConfirm(true)} className="w-full justify-center">
               Close and stop service
             </Button>
-            <Button
-              variant="ghost"
-              onClick={() => handleConfirm(false)}
-              className="w-full justify-center"
-            >
+            <Button variant="ghost" onClick={() => handleConfirm(false)} className="w-full justify-center">
               Close, keep service running
             </Button>
-            <Button
-              variant="ghost"
-              onClick={onCancel}
-              className="w-full justify-center text-text-400"
-            >
+            <Button variant="ghost" onClick={onCancel} className="w-full justify-center text-text-400">
               Cancel
             </Button>
           </div>

@@ -58,7 +58,7 @@ export interface MCPResource {
   uri: string
   description?: string
   mimeType?: string
-  client: string  // server name
+  client: string // server name
 }
 
 /**

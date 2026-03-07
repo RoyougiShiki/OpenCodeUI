@@ -86,7 +86,11 @@ class NotificationStore {
 
   /** toast 弹窗总开关 */
   toastEnabled: boolean = (() => {
-    try { return localStorage.getItem(TOAST_ENABLED_KEY) !== 'false' } catch { return true }
+    try {
+      return localStorage.getItem(TOAST_ENABLED_KEY) !== 'false'
+    } catch {
+      return true
+    }
   })()
 
   subscribe = (callback: Subscriber): (() => void) => {
@@ -106,7 +110,11 @@ class NotificationStore {
 
   setToastEnabled(enabled: boolean) {
     this.toastEnabled = enabled
-    try { localStorage.setItem(TOAST_ENABLED_KEY, String(enabled)) } catch {}
+    try {
+      localStorage.setItem(TOAST_ENABLED_KEY, String(enabled))
+    } catch {
+      // Ignore storage write failures.
+    }
     // 关闭时清掉当前所有 toast
     if (!enabled) this.dismissAllToasts()
   }
@@ -115,13 +123,7 @@ class NotificationStore {
   // 推送通知（加历史 + 弹 toast）
   // ============================================
 
-  push(
-    type: NotificationType,
-    title: string,
-    body: string,
-    sessionId: string,
-    directory?: string,
-  ) {
+  push(type: NotificationType, title: string, body: string, sessionId: string, directory?: string) {
     const entry: NotificationEntry = {
       id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       type,
@@ -160,18 +162,14 @@ class NotificationStore {
   // ============================================
 
   markRead(id: string) {
-    const notifications = this.state.notifications.map(n =>
-      n.id === id && !n.read ? { ...n, read: true } : n
-    )
+    const notifications = this.state.notifications.map(n => (n.id === id && !n.read ? { ...n, read: true } : n))
     this.state = { ...this.state, notifications }
     this.persist()
     this.notify()
   }
 
   markAllRead() {
-    const notifications = this.state.notifications.map(n =>
-      n.read ? n : { ...n, read: true }
-    )
+    const notifications = this.state.notifications.map(n => (n.read ? n : { ...n, read: true }))
     this.state = { ...this.state, notifications }
     this.persist()
     this.notify()
@@ -221,9 +219,7 @@ class NotificationStore {
 
   dismissToast(id: string) {
     this.clearToastTimer(id)
-    const toasts = this.state.toasts.map(t =>
-      t.notification.id === id ? { ...t, exiting: true } : t
-    )
+    const toasts = this.state.toasts.map(t => (t.notification.id === id ? { ...t, exiting: true } : t))
     this.state = { ...this.state, toasts }
     this.notify()
 
@@ -251,10 +247,7 @@ class NotificationStore {
 export const notificationStore = new NotificationStore()
 
 export function useNotificationStore() {
-  return useSyncExternalStore(
-    notificationStore.subscribe,
-    notificationStore.getSnapshot,
-  )
+  return useSyncExternalStore(notificationStore.subscribe, notificationStore.getSnapshot)
 }
 
 /** 通知历史列表 */

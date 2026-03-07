@@ -1,7 +1,7 @@
 // ============================================
 // useGlobalEvents - 全局 SSE 事件订阅
 // ============================================
-// 
+//
 // 职责：
 // 1. 订阅全局 SSE 事件流
 // 2. 将事件分发到 messageStore
@@ -13,13 +13,7 @@ import { messageStore, childSessionStore } from '../store'
 import { activeSessionStore } from '../store/activeSessionStore'
 import { notificationStore } from '../store/notificationStore'
 import { subscribeToEvents, getSessionStatus, getPendingPermissions, getPendingQuestions } from '../api'
-import type { 
-  ApiMessage, 
-  ApiPart,
-  ApiPermissionRequest,
-  ApiQuestionRequest,
-  SessionStatusPayload,
-} from '../api/types'
+import type { ApiMessage, ApiPart, ApiPermissionRequest, ApiQuestionRequest, SessionStatusPayload } from '../api/types'
 
 interface GlobalEventsCallbacks {
   onPermissionAsked?: (request: ApiPermissionRequest) => void
@@ -64,10 +58,10 @@ function cleanupExpired<T>(map: Map<string, PendingRequest<T>>) {
 function belongsToCurrentSession(sessionId: string): boolean {
   const currentSessionId = messageStore.getCurrentSessionId()
   if (!currentSessionId) return false
-  
+
   // 是当前 session
   if (sessionId === currentSessionId) return true
-  
+
   // 是当前 session 的子 session
   return childSessionStore.belongsToSession(sessionId, currentSessionId)
 }
@@ -75,10 +69,13 @@ function belongsToCurrentSession(sessionId: string): boolean {
 export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: string) {
   // 使用 ref 保存 callbacks，避免重新订阅 SSE
   const callbacksRef = useRef(callbacks)
-  callbacksRef.current = callbacks
   const directoryRef = useRef<string | undefined>(directory)
   const refreshRef = useRef<(() => void) | null>(null)
   const initializedDirectoryRef = useRef(false)
+
+  useEffect(() => {
+    callbacksRef.current = callbacks
+  }, [callbacks])
 
   useEffect(() => {
     // 节流滚动
@@ -97,15 +94,15 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
     // ============================================
 
     const fetchAndInitialize = () => {
-        const directory = directoryRef.current
-        Promise.all([
-          getSessionStatus(directory).catch(() => ({} as Record<string, import('../types/api/session').SessionStatus>)),
-          getPendingPermissions(undefined, directory).catch(() => []),
-          getPendingQuestions(undefined, directory).catch(() => []),
-        ]).then(([statusMap, permissions, questions]) => {
-          activeSessionStore.initialize(statusMap)
-          activeSessionStore.initializePendingRequests(permissions, questions)
-        })
+      const directory = directoryRef.current
+      Promise.all([
+        getSessionStatus(directory).catch(() => ({}) as Record<string, import('../types/api/session').SessionStatus>),
+        getPendingPermissions(undefined, directory).catch(() => []),
+        getPendingQuestions(undefined, directory).catch(() => []),
+      ]).then(([statusMap, permissions, questions]) => {
+        activeSessionStore.initialize(statusMap)
+        activeSessionStore.initializePendingRequests(permissions, questions)
+      })
     }
 
     refreshRef.current = fetchAndInitialize
@@ -114,7 +111,7 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
       // ============================================
       // Message Events → messageStore
       // ============================================
-      
+
       onMessageUpdated: (apiMsg: ApiMessage) => {
         messageStore.handleMessageUpdated(apiMsg)
       },
@@ -126,12 +123,12 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
         }
       },
 
-      onPartDelta: (data) => {
+      onPartDelta: data => {
         messageStore.handlePartDelta(data)
         scheduleScroll()
       },
 
-      onPartRemoved: (data) => {
+      onPartRemoved: data => {
         messageStore.handlePartRemoved(data)
       },
 
@@ -139,18 +136,18 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
       // Session Events → childSessionStore
       // ============================================
 
-      onSessionCreated: (session) => {
+      onSessionCreated: session => {
         // 注册子 session 关系
         if (session.parentID) {
           childSessionStore.registerChildSession(session)
-          
+
           // 处理因时序问题缓存的权限请求
           const pendingPermission = pendingPermissions.get(session.id)
           if (pendingPermission && belongsToCurrentSession(session.id)) {
             callbacksRef.current?.onPermissionAsked?.(pendingPermission.request)
             pendingPermissions.delete(session.id)
           }
-          
+
           // 处理因时序问题缓存的问题请求
           const pendingQuestion = pendingQuestions.get(session.id)
           if (pendingQuestion && belongsToCurrentSession(session.id)) {
@@ -158,22 +155,22 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
             pendingQuestions.delete(session.id)
           }
         }
-        
+
         // 更新 session meta 供 active tab 使用
         activeSessionStore.setSessionMeta(session.id, session.title, session.directory)
-        
+
         // 清理过期缓存
         cleanupExpired(pendingPermissions)
         cleanupExpired(pendingQuestions)
       },
 
-      onSessionIdle: (data) => {
+      onSessionIdle: data => {
         messageStore.handleSessionIdle(data.sessionID)
         childSessionStore.markIdle(data.sessionID)
         callbacksRef.current?.onSessionIdle?.(data.sessionID)
       },
 
-      onSessionError: (error) => {
+      onSessionError: error => {
         const isAbort = error.name === 'MessageAbortedError' || error.name === 'AbortError'
         if (!isAbort && import.meta.env.DEV) {
           console.warn('[GlobalEvents] Session error:', error)
@@ -193,7 +190,7 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
         callbacksRef.current?.onSessionError?.(error.sessionID)
       },
 
-      onSessionUpdated: (session) => {
+      onSessionUpdated: session => {
         // 更新 session meta 供 active tab 使用
         activeSessionStore.setSessionMeta(session.id, session.title, session.directory)
         if (session.parentID) {
@@ -206,13 +203,11 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
       // 关键变化：不仅处理当前 session，也处理子 session 的权限请求
       // 时序处理：如果 session 还没注册，缓存请求等 session.created 后处理
       // ============================================
-      
-      onPermissionAsked: (request) => {
+
+      onPermissionAsked: request => {
         const meta = activeSessionStore.getSessionMeta(request.sessionID)
         const sessionLabel = meta?.title || request.sessionID.slice(0, 8)
-        const desc = request.patterns?.length
-          ? `${request.permission}: ${request.patterns[0]}`
-          : request.permission
+        const desc = request.patterns?.length ? `${request.permission}: ${request.patterns[0]}` : request.permission
 
         // Active 列表：注册 pending request
         activeSessionStore.addPendingRequest(request.id, request.sessionID, 'permission', desc)
@@ -233,10 +228,10 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
         }
       },
 
-      onPermissionReplied: (data) => {
+      onPermissionReplied: data => {
         pendingPermissions.delete(data.sessionID)
         activeSessionStore.resolvePendingRequest(data.requestID)
-        
+
         if (belongsToCurrentSession(data.sessionID)) {
           callbacksRef.current?.onPermissionReplied?.(data)
         }
@@ -246,7 +241,7 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
       // Question Events
       // ============================================
 
-      onQuestionAsked: (request) => {
+      onQuestionAsked: request => {
         const meta = activeSessionStore.getSessionMeta(request.sessionID)
         const sessionLabel = meta?.title || request.sessionID.slice(0, 8)
         const desc = request.questions?.[0]?.header || 'AI is waiting for your input'
@@ -269,19 +264,19 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
         }
       },
 
-      onQuestionReplied: (data) => {
+      onQuestionReplied: data => {
         pendingQuestions.delete(data.sessionID)
         activeSessionStore.resolvePendingRequest(data.requestID)
-        
+
         if (belongsToCurrentSession(data.sessionID)) {
           callbacksRef.current?.onQuestionReplied?.(data)
         }
       },
 
-      onQuestionRejected: (data) => {
+      onQuestionRejected: data => {
         pendingQuestions.delete(data.sessionID)
         activeSessionStore.resolvePendingRequest(data.requestID)
-        
+
         if (belongsToCurrentSession(data.sessionID)) {
           callbacksRef.current?.onQuestionRejected?.(data)
         }
@@ -291,7 +286,7 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
       // Session Status → activeSessionStore
       // ============================================
 
-      onSessionStatus: (data) => {
+      onSessionStatus: data => {
         const prevStatus = activeSessionStore.getSnapshot().statusMap[data.sessionID]
         const wasBusy = prevStatus && (prevStatus.type === 'busy' || prevStatus.type === 'retry')
 
@@ -313,7 +308,7 @@ export function useGlobalEvents(callbacks?: GlobalEventsCallbacks, directory?: s
       // Reconnected → 通知调用方刷新数据 + 重新拉取 session status
       // ============================================
 
-      onReconnected: (reason) => {
+      onReconnected: reason => {
         if (import.meta.env.DEV) {
           console.log(`[GlobalEvents] SSE reconnected (reason: ${reason}), notifying for data refresh`)
         }

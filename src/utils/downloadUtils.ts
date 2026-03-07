@@ -50,9 +50,7 @@ async function tauriSaveFile(data: Uint8Array, fileName: string): Promise<void> 
 
   // 从文件名提取扩展名，用于对话框过滤
   const ext = fileName.split('.').pop()?.toLowerCase()
-  const filters = ext
-    ? [{ name: ext.toUpperCase(), extensions: [ext] }]
-    : []
+  const filters = ext ? [{ name: ext.toUpperCase(), extensions: [ext] }] : []
 
   const filePath = await save({
     defaultPath: fileName,
@@ -78,7 +76,7 @@ export function downloadFileContent(content: FileContent, fileName: string): voi
     : new TextEncoder().encode(content.content)
 
   const mimeType = isBinaryContent(content.encoding)
-    ? (content.mimeType || 'application/octet-stream')
+    ? content.mimeType || 'application/octet-stream'
     : `${content.mimeType || 'text/plain'};charset=utf-8`
 
   saveData(data, fileName, mimeType)
@@ -99,5 +97,3 @@ export function saveData(data: Uint8Array, fileName: string, mimeType = 'applica
     triggerBrowserDownload(blob, fileName)
   }
 }
-
-

@@ -21,10 +21,7 @@ if (!existsSync(srcDir)) {
 }
 
 // Parse materialIcons.ts to extract every icon name referenced
-const tsSource = readFileSync(
-  resolve(root, 'src/utils/materialIcons.ts'),
-  'utf-8',
-)
+const tsSource = readFileSync(resolve(root, 'src/utils/materialIcons.ts'), 'utf-8')
 
 const icons = new Set()
 
@@ -69,6 +66,5 @@ for (const icon of icons) {
 }
 
 console.log(
-  `[copy-material-icons] Copied ${copied} icons to public/material-icons/` +
-    (missing ? ` (${missing} missing)` : ''),
+  `[copy-material-icons] Copied ${copied} icons to public/material-icons/` + (missing ? ` (${missing} missing)` : ''),
 )

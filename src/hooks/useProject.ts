@@ -33,16 +33,13 @@ export function useProject(): UseProjectResult {
 
     try {
       // 并行获取当前项目和所有项目
-      const [current, all] = await Promise.all([
-        getCurrentProject(),
-        getProjects(),
-      ])
+      const [current, all] = await Promise.all([getCurrentProject(), getProjects()])
 
       setProjects(all)
 
       // 检查 localStorage 中是否有保存的选择
       const savedProjectId = serverStorage.get(STORAGE_KEY)
-      
+
       if (savedProjectId) {
         // 尝试找到保存的项目
         const savedProject = all.find(p => p.id === savedProjectId)
@@ -71,13 +68,16 @@ export function useProject(): UseProjectResult {
   }, [loadProjects])
 
   // 选择项目
-  const selectProject = useCallback((projectId: string) => {
-    const project = projects.find(p => p.id === projectId)
-    if (project) {
-      setCurrentProject(project)
-      serverStorage.set(STORAGE_KEY, projectId)
-    }
-  }, [projects])
+  const selectProject = useCallback(
+    (projectId: string) => {
+      const project = projects.find(p => p.id === projectId)
+      if (project) {
+        setCurrentProject(project)
+        serverStorage.set(STORAGE_KEY, projectId)
+      }
+    },
+    [projects],
+  )
 
   return {
     currentProject,

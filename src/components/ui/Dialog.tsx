@@ -52,10 +52,10 @@ export function Dialog({
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (touchStartY.current === null || touchStartX.current === null) return
-    
+
     const deltaY = e.touches[0].clientY - touchStartY.current
     const deltaX = Math.abs(e.touches[0].clientX - touchStartX.current)
-    
+
     // 只在向下拖且垂直方向为主时触发
     if (deltaY > 10 && deltaY > deltaX) {
       isDragging.current = true
@@ -84,25 +84,28 @@ export function Dialog({
     if (e.pointerType === 'touch') return // 触摸设备不走背景关闭
     mouseDownOnBackdrop.current = e.target === e.currentTarget
   }, [])
-  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && mouseDownOnBackdrop.current) {
-      onClose()
-    }
-    mouseDownOnBackdrop.current = false
-  }, [onClose])
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget && mouseDownOnBackdrop.current) {
+        onClose()
+      }
+      mouseDownOnBackdrop.current = false
+    },
+    [onClose],
+  )
 
   // Focus trap
   const handleFocusTrap = useCallback((e: KeyboardEvent) => {
     if (e.key !== 'Tab' || !dialogRef.current) return
-    
+
     const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     )
     if (focusable.length === 0) return
-    
+
     const first = focusable[0]
     const last = focusable[focusable.length - 1]
-    
+
     if (e.shiftKey) {
       if (document.activeElement === first || !dialogRef.current.contains(document.activeElement)) {
         e.preventDefault()
@@ -138,7 +141,7 @@ export function Dialog({
 
   useEffect(() => {
     if (!isOpen) return
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose()
@@ -153,7 +156,7 @@ export function Dialog({
   if (!shouldRender) return null
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-0 transition-all duration-200 ease-out"
       style={{
         backgroundColor: isVisible ? 'hsl(var(--always-black) / 0.4)' : 'hsl(var(--always-black) / 0)',
@@ -163,7 +166,7 @@ export function Dialog({
       onClick={handleBackdropClick}
     >
       {/* Dialog Panel */}
-      <div 
+      <div
         ref={dialogRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -174,17 +177,15 @@ export function Dialog({
           ${isDragging.current ? '' : 'transition-all duration-200 ease-out'}
           ${className}
         `}
-        style={{ 
-          width: typeof width === 'number' ? `${width}px` : width, 
+        style={{
+          width: typeof width === 'number' ? `${width}px` : width,
           maxWidth: '100%',
           opacity: isVisible ? (dragY > 0 ? Math.max(0.3, 1 - dragY / 300) : 1) : 0,
-          transform: isVisible 
-            ? `scale(1) translateY(${dragY}px)` 
-            : 'scale(0.95) translateY(8px)',
+          transform: isVisible ? `scale(1) translateY(${dragY}px)` : 'scale(0.95) translateY(8px)',
         }}
         role="dialog"
         aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         {/* Drag Handle (mobile) - 触摸下滑关闭的唯一触发区域 */}
         <div
@@ -204,7 +205,7 @@ export function Dialog({
               <div className="flex items-center justify-between px-5 py-4 border-b border-border-100/50">
                 <div className="text-lg font-semibold text-text-100">{title}</div>
                 {showCloseButton && (
-                  <button 
+                  <button
                     onClick={onClose}
                     className="p-2 text-text-400 hover:text-text-200 hover:bg-bg-100 rounded-md transition-colors"
                   >
@@ -213,15 +214,13 @@ export function Dialog({
                 )}
               </div>
             )}
-            
+
             {/* Content */}
-            <div className="p-5 overflow-y-auto custom-scrollbar max-h-[80vh]">
-              {children}
-            </div>
+            <div className="p-5 overflow-y-auto custom-scrollbar max-h-[80vh]">{children}</div>
           </>
         )}
       </div>
     </div>,
-    document.body
+    document.body,
   )
 }

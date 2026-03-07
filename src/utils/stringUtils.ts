@@ -8,7 +8,4 @@ export function getInitials(name: string): string {
 
 // 目录路径工具已移至 directoryUtils.ts
 // 保持向后兼容的 re-export
-export { 
-  normalizeForComparison as normalizeDirectoryPath,
-  isSameDirectory,
-} from './directoryUtils'
+export { normalizeForComparison as normalizeDirectoryPath, isSameDirectory } from './directoryUtils'

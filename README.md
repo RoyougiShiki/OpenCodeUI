@@ -30,16 +30,16 @@
 
 ## 技术栈
 
-| 类别 | 技术 |
-|------|------|
-| 框架 | React 19 + TypeScript |
-| 构建 | Vite 7 |
-| 样式 | Tailwind CSS v4 |
-| 代码高亮 | Shiki |
-| 终端 | xterm.js (WebGL) |
-| Markdown | react-markdown + remark-gfm |
-| 桌面 | Tauri 2 |
-| 部署 | Docker (Caddy + Python Router) |
+| 类别     | 技术                           |
+| -------- | ------------------------------ |
+| 框架     | React 19 + TypeScript          |
+| 构建     | Vite 7                         |
+| 样式     | Tailwind CSS v4                |
+| 代码高亮 | Shiki                          |
+| 终端     | xterm.js (WebGL)               |
+| Markdown | react-markdown + remark-gfm    |
+| 桌面     | Tauri 2                        |
+| 部署     | Docker (Caddy + Python Router) |
 
 ## 快速体验
 
@@ -71,10 +71,10 @@ docker compose -f docker-compose.standalone.yml up -d
 BACKEND_URL=your-server.com:4096 PORT=8080 docker compose -f docker-compose.standalone.yml up -d
 ```
 
-| 环境变量 | 默认值 | 说明 |
-|---------|--------|------|
+| 环境变量      | 默认值                      | 说明                                |
+| ------------- | --------------------------- | ----------------------------------- |
 | `BACKEND_URL` | `host.docker.internal:4096` | opencode serve 地址（不含协议前缀） |
-| `PORT` | `3000` | 前端监听端口 |
+| `PORT`        | `3000`                      | 前端监听端口                        |
 
 ## Docker 部署
 
@@ -82,24 +82,24 @@ BACKEND_URL=your-server.com:4096 PORT=8080 docker compose -f docker-compose.stan
 
 部署包含三个服务，由 Gateway 统一对外：
 
-| 服务 | 端口 | 说明 |
-|------|------|------|
-| Gateway | 6658（`GATEWAY_PORT`） | 统一入口，反代所有请求 |
-| Gateway | 6659（`PREVIEW_PORT`） | 开发服务预览专用 |
-| Frontend | 3000（内部） | 静态前端 |
-| Backend | 4096（内部） | OpenCode API |
-| Router | 7070（内部） | 动态端口路由（内置于 Gateway） |
+| 服务     | 端口                   | 说明                           |
+| -------- | ---------------------- | ------------------------------ |
+| Gateway  | 6658（`GATEWAY_PORT`） | 统一入口，反代所有请求         |
+| Gateway  | 6659（`PREVIEW_PORT`） | 开发服务预览专用               |
+| Frontend | 3000（内部）           | 静态前端                       |
+| Backend  | 4096（内部）           | OpenCode API                   |
+| Router   | 7070（内部）           | 动态端口路由（内置于 Gateway） |
 
 ### Gateway 路由规则
 
 端口 `6658` 上的请求按以下规则转发：
 
-| 路径 | 转发目标 | 说明 |
-|------|---------|------|
-| `/api/*` | Backend :4096 | OpenCode API，支持 SSE |
-| `/routes` | Router :7070 | 动态路由管理面板 |
-| `/preview/*` | Router :7070 | 预览端口切换 API |
-| 其他 | Frontend :3000 | 前端静态资源 |
+| 路径         | 转发目标       | 说明                   |
+| ------------ | -------------- | ---------------------- |
+| `/api/*`     | Backend :4096  | OpenCode API，支持 SSE |
+| `/routes`    | Router :7070   | 动态路由管理面板       |
+| `/preview/*` | Router :7070   | 预览端口切换 API       |
+| 其他         | Frontend :3000 | 前端静态资源           |
 
 端口 `6659` 用于访问容器内开发服务，Router 自动扫描 `3000-9999` 端口，通过 `/p/{token}/` 路径生成预览链接。
 
@@ -305,4 +305,4 @@ docker/                  # Docker 配置（Gateway / Frontend / Backend）
 
 ---
 
-*本项目由 Vibe Coding 驱动开发，如果你也对 AI 辅助编程感兴趣，欢迎交流。*
+_本项目由 Vibe Coding 驱动开发，如果你也对 AI 辅助编程感兴趣，欢迎交流。_

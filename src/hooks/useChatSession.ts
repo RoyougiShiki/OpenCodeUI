@@ -3,30 +3,45 @@
 // ============================================
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useMessageStore, messageStore, useSessionFamily, autoApproveStore, childSessionStore, useActiveSessionStore } from '../store'
+import {
+  useMessageStore,
+  messageStore,
+  useSessionFamily,
+  autoApproveStore,
+  childSessionStore,
+  useActiveSessionStore,
+} from '../store'
 import { useSessionManager, useGlobalEvents } from '../hooks'
-import { usePermissions, useRouter, usePermissionHandler, useMessageAnimation, useDirectory, useSessionContext } from '../hooks'
+import {
+  usePermissions,
+  useRouter,
+  usePermissionHandler,
+  useMessageAnimation,
+  useDirectory,
+  useSessionContext,
+} from '../hooks'
 import { useNotification } from './useNotification'
-import { 
-  sendMessageAsync, abortSession, 
-  getSelectableAgents, 
-  getPendingPermissions, getPendingQuestions,
-  prefetchCommands, prefetchRootDirectory,
+import {
+  sendMessageAsync,
+  abortSession,
+  getSelectableAgents,
+  getPendingPermissions,
+  getPendingQuestions,
+  prefetchCommands,
+  prefetchRootDirectory,
   getSessionChildren,
   executeCommand,
   summarizeSession,
   updateSession,
   type ApiSession,
-  type ApiAgent, type Attachment, type ModelInfo,
+  type ApiAgent,
+  type Attachment,
+  type ModelInfo,
 } from '../api'
 import { getMessageText } from '../types/message'
 import { createErrorHandler } from '../utils'
 import { serverStorage } from '../utils/perServerStorage'
-import { 
-  UNDO_SCROLL_DELAY_MS,
-  AUTO_SCROLL_SUPPRESS_DURATION_MS,
-  STORAGE_KEY_SELECTED_AGENT,
-} from '../constants'
+import { UNDO_SCROLL_DELAY_MS, AUTO_SCROLL_SUPPRESS_DURATION_MS, STORAGE_KEY_SELECTED_AGENT } from '../constants'
 import type { ChatAreaHandle } from '../features/chat'
 
 const handleError = createErrorHandler('session')
@@ -59,7 +74,7 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
     hasMoreHistory,
   } = useMessageStore()
   const { statusMap } = useActiveSessionStore()
-  
+
   // Agents
   const [agents, setAgents] = useState<ApiAgent[]>([])
   const [selectedAgent, setSelectedAgentRaw] = useState<string>(() => {
@@ -92,30 +107,29 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
     }
   }, [routeSessionId, routeStatus])
 
-  const getSessionTitle = useCallback((sessionId?: string) => {
-    const session = sessions.find(s => s.id === sessionId)
-    if (session?.title) return session.title
-    if (sessionId) return `Session ${sessionId.slice(0, 6)}`
-    return 'OpenCode'
-  }, [sessions])
+  const getSessionTitle = useCallback(
+    (sessionId?: string) => {
+      const session = sessions.find(s => s.id === sessionId)
+      if (session?.title) return session.title
+      if (sessionId) return `Session ${sessionId.slice(0, 6)}`
+      return 'OpenCode'
+    },
+    [sessions],
+  )
 
-  const buildNotificationTitle = useCallback((sessionId: string | undefined, label: string) => {
-    const base = getSessionTitle(sessionId)
-    return `${base} - ${label}`
-  }, [getSessionTitle])
-  
+  const buildNotificationTitle = useCallback(
+    (sessionId: string | undefined, label: string) => {
+      const base = getSessionTitle(sessionId)
+      return `${base} - ${label}`
+    },
+    [getSessionTitle],
+  )
+
   // Session family for permission polling
   const sessionFamily = useSessionFamily(routeSessionId)
 
   // Session Manager
-  const {
-    loadSession,
-    loadMoreHistory,
-    handleUndo,
-    handleRedo,
-    handleRedoAll,
-    clearRevert,
-  } = useSessionManager({
+  const { loadSession, loadMoreHistory, handleUndo, handleRedo, handleRedoAll, clearRevert } = useSessionManager({
     sessionId: routeSessionId,
     directory: currentDirectory,
   })
@@ -141,114 +155,111 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
   const effectiveDirectory = sessionDirectory || currentDirectory
 
   // Global Events (SSE)
-  useGlobalEvents({
-    onPermissionAsked: (request) => {
-      // Full Auto 模式：无差别自动 once 放行
-      if (autoApproveStore.shouldFullAutoApprove()) {
-        handlePermissionReply(request.id, 'once', effectiveDirectory)
-        return
-      }
-      
-      // 自动批准检查（实验性功能）
-      if (autoApproveStore.enabled && autoApproveStore.shouldAutoApprove(
-        request.sessionID,
-        request.permission,
-        request.patterns
-      )) {
-        // 匹配规则，自动用 once 批准，不弹框
-        handlePermissionReply(request.id, 'once', effectiveDirectory)
-        return
-      }
-      
-      setPendingPermissionRequests(prev => {
-        if (prev.some(r => r.id === request.id)) return prev
-        return [...prev, request]
-      })
+  useGlobalEvents(
+    {
+      onPermissionAsked: request => {
+        // Full Auto 模式：无差别自动 once 放行
+        if (autoApproveStore.shouldFullAutoApprove()) {
+          handlePermissionReply(request.id, 'once', effectiveDirectory)
+          return
+        }
 
-      // 页面不在前台时通知用户有权限请求等待批准
-      const permDesc = request.patterns?.length
-        ? `${request.permission}: ${request.patterns[0]}`
-        : request.permission
-      const title = buildNotificationTitle(request.sessionID, 'Permission Required')
-      sendNotification(title, permDesc, {
-        sessionId: request.sessionID,
-        directory: effectiveDirectory,
-      })
-      // 应用内 toast 已在 useGlobalEvents 中统一处理
-    },
-    onPermissionReplied: (data) => {
-      setPendingPermissionRequests(prev => 
-        prev.filter(r => r.id !== data.requestID)
-      )
-    },
-    onQuestionAsked: (request) => {
-      setPendingQuestionRequests(prev => {
-        if (prev.some(r => r.id === request.id)) return prev
-        return [...prev, request]
-      })
+        // 自动批准检查（实验性功能）
+        if (
+          autoApproveStore.enabled &&
+          autoApproveStore.shouldAutoApprove(request.sessionID, request.permission, request.patterns)
+        ) {
+          // 匹配规则，自动用 once 批准，不弹框
+          handlePermissionReply(request.id, 'once', effectiveDirectory)
+          return
+        }
 
-      // 页面不在前台时通知用户有问题等待回答
-      const questionDesc = request.questions?.[0]?.header || 'AI is waiting for your input'
-      const title = buildNotificationTitle(request.sessionID, 'Question')
-      sendNotification(title, questionDesc, {
-        sessionId: request.sessionID,
-        directory: effectiveDirectory,
-      })
-      // 应用内 toast 已在 useGlobalEvents 中统一处理
-    },
-    onQuestionReplied: (data) => {
-      setPendingQuestionRequests(prev => 
-        prev.filter(r => r.id !== data.requestID)
-      )
-    },
-    onQuestionRejected: (data) => {
-      setPendingQuestionRequests(prev => 
-        prev.filter(r => r.id !== data.requestID)
-      )
-    },
-    onScrollRequest: () => {
-      chatAreaRef.current?.scrollToBottomIfAtBottom()
-    },
-    onSessionIdle: (sessionID) => {
-      // 页面不在前台时发送浏览器通知
-      const title = buildNotificationTitle(sessionID, 'Session completed')
-      sendNotification(title, 'Session completed', {
-        sessionId: sessionID,
-        directory: effectiveDirectory,
-      })
-      // 应用内 toast 已在 useGlobalEvents 中统一处理
-    },
-    onSessionError: (sessionID) => {
-      // 页面不在前台时通知用户 session 出错
-      const title = buildNotificationTitle(sessionID, 'Session error')
-      sendNotification(title, 'Session error', {
-        sessionId: sessionID,
-        directory: effectiveDirectory,
-      })
-      // 应用内 toast 已在 useGlobalEvents 中统一处理
-    },
-    onReconnected: (_reason) => {
-      // SSE 重连后重新加载当前会话，补齐断连期间可能丢失的消息
-      if (routeSessionId) {
-        // 使用 force 模式，确保覆盖本地可能不完整的数据
-        loadSession(routeSessionId, { force: true })
-        // 重连后刷新待处理的权限请求和问题，避免用户错过后台产生的请求
-        refreshPendingRequests(sessionFamily, effectiveDirectory)
-      }
-      refetchModels().catch(() => {})
-      // 重新获取 agents 列表（切换后端时 currentDirectory 可能没变，useEffect 不会触发）
-      getSelectableAgents(currentDirectory)
-        .then(setAgents)
-        .catch(() => {})
-    },
-  }, effectiveDirectory)
+        setPendingPermissionRequests(prev => {
+          if (prev.some(r => r.id === request.id)) return prev
+          return [...prev, request]
+        })
 
-  const handleVisibleMessageIdsChange = useCallback((ids: string[]) => {
-    if (!routeSessionId || ids.length === 0) return
-    messageStore.prefetchMessageParts(routeSessionId, ids)
-    messageStore.evictMessageParts(routeSessionId, ids)
-  }, [routeSessionId])
-  
+        // 页面不在前台时通知用户有权限请求等待批准
+        const permDesc = request.patterns?.length ? `${request.permission}: ${request.patterns[0]}` : request.permission
+        const title = buildNotificationTitle(request.sessionID, 'Permission Required')
+        sendNotification(title, permDesc, {
+          sessionId: request.sessionID,
+          directory: effectiveDirectory,
+        })
+        // 应用内 toast 已在 useGlobalEvents 中统一处理
+      },
+      onPermissionReplied: data => {
+        setPendingPermissionRequests(prev => prev.filter(r => r.id !== data.requestID))
+      },
+      onQuestionAsked: request => {
+        setPendingQuestionRequests(prev => {
+          if (prev.some(r => r.id === request.id)) return prev
+          return [...prev, request]
+        })
+
+        // 页面不在前台时通知用户有问题等待回答
+        const questionDesc = request.questions?.[0]?.header || 'AI is waiting for your input'
+        const title = buildNotificationTitle(request.sessionID, 'Question')
+        sendNotification(title, questionDesc, {
+          sessionId: request.sessionID,
+          directory: effectiveDirectory,
+        })
+        // 应用内 toast 已在 useGlobalEvents 中统一处理
+      },
+      onQuestionReplied: data => {
+        setPendingQuestionRequests(prev => prev.filter(r => r.id !== data.requestID))
+      },
+      onQuestionRejected: data => {
+        setPendingQuestionRequests(prev => prev.filter(r => r.id !== data.requestID))
+      },
+      onScrollRequest: () => {
+        chatAreaRef.current?.scrollToBottomIfAtBottom()
+      },
+      onSessionIdle: sessionID => {
+        // 页面不在前台时发送浏览器通知
+        const title = buildNotificationTitle(sessionID, 'Session completed')
+        sendNotification(title, 'Session completed', {
+          sessionId: sessionID,
+          directory: effectiveDirectory,
+        })
+        // 应用内 toast 已在 useGlobalEvents 中统一处理
+      },
+      onSessionError: sessionID => {
+        // 页面不在前台时通知用户 session 出错
+        const title = buildNotificationTitle(sessionID, 'Session error')
+        sendNotification(title, 'Session error', {
+          sessionId: sessionID,
+          directory: effectiveDirectory,
+        })
+        // 应用内 toast 已在 useGlobalEvents 中统一处理
+      },
+      onReconnected: _reason => {
+        // SSE 重连后重新加载当前会话，补齐断连期间可能丢失的消息
+        if (routeSessionId) {
+          // 使用 force 模式，确保覆盖本地可能不完整的数据
+          loadSession(routeSessionId, { force: true })
+          // 重连后刷新待处理的权限请求和问题，避免用户错过后台产生的请求
+          refreshPendingRequests(sessionFamily, effectiveDirectory)
+        }
+        refetchModels().catch(() => {})
+        // 重新获取 agents 列表（切换后端时 currentDirectory 可能没变，useEffect 不会触发）
+        getSelectableAgents(currentDirectory)
+          .then(setAgents)
+          .catch(() => {})
+      },
+    },
+    effectiveDirectory,
+  )
+
+  const handleVisibleMessageIdsChange = useCallback(
+    (ids: string[]) => {
+      if (!routeSessionId || ids.length === 0) return
+      messageStore.prefetchMessageParts(routeSessionId, ids)
+      messageStore.evictMessageParts(routeSessionId, ids)
+    },
+    [routeSessionId],
+  )
+
   // Load agents
   useEffect(() => {
     getSelectableAgents(currentDirectory)
@@ -325,60 +336,67 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
 
     loadChildSessionsAndPermissions()
 
-    return () => { cancelled = true }
-  }, [routeSessionId, effectiveDirectory, resetPendingRequests, setPendingPermissionRequests, setPendingQuestionRequests])
+    return () => {
+      cancelled = true
+    }
+  }, [
+    routeSessionId,
+    effectiveDirectory,
+    resetPendingRequests,
+    setPendingPermissionRequests,
+    setPendingQuestionRequests,
+  ])
 
   // Send message handler
-  const handleSend = useCallback(async (
-    content: string, 
-    attachments: Attachment[],
-    options?: { agent?: string; variant?: string }
-  ) => {
-    if (!currentModel) {
-      handleError('send message', new Error('No model selected'))
-      return
-    }
-
-    // Clear revert state and truncate old messages
-    if (routeSessionId) {
-      messageStore.truncateAfterRevert(routeSessionId)
-    }
-
-    // Set streaming
-    if (routeSessionId) {
-      messageStore.setStreaming(routeSessionId, true)
-    }
-
-    let sessionId = routeSessionId
-
-    try {
-      if (!sessionId) {
-        const newSession = await createSession()
-        sessionId = newSession.id
-        messageStore.setCurrentSession(sessionId)
-        messageStore.setStreaming(sessionId, true)
-        navigateToSession(sessionId)
+  const handleSend = useCallback(
+    async (content: string, attachments: Attachment[], options?: { agent?: string; variant?: string }) => {
+      if (!currentModel) {
+        handleError('send message', new Error('No model selected'))
+        return
       }
 
-      await sendMessageAsync({
-        sessionId,
-        text: content,
-        attachments,
-        model: {
-          providerID: currentModel.providerId,
-          modelID: currentModel.id,
-        },
-        agent: options?.agent,
-        variant: options?.variant,
-        directory: effectiveDirectory,
-      })
-    } catch (error) {
-      handleError('send message', error)
-      if (sessionId) {
-        messageStore.setStreaming(sessionId, false)
+      // Clear revert state and truncate old messages
+      if (routeSessionId) {
+        messageStore.truncateAfterRevert(routeSessionId)
       }
-    }
-  }, [currentModel, routeSessionId, effectiveDirectory, navigateToSession, createSession])
+
+      // Set streaming
+      if (routeSessionId) {
+        messageStore.setStreaming(routeSessionId, true)
+      }
+
+      let sessionId = routeSessionId
+
+      try {
+        if (!sessionId) {
+          const newSession = await createSession()
+          sessionId = newSession.id
+          messageStore.setCurrentSession(sessionId)
+          messageStore.setStreaming(sessionId, true)
+          navigateToSession(sessionId)
+        }
+
+        await sendMessageAsync({
+          sessionId,
+          text: content,
+          attachments,
+          model: {
+            providerID: currentModel.providerId,
+            modelID: currentModel.id,
+          },
+          agent: options?.agent,
+          variant: options?.variant,
+          directory: effectiveDirectory,
+        })
+      } catch (error) {
+        handleError('send message', error)
+        if (sessionId) {
+          messageStore.setStreaming(sessionId, false)
+        }
+      }
+    },
+    [currentModel, routeSessionId, effectiveDirectory, navigateToSession, createSession],
+  )
 
   // New chat handler
   const handleNewChat = useCallback(() => {
@@ -402,58 +420,68 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
   }, [routeSessionId, sessionDirectory, currentDirectory])
 
   // Command handler (slash commands)
-  const handleCommand = useCallback(async (commandStr: string) => {
-    // 解析命令："/help arg1 arg2" => command="help", args="arg1 arg2"
-    const trimmed = commandStr.trim()
-    const withoutSlash = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed
-    const spaceIndex = withoutSlash.indexOf(' ')
-    const command = spaceIndex > 0 ? withoutSlash.slice(0, spaceIndex) : withoutSlash
-    const args = spaceIndex > 0 ? withoutSlash.slice(spaceIndex + 1) : ''
-    
-    if (!command) return
-    
-    let sessionId = routeSessionId
-    
-    try {
-      // Create session if needed (like handleSend does)
-      if (!sessionId) {
-        const newSession = await createSession()
-        sessionId = newSession.id
-        messageStore.setCurrentSession(sessionId)
-        navigateToSession(sessionId)
-      }
-      
-      if (command === 'compact') {
-        if (!currentModel) {
-          handleError('execute command', new Error('No model selected'))
+  const handleCommand = useCallback(
+    async (commandStr: string) => {
+      // 解析命令："/help arg1 arg2" => command="help", args="arg1 arg2"
+      const trimmed = commandStr.trim()
+      const withoutSlash = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed
+      const spaceIndex = withoutSlash.indexOf(' ')
+      const command = spaceIndex > 0 ? withoutSlash.slice(0, spaceIndex) : withoutSlash
+      const args = spaceIndex > 0 ? withoutSlash.slice(spaceIndex + 1) : ''
+
+      if (!command) return
+
+      let sessionId = routeSessionId
+
+      try {
+        // Create session if needed (like handleSend does)
+        if (!sessionId) {
+          const newSession = await createSession()
+          sessionId = newSession.id
+          messageStore.setCurrentSession(sessionId)
+          navigateToSession(sessionId)
+        }
+
+        if (command === 'compact') {
+          if (!currentModel) {
+            handleError('execute command', new Error('No model selected'))
+            return
+          }
+          await summarizeSession(
+            sessionId,
+            { providerID: currentModel.providerId, modelID: currentModel.id },
+            effectiveDirectory,
+          )
           return
         }
-        await summarizeSession(sessionId, { providerID: currentModel.providerId, modelID: currentModel.id }, effectiveDirectory)
-        return
+
+        await executeCommand(sessionId, command, args, effectiveDirectory)
+      } catch (err) {
+        handleError('execute command', err)
       }
-      
-      await executeCommand(sessionId, command, args, effectiveDirectory)
-    } catch (err) {
-      handleError('execute command', err)
-    }
-  }, [routeSessionId, effectiveDirectory, createSession, navigateToSession, currentModel])
+    },
+    [routeSessionId, effectiveDirectory, createSession, navigateToSession, currentModel],
+  )
 
   // Undo with animation
-  const handleUndoWithAnimation = useCallback(async (userMessageId: string) => {
-    chatAreaRef.current?.suppressAutoScroll(AUTO_SCROLL_SUPPRESS_DURATION_MS)
-    
-    const messageIndex = messages.findIndex(m => m.info.id === userMessageId)
-    if (messageIndex === -1) return
-    
-    const messageIdsToRemove = messages.slice(messageIndex).map(m => m.info.id)
-    
-    await animateUndo(messageIdsToRemove)
-    await handleUndo(userMessageId)
-    
-    setTimeout(() => {
-      chatAreaRef.current?.scrollToLastMessage()
-    }, UNDO_SCROLL_DELAY_MS)
-  }, [messages, animateUndo, handleUndo])
+  const handleUndoWithAnimation = useCallback(
+    async (userMessageId: string) => {
+      chatAreaRef.current?.suppressAutoScroll(AUTO_SCROLL_SUPPRESS_DURATION_MS)
+
+      const messageIndex = messages.findIndex(m => m.info.id === userMessageId)
+      if (messageIndex === -1) return
+
+      const messageIdsToRemove = messages.slice(messageIndex).map(m => m.info.id)
+
+      await animateUndo(messageIdsToRemove)
+      await handleUndo(userMessageId)
+
+      setTimeout(() => {
+        chatAreaRef.current?.scrollToLastMessage()
+      }, UNDO_SCROLL_DELAY_MS)
+    },
+    [messages, animateUndo, handleUndo],
+  )
 
   // Redo with animation
   const handleRedoWithAnimation = useCallback(async () => {
@@ -463,9 +491,12 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
   }, [animateRedo, handleRedo])
 
   // Session selection
-  const handleSelectSession = useCallback((session: ApiSession) => {
-    navigateToSession(session.id, session.directory)
-  }, [navigateToSession])
+  const handleSelectSession = useCallback(
+    (session: ApiSession) => {
+      navigateToSession(session.id, session.directory)
+    },
+    [navigateToSession],
+  )
 
   // New session
   const handleNewSession = useCallback(() => {
@@ -516,20 +547,23 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
   }, [agents, selectedAgent, setSelectedAgent])
 
   // 从消息中恢复 agent 选择（用于切换 session 时）
-  const restoreAgentFromMessage = useCallback((agentName: string | null | undefined) => {
-    if (!agentName) return
-    // 只有当 agent 存在于列表中时才恢复
-    const exists = agents.some(a => a.name === agentName && a.mode !== 'subagent' && !a.hidden)
-    if (exists) {
-      setSelectedAgent(agentName)
-    }
-  }, [agents, setSelectedAgent])
+  const restoreAgentFromMessage = useCallback(
+    (agentName: string | null | undefined) => {
+      if (!agentName) return
+      // 只有当 agent 存在于列表中时才恢复
+      const exists = agents.some(a => a.name === agentName && a.mode !== 'subagent' && !a.hidden)
+      if (exists) {
+        setSelectedAgent(agentName)
+      }
+    },
+    [agents, setSelectedAgent],
+  )
 
   // Copy last AI response to clipboard
   const handleCopyLastResponse = useCallback(async () => {
     const lastAssistant = [...messages].reverse().find(m => m.info.role === 'assistant')
     if (!lastAssistant) return
-    
+
     const text = getMessageText(lastAssistant)
     if (text) {
       try {
@@ -567,7 +601,7 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
     sidebarExpanded,
     setSidebarExpanded,
     effectiveDirectory,
-    
+
     // Permissions
     pendingPermissionRequests,
     pendingQuestionRequests,
@@ -575,16 +609,16 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
     handleQuestionReply,
     handleQuestionReject,
     isReplying,
-    
+
     // Session management
     loadMoreHistory,
     handleRedoAll,
     clearRevert,
-    
+
     // Animation
     registerMessage,
     registerInputBox,
-    
+
     // Handlers
     handleSend,
     handleAbort,

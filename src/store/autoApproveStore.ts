@@ -12,8 +12,8 @@ type FullAutoListener = (enabled: boolean) => void
  * 自动批准规则
  */
 export interface AutoApproveRule {
-  permission: string  // 工具类型: bash, edit, read, etc.
-  pattern: string     // 匹配模式，如 "mkdir *", "ls", "*.tsx"
+  permission: string // 工具类型: bash, edit, read, etc.
+  pattern: string // 匹配模式，如 "mkdir *", "ls", "*.tsx"
 }
 
 /**
@@ -23,10 +23,10 @@ export interface AutoApproveRule {
 function wildcardMatch(pattern: string, text: string): boolean {
   // 转换为正则表达式
   const regexStr = pattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')  // 转义特殊字符
-    .replace(/\*/g, '.*')                   // * -> .*
-    .replace(/\?/g, '.')                    // ? -> .
-  
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&') // 转义特殊字符
+    .replace(/\*/g, '.*') // * -> .*
+    .replace(/\?/g, '.') // ? -> .
+
   const regex = new RegExp(`^${regexStr}$`, 'i')
   return regex.test(text)
 }
@@ -38,16 +38,16 @@ function wildcardMatch(pattern: string, text: string): boolean {
 class AutoApproveStore {
   // 规则存储：sessionId -> rules[]
   private rulesMap = new Map<string, AutoApproveRule[]>()
-  
+
   // 功能开关（存 localStorage，持久化）
   private _enabled: boolean = false
   private readonly STORAGE_KEY = 'opencode-auto-approve-enabled'
-  
+
   // Full Auto 模式（纯内存，不持久化，刷新即关）
   // 开启后所有权限请求无差别自动 once 放行
   private _fullAuto: boolean = false
   private _fullAutoListeners = new Set<FullAutoListener>()
-  
+
   constructor() {
     // 从 localStorage 读取开关状态
     try {
@@ -57,7 +57,7 @@ class AutoApproveStore {
       this._enabled = false
     }
   }
-  
+
   /**
    * 重新从 storage 加载开关状态（服务器切换时调用）
    */
@@ -75,14 +75,14 @@ class AutoApproveStore {
       this._fullAutoListeners.forEach(fn => fn(false))
     }
   }
-  
+
   /**
    * 获取功能开关状态
    */
   get enabled(): boolean {
     return this._enabled
   }
-  
+
   /**
    * 设置功能开关
    */
@@ -94,16 +94,16 @@ class AutoApproveStore {
       // ignore
     }
   }
-  
+
   // ---- Full Auto 模式 ----
-  
+
   /**
    * Full Auto 开关状态
    */
   get fullAuto(): boolean {
     return this._fullAuto
   }
-  
+
   /**
    * 设置 Full Auto 模式
    * 纯内存，不持久化
@@ -112,15 +112,17 @@ class AutoApproveStore {
     this._fullAuto = value
     this._fullAutoListeners.forEach(fn => fn(value))
   }
-  
+
   /**
    * 订阅 Full Auto 状态变更
    */
   onFullAutoChange(listener: FullAutoListener): () => void {
     this._fullAutoListeners.add(listener)
-    return () => { this._fullAutoListeners.delete(listener) }
+    return () => {
+      this._fullAutoListeners.delete(listener)
+    }
   }
-  
+
   /**
    * Full Auto 模式下判断是否自动批准
    * 无条件放行，不看规则
@@ -128,7 +130,7 @@ class AutoApproveStore {
   shouldFullAutoApprove(): boolean {
     return this._fullAuto
   }
-  
+
   /**
    * 添加自动批准规则
    * @param sessionId 会话 ID
@@ -137,48 +139,46 @@ class AutoApproveStore {
    */
   addRules(sessionId: string, permission: string, patterns: string[]): void {
     if (!this._enabled) return
-    
+
     const existing = this.rulesMap.get(sessionId) || []
     const newRules: AutoApproveRule[] = patterns.map(pattern => ({
       permission,
       pattern,
     }))
-    
+
     // 去重
     const uniqueRules = [...existing]
     for (const rule of newRules) {
-      const isDuplicate = uniqueRules.some(
-        r => r.permission === rule.permission && r.pattern === rule.pattern
-      )
+      const isDuplicate = uniqueRules.some(r => r.permission === rule.permission && r.pattern === rule.pattern)
       if (!isDuplicate) {
         uniqueRules.push(rule)
       }
     }
-    
+
     this.rulesMap.set(sessionId, uniqueRules)
   }
-  
+
   /**
    * 获取某个会话的所有规则
    */
   getRules(sessionId: string): AutoApproveRule[] {
     return this.rulesMap.get(sessionId) || []
   }
-  
+
   /**
    * 清空某个会话的所有规则
    */
   clearRules(sessionId: string): void {
     this.rulesMap.delete(sessionId)
   }
-  
+
   /**
    * 清空所有规则
    */
   clearAllRules(): void {
     this.rulesMap.clear()
   }
-  
+
   /**
    * 检查权限请求是否应该自动批准
    * @param sessionId 会话 ID
@@ -186,17 +186,13 @@ class AutoApproveStore {
    * @param requestPatterns 请求的 patterns
    * @returns true 如果所有 patterns 都被规则匹配
    */
-  shouldAutoApprove(
-    sessionId: string,
-    permission: string,
-    requestPatterns: string[]
-  ): boolean {
+  shouldAutoApprove(sessionId: string, permission: string, requestPatterns: string[]): boolean {
     if (!this._enabled) return false
     if (!requestPatterns || requestPatterns.length === 0) return false
-    
+
     const rules = this.getRules(sessionId)
     if (rules.length === 0) return false
-    
+
     // 检查每个请求的 pattern 是否都被至少一条规则匹配
     return requestPatterns.every(reqPattern => {
       return rules.some(rule => {
@@ -206,12 +202,11 @@ class AutoApproveStore {
         }
         // 双向通配匹配：rule 作为模式匹配 request，或 request 作为模式匹配 rule
         // patterns 和 always 可能格式不同，双向确保都能命中
-        return wildcardMatch(rule.pattern, reqPattern)
-          || wildcardMatch(reqPattern, rule.pattern)
+        return wildcardMatch(rule.pattern, reqPattern) || wildcardMatch(reqPattern, rule.pattern)
       })
     })
   }
-  
+
   /**
    * 获取调试信息
    */

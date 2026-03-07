@@ -30,20 +30,25 @@ function formatDuration(ms: number): string {
   return rem > 0 ? `${m}m${rem}s` : `${m}m`
 }
 
-export const StepFinishPartView = memo(function StepFinishPartView({ part, duration, turnDuration }: StepFinishPartViewProps) {
+export const StepFinishPartView = memo(function StepFinishPartView({
+  part,
+  duration,
+  turnDuration,
+}: StepFinishPartViewProps) {
   const { stepFinishDisplay: show } = useTheme()
   const { tokens, cost } = part
   const totalTokens = tokens.input + tokens.output + tokens.reasoning + tokens.cache.read + tokens.cache.write
   const cacheHit = tokens.cache.read
-  
+
   // 所有项都关闭时不渲染
-  const hasAny = (show.tokens && totalTokens > 0)
-    || (show.cache && cacheHit > 0)
-    || (show.cost && cost > 0)
-    || (show.duration && duration != null && duration > 0)
-    || (show.turnDuration && turnDuration != null && turnDuration > 0)
+  const hasAny =
+    (show.tokens && totalTokens > 0) ||
+    (show.cache && cacheHit > 0) ||
+    (show.cost && cost > 0) ||
+    (show.duration && duration != null && duration > 0) ||
+    (show.turnDuration && turnDuration != null && turnDuration > 0)
   if (!hasAny) return null
-  
+
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-0.5 text-[10px] leading-4 text-text-500">
       {show.tokens && totalTokens > 0 && (
@@ -58,12 +63,8 @@ export const StepFinishPartView = memo(function StepFinishPartView({ part, durat
           ({formatNumber(cacheHit)} cached)
         </span>
       )}
-      {show.cost && cost > 0 && (
-        <span>{formatCost(cost)}</span>
-      )}
-      {show.duration && duration != null && duration > 0 && (
-        <span>{formatDuration(duration)}</span>
-      )}
+      {show.cost && cost > 0 && <span>{formatCost(cost)}</span>}
+      {show.duration && duration != null && duration > 0 && <span>{formatDuration(duration)}</span>}
       {show.turnDuration && turnDuration != null && turnDuration > 0 && (
         <span>total {formatDuration(turnDuration)}</span>
       )}

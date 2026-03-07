@@ -9,6 +9,7 @@
 Patch release focused on chat input polish, session list consistency, and smoother permission handling.
 
 ### Fixes
+
 - Restored collapsed input dock bottom spacing
 - Kept the session list in sync across directory filters and live updates
 - Returned gracefully to a new chat after deleting the currently open session
@@ -16,6 +17,7 @@ Patch release focused on chat input polish, session list consistency, and smooth
 - Removed extra polling from permission/question flows and synced reply state immediately
 
 ### Improvements
+
 - Preloaded `@` root listing and `/` command data when entering a session to reduce first-open lag
 
 ## [v0.1.0] - 2026-03-05
@@ -23,6 +25,7 @@ Patch release focused on chat input polish, session list consistency, and smooth
 First stable release of OpenCodeUI.
 
 ### Features
+
 - Drag-and-drop file attachment support (desktop & mobile)
 - Material file icons for file/folder display
 - File @mention from explorer sidebar
@@ -32,6 +35,7 @@ First stable release of OpenCodeUI.
 - Capability-based file attachment upload
 
 ### Fixes
+
 - Aligned capsule thinking chevron with italic/tool toggle arrows
 - Stabilized Tauri desktop file drag-and-drop handling
 - Fixed multiple task windows rendering the latest child session
@@ -41,6 +45,7 @@ First stable release of OpenCodeUI.
 - Fixed attachment pill truncation and compact tool layout
 
 ### Improvements
+
 - Migrated all icons to lucide-react
 - Unified message part spacing and alignment
 - Added Docker support with material icons build step

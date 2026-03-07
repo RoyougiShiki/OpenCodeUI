@@ -1,11 +1,33 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Dialog } from '../../components/ui/Dialog'
 import { Button } from '../../components/ui/Button'
-import { 
-  SunIcon, MoonIcon, SystemIcon, MaximizeIcon, MinimizeIcon, 
-  PathAutoIcon, PathUnixIcon, PathWindowsIcon,
-  GlobeIcon, PlusIcon, TrashIcon, CheckIcon, WifiIcon, WifiOffIcon, SpinnerIcon, KeyIcon,
-  SettingsIcon, KeyboardIcon, CloseIcon, BellIcon, BoltIcon, CompactIcon, PlugIcon, StopIcon, EyeIcon, ThinkingIcon
+import {
+  SunIcon,
+  MoonIcon,
+  SystemIcon,
+  MaximizeIcon,
+  MinimizeIcon,
+  PathAutoIcon,
+  PathUnixIcon,
+  PathWindowsIcon,
+  GlobeIcon,
+  PlusIcon,
+  TrashIcon,
+  CheckIcon,
+  WifiIcon,
+  WifiOffIcon,
+  SpinnerIcon,
+  KeyIcon,
+  SettingsIcon,
+  KeyboardIcon,
+  CloseIcon,
+  BellIcon,
+  BoltIcon,
+  CompactIcon,
+  PlugIcon,
+  StopIcon,
+  EyeIcon,
+  ThinkingIcon,
 } from '../../components/Icons'
 import { usePathMode, useServerStore, useIsMobile, useNotification, useRouter } from '../../hooks'
 import { autoApproveStore, messageStore, notificationStore } from '../../store'
@@ -50,12 +72,17 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
       type="button"
       role="switch"
       aria-checked={enabled}
-      onClick={(e) => { e.stopPropagation(); onChange() }}
+      onClick={e => {
+        e.stopPropagation()
+        onChange()
+      }}
       className={`relative w-11 h-6 rounded-full transition-colors duration-200 
         ${enabled ? 'bg-accent-main-100' : 'bg-bg-300'}`}
     >
-      <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-[hsl(var(--always-white))] rounded-full shadow-sm transition-transform duration-200 
-        ${enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+      <div
+        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-[hsl(var(--always-white))] rounded-full shadow-sm transition-transform duration-200 
+        ${enabled ? 'translate-x-5' : 'translate-x-0'}`}
+      />
     </button>
   )
 }
@@ -68,12 +95,12 @@ interface SegmentedControlProps<T extends string> {
 
 function SegmentedControl<T extends string>({ value, options, onChange }: SegmentedControlProps<T>) {
   const activeIndex = options.findIndex(o => o.value === value)
-  
+
   return (
-    <div 
+    <div
       className="bg-bg-100/50 p-0.5 rounded-lg flex border border-border-200/50 relative isolate"
       role="tablist"
-      onKeyDown={(e) => {
+      onKeyDown={e => {
         if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
           e.preventDefault()
           const dir = e.key === 'ArrowRight' ? 1 : -1
@@ -86,7 +113,7 @@ function SegmentedControl<T extends string>({ value, options, onChange }: Segmen
         className="absolute top-0.5 bottom-0.5 left-0.5 bg-bg-000 rounded-md shadow-sm ring-1 ring-border-200/50 transition-transform duration-300 ease-out -z-10"
         style={{
           width: `calc((100% - 4px) / ${options.length})`,
-          transform: `translateX(${activeIndex * 100}%)`
+          transform: `translateX(${activeIndex * 100}%)`,
         }}
       />
       {options.map(opt => (
@@ -95,7 +122,7 @@ function SegmentedControl<T extends string>({ value, options, onChange }: Segmen
           role="tab"
           aria-selected={opt.value === value}
           tabIndex={opt.value === value ? 0 : -1}
-          onClick={(e) => onChange(opt.value, e)}
+          onClick={e => onChange(opt.value, e)}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] font-medium transition-colors duration-200
             ${opt.value === value ? 'text-text-100' : 'text-text-400 hover:text-text-200'}`}
         >
@@ -118,7 +145,7 @@ interface SettingRowProps {
 
 function SettingRow({ label, description, icon, children, onClick, className }: SettingRowProps) {
   return (
-    <div 
+    <div
       className={`flex items-center justify-between py-2.5 px-2.5 rounded-lg border border-transparent transition-colors
         ${onClick ? 'cursor-pointer hover:bg-bg-100/55 hover:border-border-200/45' : ''}
         ${className || ''}`}
@@ -174,8 +201,17 @@ const PRESET_PREVIEW_COLORS: Record<string, { bg: string; accent: string; text: 
   custom: { bg: '#f0f0f0', accent: '#888888', text: '#333333' },
 }
 
-function PresetCard({ id, name, description, isActive, onClick }: {
-  id: string; name: string; description: string; isActive: boolean
+function PresetCard({
+  id,
+  name,
+  description,
+  isActive,
+  onClick,
+}: {
+  id: string
+  name: string
+  description: string
+  isActive: boolean
   onClick: (e: React.MouseEvent) => void
 }) {
   const colors = PRESET_PREVIEW_COLORS[id] || PRESET_PREVIEW_COLORS.custom
@@ -183,9 +219,10 @@ function PresetCard({ id, name, description, isActive, onClick }: {
     <button
       onClick={onClick}
       className={`flex items-start gap-3 p-3 rounded-lg border transition-all text-left w-full
-        ${isActive
-          ? 'border-accent-main-100/60 bg-accent-main-100/5 ring-1 ring-accent-main-100/20'
-          : 'border-border-200/50 hover:border-border-300 hover:bg-bg-100/50'
+        ${
+          isActive
+            ? 'border-accent-main-100/60 bg-accent-main-100/5 ring-1 ring-accent-main-100/20'
+            : 'border-border-200/50 hover:border-border-300 hover:bg-bg-100/50'
         }`}
     >
       <div
@@ -193,8 +230,14 @@ function PresetCard({ id, name, description, isActive, onClick }: {
         style={{ backgroundColor: colors.bg }}
       >
         <div className="absolute bottom-0 left-0 right-0 h-2" style={{ backgroundColor: colors.accent }} />
-        <div className="absolute top-1.5 left-1.5 w-3 h-0.5 rounded-full" style={{ backgroundColor: colors.text, opacity: 0.6 }} />
-        <div className="absolute top-3 left-1.5 w-2 h-0.5 rounded-full" style={{ backgroundColor: colors.text, opacity: 0.3 }} />
+        <div
+          className="absolute top-1.5 left-1.5 w-3 h-0.5 rounded-full"
+          style={{ backgroundColor: colors.text, opacity: 0.6 }}
+        />
+        <div
+          className="absolute top-3 left-1.5 w-2 h-0.5 rounded-full"
+          style={{ backgroundColor: colors.text, opacity: 0.3 }}
+        />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -214,15 +257,17 @@ function PresetCard({ id, name, description, isActive, onClick }: {
 function CustomCSSEditor({ value, onChange }: { value: string; onChange: (css: string) => void }) {
   const [localValue, setLocalValue] = useState(value)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  
-  useEffect(() => { setLocalValue(value) }, [value])
-  
+
+  useEffect(() => {
+    setLocalValue(value)
+  }, [value])
+
   const handleChange = (newVal: string) => {
     setLocalValue(newVal)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => onChange(newVal), 400)
   }
-  
+
   const template = `/* ====== One Dark Inspired Theme Template ====== */
 /* Palette inspired by Atom One Dark / One Dark Pro (MIT). */
 /* Use HSL token values: H S% L% (without hsl()). */
@@ -393,7 +438,9 @@ function CustomCSSEditor({ value, onChange }: { value: string; onChange: (css: s
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="text-[11px] text-text-400">
-          Override fonts, colors, and styles. Use <code className="text-[10px] px-1 py-0.5 bg-bg-200 rounded font-mono">:root:root</code> for higher specificity.
+          Override fonts, colors, and styles. Use{' '}
+          <code className="text-[10px] px-1 py-0.5 bg-bg-200 rounded font-mono">:root:root</code> for higher
+          specificity.
         </div>
         {!localValue.trim() && (
           <button
@@ -406,7 +453,7 @@ function CustomCSSEditor({ value, onChange }: { value: string; onChange: (css: s
       </div>
       <textarea
         value={localValue}
-        onChange={(e) => handleChange(e.target.value)}
+        onChange={e => handleChange(e.target.value)}
         placeholder={template}
         spellCheck={false}
         className="w-full h-48 px-3 py-2 text-[12px] font-mono bg-bg-200/50 border border-border-200 rounded-lg 
@@ -415,7 +462,14 @@ function CustomCSSEditor({ value, onChange }: { value: string; onChange: (css: s
       />
       {localValue.trim() && (
         <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={() => { setLocalValue(''); onChange('') }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setLocalValue('')
+              onChange('')
+            }}
+          >
             Clear
           </Button>
         </div>
@@ -428,7 +482,17 @@ function CustomCSSEditor({ value, onChange }: { value: string; onChange: (css: s
 // Tab: Appearance
 // ============================================
 
-function AppearanceSettings({ themeMode, onThemeChange, isWideMode, onToggleWideMode, presetId, onPresetChange, availablePresets, customCSS, onCustomCSSChange }: {
+function AppearanceSettings({
+  themeMode,
+  onThemeChange,
+  isWideMode,
+  onToggleWideMode,
+  presetId,
+  onPresetChange,
+  availablePresets,
+  customCSS,
+  onCustomCSSChange,
+}: {
   themeMode: ThemeMode
   onThemeChange: (mode: ThemeMode, event?: React.MouseEvent) => void
   isWideMode?: boolean
@@ -439,14 +503,10 @@ function AppearanceSettings({ themeMode, onThemeChange, isWideMode, onToggleWide
   customCSS?: string
   onCustomCSSChange?: (css: string) => void
 }) {
-
   return (
     <div className="space-y-4">
       {availablePresets && availablePresets.length > 0 && (
-        <SettingsCard
-          title="Theme Presets"
-          description="Choose a base visual style for the app"
-        >
+        <SettingsCard title="Theme Presets" description="Choose a base visual style for the app">
           <div className="grid gap-2 sm:grid-cols-2">
             {availablePresets.map(p => (
               <PresetCard
@@ -455,7 +515,7 @@ function AppearanceSettings({ themeMode, onThemeChange, isWideMode, onToggleWide
                 name={p.name}
                 description={p.description}
                 isActive={presetId === p.id}
-                onClick={(e) => onPresetChange?.(p.id, e)}
+                onClick={e => onPresetChange?.(p.id, e)}
               />
             ))}
           </div>
@@ -471,10 +531,7 @@ function AppearanceSettings({ themeMode, onThemeChange, isWideMode, onToggleWide
         </SettingsCard>
       )}
 
-      <SettingsCard
-        title="Display"
-        description="Control color mode and layout"
-      >
+      <SettingsCard title="Display" description="Control color mode and layout">
         <div className="space-y-4">
           <div>
             <div className="text-[11px] font-medium text-text-400 uppercase tracking-wider mb-1.5">Color Mode</div>
@@ -491,8 +548,8 @@ function AppearanceSettings({ themeMode, onThemeChange, isWideMode, onToggleWide
 
           {onToggleWideMode && (
             <div className="pt-3 border-t border-border-100/55">
-              <SettingRow 
-                label="Wide Mode" 
+              <SettingRow
+                label="Wide Mode"
                 description="Expand chat area for long outputs"
                 icon={isWideMode ? <MinimizeIcon size={14} /> : <MaximizeIcon size={14} />}
                 onClick={onToggleWideMode}
@@ -500,7 +557,7 @@ function AppearanceSettings({ themeMode, onThemeChange, isWideMode, onToggleWide
                 <Toggle enabled={!!isWideMode} onChange={onToggleWideMode} />
               </SettingRow>
             </div>
-           )}
+          )}
         </div>
       </SettingsCard>
     </div>
@@ -514,13 +571,26 @@ function AppearanceSettings({ themeMode, onThemeChange, isWideMode, onToggleWide
 function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' }) {
   const { pathMode, setPathMode, effectiveStyle, detectedStyle, isAutoMode } = usePathMode()
   const [autoApprove, setAutoApprove] = useState(autoApproveStore.enabled)
-  const { enabled: notificationsEnabled, setEnabled: setNotificationsEnabled, supported: notificationsSupported, permission: notificationPermission, sendNotification } = useNotification()
+  const {
+    enabled: notificationsEnabled,
+    setEnabled: setNotificationsEnabled,
+    supported: notificationsSupported,
+    permission: notificationPermission,
+    sendNotification,
+  } = useNotification()
   const [collapseUserMessages, setCollapseUserMessages] = useState(themeStore.collapseUserMessages)
   const [stepFinishDisplay, setStepFinishDisplay] = useState(themeStore.stepFinishDisplay)
   const [reasoningDisplayMode, setReasoningDisplayMode] = useState(themeStore.reasoningDisplayMode)
   const [toastEnabled, setToastEnabledState] = useState(notificationStore.toastEnabled)
   const isMobile = useIsMobile()
-  const { autoStart: autoStartService, binaryPath, envVars, running: serviceRunning, startedByUs, starting: serviceStarting } = useServiceStore()
+  const {
+    autoStart: autoStartService,
+    binaryPath,
+    envVars,
+    running: serviceRunning,
+    startedByUs,
+    starting: serviceStarting,
+  } = useServiceStore()
   const { activeServer } = useServerStore()
   const isTauriDesktop = isTauri() && !isMobile
 
@@ -531,7 +601,9 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
   const [serviceError, setServiceError] = useState('')
 
   // 同步外部变化
-  useEffect(() => { setLocalBinaryPath(binaryPath) }, [binaryPath])
+  useEffect(() => {
+    setLocalBinaryPath(binaryPath)
+  }, [binaryPath])
 
   // 打开设置页时自动检测一次服务状态
   useEffect(() => {
@@ -634,10 +706,7 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
       {mode === 'chat' && (
         <>
           <div className="grid gap-4 xl:grid-cols-2">
-            <SettingsCard
-              title="Paths & Formatting"
-              description="How file paths are displayed in messages and tools"
-            >
+            <SettingsCard title="Paths & Formatting" description="How file paths are displayed in messages and tools">
               <SegmentedControl
                 value={pathMode}
                 options={[
@@ -645,20 +714,24 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
                   { value: 'unix', label: 'Unix /', icon: <PathUnixIcon size={14} /> },
                   { value: 'windows', label: 'Win \\', icon: <PathWindowsIcon size={14} /> },
                 ]}
-                onChange={(v) => setPathMode(v as PathMode)}
+                onChange={v => setPathMode(v as PathMode)}
               />
               {isAutoMode && (
                 <div className="text-[11px] text-text-400 mt-2 px-1">
                   Using <span className="font-mono text-text-300">{effectiveStyle === 'windows' ? '\\' : '/'}</span>
-                  {detectedStyle && <>, detected <span className="font-mono text-text-300">{detectedStyle === 'windows' ? 'Windows' : 'Unix'}</span></>}
+                  {detectedStyle && (
+                    <>
+                      , detected{' '}
+                      <span className="font-mono text-text-300">
+                        {detectedStyle === 'windows' ? 'Windows' : 'Unix'}
+                      </span>
+                    </>
+                  )}
                 </div>
               )}
             </SettingsCard>
 
-            <SettingsCard
-              title="Agent Behavior"
-              description="Execution defaults for tool actions"
-            >
+            <SettingsCard title="Agent Behavior" description="Execution defaults for tool actions">
               <SettingRow
                 label="Auto-Approve"
                 description="Use local rules for always, send once to server"
@@ -688,17 +761,21 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
 
                 <div className="rounded-lg border border-border-200/45 bg-bg-100/35 px-2.5 py-2.5">
                   <div className="flex items-start gap-3">
-                    <span className="text-text-400 mt-0.5 shrink-0"><ThinkingIcon size={14} /></span>
+                    <span className="text-text-400 mt-0.5 shrink-0">
+                      <ThinkingIcon size={14} />
+                    </span>
                     <div className="min-w-0 flex-1">
                       <div className="text-[13px] font-medium text-text-100">Thinking Display</div>
-                      <div className="text-[11px] text-text-400 mt-0.5 mb-2">Choose capsule or low-noise italic style</div>
+                      <div className="text-[11px] text-text-400 mt-0.5 mb-2">
+                        Choose capsule or low-noise italic style
+                      </div>
                       <SegmentedControl
                         value={reasoningDisplayMode}
                         options={[
                           { value: 'capsule', label: 'Capsule' },
                           { value: 'italic', label: 'Italic' },
                         ]}
-                        onChange={(v) => handleReasoningDisplayModeChange(v as ReasoningDisplayMode)}
+                        onChange={v => handleReasoningDisplayModeChange(v as ReasoningDisplayMode)}
                       />
                     </div>
                   </div>
@@ -706,15 +783,19 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
               </div>
 
               <div className="pt-3 border-t border-border-100/55">
-                <div className="text-[11px] font-medium text-text-400 uppercase tracking-wider mb-2">Step Finish Info</div>
+                <div className="text-[11px] font-medium text-text-400 uppercase tracking-wider mb-2">
+                  Step Finish Info
+                </div>
                 <div className="grid gap-2 md:grid-cols-2">
-                  {([
-                    { key: 'tokens', label: 'Tokens', desc: 'Show token usage' },
-                    { key: 'cache', label: 'Cache', desc: 'Show cache hit info' },
-                    { key: 'cost', label: 'Cost', desc: 'Show API cost' },
-                    { key: 'duration', label: 'Duration', desc: 'Show message response time' },
-                    { key: 'turnDuration', label: 'Total Duration', desc: 'Show full turn elapsed time' },
-                  ] as const).map(({ key, label, desc }) => (
+                  {(
+                    [
+                      { key: 'tokens', label: 'Tokens', desc: 'Show token usage' },
+                      { key: 'cache', label: 'Cache', desc: 'Show cache hit info' },
+                      { key: 'cost', label: 'Cost', desc: 'Show API cost' },
+                      { key: 'duration', label: 'Duration', desc: 'Show message response time' },
+                      { key: 'turnDuration', label: 'Total Duration', desc: 'Show full turn elapsed time' },
+                    ] as const
+                  ).map(({ key, label, desc }) => (
                     <SettingRow
                       key={key}
                       label={label}
@@ -746,21 +827,22 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
 
       {mode === 'notifications' && (
         <div className="grid gap-4 xl:grid-cols-2">
-          <SettingsCard
-            title="System Notifications"
-            description="Browser-level notifications when responses complete"
-          >
+          <SettingsCard title="System Notifications" description="Browser-level notifications when responses complete">
             {notificationsSupported ? (
               <div className="space-y-1.5">
                 <SettingRow
                   label="Notifications"
-                  description={notificationPermission === 'denied' ? 'Blocked by browser' : 'Notify when AI completes a response'}
+                  description={
+                    notificationPermission === 'denied' ? 'Blocked by browser' : 'Notify when AI completes a response'
+                  }
                   icon={<BellIcon size={14} />}
                   onClick={() => notificationPermission !== 'denied' && setNotificationsEnabled(!notificationsEnabled)}
                 >
                   <Toggle
                     enabled={notificationsEnabled && notificationPermission !== 'denied'}
-                    onChange={() => notificationPermission !== 'denied' && setNotificationsEnabled(!notificationsEnabled)}
+                    onChange={() =>
+                      notificationPermission !== 'denied' && setNotificationsEnabled(!notificationsEnabled)
+                    }
                   />
                 </SettingRow>
 
@@ -786,10 +868,7 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
             )}
           </SettingsCard>
 
-          <SettingsCard
-            title="In-App Alerts"
-            description="Toast notifications for background session events"
-          >
+          <SettingsCard title="In-App Alerts" description="Toast notifications for background session events">
             <SettingRow
               label="Toast Notifications"
               description="Show in-app toast popups"
@@ -802,8 +881,8 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
         </div>
       )}
 
-      {mode === 'service' && (
-        isTauriDesktop ? (
+      {mode === 'service' &&
+        (isTauriDesktop ? (
           <SettingsCard
             title="Local Service"
             description="Manage embedded opencode serve startup, status, and environment"
@@ -814,13 +893,16 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
                 <input
                   type="text"
                   value={localBinaryPath}
-                  onChange={(e) => handleBinaryPathChange(e.target.value)}
+                  onChange={e => handleBinaryPathChange(e.target.value)}
                   placeholder="opencode (default, uses PATH)"
                   className="w-full h-8 px-3 text-[13px] font-mono bg-bg-200/50 border border-border-200 rounded-md
                     focus:outline-none focus:border-accent-main-100/50 text-text-100 placeholder:text-text-400"
                 />
                 <div className="text-[11px] text-text-400 mt-1">
-                  Leave empty to use <code className="text-[10px] px-1 py-0.5 bg-bg-200 rounded font-mono">opencode</code> from PATH. Or enter full path, e.g. <code className="text-[10px] px-1 py-0.5 bg-bg-200 rounded font-mono">/usr/local/bin/opencode</code>
+                  Leave empty to use{' '}
+                  <code className="text-[10px] px-1 py-0.5 bg-bg-200 rounded font-mono">opencode</code> from PATH. Or
+                  enter full path, e.g.{' '}
+                  <code className="text-[10px] px-1 py-0.5 bg-bg-200 rounded font-mono">/usr/local/bin/opencode</code>
                 </div>
               </div>
 
@@ -838,17 +920,22 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
                 <SettingRow
                   label="Service Status"
                   description={
-                    serviceStarting ? 'Starting opencode serve...' :
-                    serviceRunning
-                      ? startedByUs ? 'Running (started by app)' : 'Running (external)'
-                      : 'Not running'
+                    serviceStarting
+                      ? 'Starting opencode serve...'
+                      : serviceRunning
+                        ? startedByUs
+                          ? 'Running (started by app)'
+                          : 'Running (external)'
+                        : 'Not running'
                   }
                   icon={
-                    serviceStarting
-                      ? <SpinnerIcon size={14} className="animate-spin text-text-400" />
-                      : serviceRunning
-                        ? <WifiIcon size={14} className="text-success-100" />
-                        : <WifiOffIcon size={14} className="text-text-400" />
+                    serviceStarting ? (
+                      <SpinnerIcon size={14} className="animate-spin text-text-400" />
+                    ) : serviceRunning ? (
+                      <WifiIcon size={14} className="text-success-100" />
+                    ) : (
+                      <WifiOffIcon size={14} className="text-text-400" />
+                    )
                   }
                   className="bg-bg-100/35 border-border-200/45"
                 >
@@ -891,7 +978,7 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
                         <input
                           type="text"
                           value={env.key}
-                          onChange={(e) => {
+                          onChange={e => {
                             const updated = [...envVars]
                             updated[idx] = { ...updated[idx], key: e.target.value }
                             serviceStore.setEnvVars(updated)
@@ -904,7 +991,7 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
                         <input
                           type="text"
                           value={env.value}
-                          onChange={(e) => {
+                          onChange={e => {
                             const updated = [...envVars]
                             updated[idx] = { ...updated[idx], value: e.target.value }
                             serviceStore.setEnvVars(updated)
@@ -938,16 +1025,12 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
             </div>
           </SettingsCard>
         ) : (
-          <SettingsCard
-            title="Local Service"
-            description="This section is available on desktop app only"
-          >
+          <SettingsCard title="Local Service" description="This section is available on desktop app only">
             <div className="text-[12px] text-text-400 leading-relaxed">
               OpenCode web mode connects to external servers and does not manage a local background service
             </div>
           </SettingsCard>
-        )
-      )}
+        ))}
     </div>
   )
 }
@@ -956,7 +1039,14 @@ function GeneralSettings({ mode }: { mode: 'chat' | 'notifications' | 'service' 
 // Tab: Servers
 // ============================================
 
-function ServerItem({ server, health, isActive, onSelect, onDelete, onCheckHealth }: {
+function ServerItem({
+  server,
+  health,
+  isActive,
+  onSelect,
+  onDelete,
+  onCheckHealth,
+}: {
   server: ServerConfig
   health: ServerHealth | null
   isActive: boolean
@@ -970,28 +1060,39 @@ function ServerItem({ server, health, isActive, onSelect, onDelete, onCheckHealt
     if (health.status === 'unauthorized') return <KeyIcon size={12} className="text-warning-100" />
     return <WifiOffIcon size={12} className="text-danger-100" />
   }
-  
+
   const statusTitle = () => {
     if (!health) return 'Check health'
     switch (health.status) {
-      case 'checking': return 'Checking...'
-      case 'online': return `Online (${health.latency}ms)${health.version ? ` v${health.version}` : ''}`
-      case 'unauthorized': return 'Invalid credentials'
-      case 'offline': return health.error || 'Offline'
-      case 'error': return health.error || 'Error'
-      default: return 'Unknown'
+      case 'checking':
+        return 'Checking...'
+      case 'online':
+        return `Online (${health.latency}ms)${health.version ? ` v${health.version}` : ''}`
+      case 'unauthorized':
+        return 'Invalid credentials'
+      case 'offline':
+        return health.error || 'Offline'
+      case 'error':
+        return health.error || 'Error'
+      default:
+        return 'Unknown'
     }
   }
-  
+
   return (
-    <div 
+    <div
       className={`flex items-center gap-3 p-2.5 rounded-lg border transition-colors cursor-pointer group
-        ${isActive 
-          ? 'border-accent-main-100/40 bg-accent-main-100/5' 
-          : 'border-border-200/40 hover:border-border-300'}`}
+        ${
+          isActive ? 'border-accent-main-100/40 bg-accent-main-100/5' : 'border-border-200/40 hover:border-border-300'
+        }`}
       onClick={onSelect}
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect() }}}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect()
+        }
+      }}
     >
       <GlobeIcon size={14} className={isActive ? 'text-accent-main-100' : 'text-text-400'} />
       <div className="flex-1 min-w-0">
@@ -1008,18 +1109,24 @@ function ServerItem({ server, health, isActive, onSelect, onDelete, onCheckHealt
           {server.auth?.password && <KeyIcon size={10} className="shrink-0 text-text-400" />}
         </div>
       </div>
-      <button 
+      <button
         className="p-2 rounded hover:bg-bg-200 transition-colors"
-        onClick={(e) => { e.stopPropagation(); onCheckHealth() }}
+        onClick={e => {
+          e.stopPropagation()
+          onCheckHealth()
+        }}
         title={statusTitle()}
       >
         {statusIcon()}
       </button>
       {!server.isDefault && (
-        <button 
+        <button
           className="p-2 rounded text-text-400 hover:text-danger-100 hover:bg-danger-100/10 
                      md:opacity-0 md:group-hover:opacity-100 transition-all"
-          onClick={(e) => { e.stopPropagation(); onDelete() }}
+          onClick={e => {
+            e.stopPropagation()
+            onDelete()
+          }}
           title="Remove"
         >
           <TrashIcon size={12} />
@@ -1029,9 +1136,12 @@ function ServerItem({ server, health, isActive, onSelect, onDelete, onCheckHealt
   )
 }
 
-function AddServerForm({ onAdd, onCancel }: { 
+function AddServerForm({
+  onAdd,
+  onCancel,
+}: {
   onAdd: (name: string, url: string, username?: string, password?: string) => void
-  onCancel: () => void 
+  onCancel: () => void
 }) {
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
@@ -1039,18 +1149,29 @@ function AddServerForm({ onAdd, onCancel }: {
   const [password, setPassword] = useState('')
   const [showAuth, setShowAuth] = useState(false)
   const [error, setError] = useState('')
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) { setError('Name required'); return }
-    if (!url.trim()) { setError('URL required'); return }
-    try { new URL(url) } catch { setError('Invalid URL'); return }
-    
+    if (!name.trim()) {
+      setError('Name required')
+      return
+    }
+    if (!url.trim()) {
+      setError('URL required')
+      return
+    }
+    try {
+      new URL(url)
+    } catch {
+      setError('Invalid URL')
+      return
+    }
+
     onAdd(
-      name.trim(), 
-      url.trim(), 
-      password.trim() ? (username.trim() || 'opencode') : undefined,
-      password.trim() || undefined
+      name.trim(),
+      url.trim(),
+      password.trim() ? username.trim() || 'opencode' : undefined,
+      password.trim() || undefined,
     )
   }
 
@@ -1059,62 +1180,112 @@ function AddServerForm({ onAdd, onCancel }: {
     try {
       const serverUrl = new URL(url)
       return serverUrl.origin !== window.location.origin
-    } catch { return false }
+    } catch {
+      return false
+    }
   })()
 
-  const inputCls = "w-full h-8 px-3 text-[13px] bg-bg-000 border border-border-200 rounded-md focus:outline-none focus:border-accent-main-100/50 text-text-100 placeholder:text-text-400"
-  
+  const inputCls =
+    'w-full h-8 px-3 text-[13px] bg-bg-000 border border-border-200 rounded-md focus:outline-none focus:border-accent-main-100/50 text-text-100 placeholder:text-text-400'
+
   return (
     <form onSubmit={handleSubmit} className="p-3 rounded-lg border border-border-200 bg-bg-050 space-y-2.5">
       <div>
         <label className="block text-[11px] font-medium text-text-300 mb-1">Name</label>
-        <input type="text" value={name} onChange={e => { setName(e.target.value); setError('') }}
-          placeholder="My Server" className={inputCls} autoFocus />
+        <input
+          type="text"
+          value={name}
+          onChange={e => {
+            setName(e.target.value)
+            setError('')
+          }}
+          placeholder="My Server"
+          className={inputCls}
+          autoFocus
+        />
       </div>
       <div>
         <label className="block text-[11px] font-medium text-text-300 mb-1">URL</label>
-        <input type="text" value={url} onChange={e => { setUrl(e.target.value); setError('') }}
-          placeholder="http://192.168.1.100:4096" className={`${inputCls} font-mono`} />
+        <input
+          type="text"
+          value={url}
+          onChange={e => {
+            setUrl(e.target.value)
+            setError('')
+          }}
+          placeholder="http://192.168.1.100:4096"
+          className={`${inputCls} font-mono`}
+        />
       </div>
-      
-      <button type="button" onClick={() => setShowAuth(!showAuth)}
-        className="flex items-center gap-1.5 text-[11px] text-accent-main-100 hover:text-accent-main-200 transition-colors">
+
+      <button
+        type="button"
+        onClick={() => setShowAuth(!showAuth)}
+        className="flex items-center gap-1.5 text-[11px] text-accent-main-100 hover:text-accent-main-200 transition-colors"
+      >
         <KeyIcon size={10} />
         {showAuth ? 'Hide authentication' : 'Add authentication'}
       </button>
-      
+
       {showAuth && (
         <>
           <div>
             <label className="block text-[11px] font-medium text-text-300 mb-1">Username</label>
-            <input type="text" value={username} onChange={e => { setUsername(e.target.value); setError('') }}
-              placeholder="opencode (default)" className={inputCls} />
+            <input
+              type="text"
+              value={username}
+              onChange={e => {
+                setUsername(e.target.value)
+                setError('')
+              }}
+              placeholder="opencode (default)"
+              className={inputCls}
+            />
           </div>
           <div>
             <label className="block text-[11px] font-medium text-text-300 mb-1">Password</label>
-            <input type="password" value={password} onChange={e => { setPassword(e.target.value); setError('') }}
-              placeholder="OPENCODE_SERVER_PASSWORD" className={inputCls} />
+            <input
+              type="password"
+              value={password}
+              onChange={e => {
+                setPassword(e.target.value)
+                setError('')
+              }}
+              placeholder="OPENCODE_SERVER_PASSWORD"
+              className={inputCls}
+            />
           </div>
-          
+
           {isCrossOrigin && password.trim() && (
             <div className="text-[11px] text-warning-100 bg-warning-bg border border-warning-100/20 rounded-md px-2.5 py-2 leading-relaxed">
-              Cross-origin + password may not work due to a backend CORS limitation 
-              (<a href="https://github.com/anomalyco/opencode/issues/10047" target="_blank" rel="noopener" 
-                className="underline hover:no-underline">#10047</a>). 
-              Consider deploying the UI on the same origin or starting the server without a password.
+              Cross-origin + password may not work due to a backend CORS limitation (
+              <a
+                href="https://github.com/anomalyco/opencode/issues/10047"
+                target="_blank"
+                rel="noopener"
+                className="underline hover:no-underline"
+              >
+                #10047
+              </a>
+              ). Consider deploying the UI on the same origin or starting the server without a password.
             </div>
           )}
-          
+
           <div className="text-[11px] text-text-400 leading-relaxed">
-            Credentials are stored in localStorage. For same-origin setups, the browser can handle auth natively without entering credentials here.
+            Credentials are stored in localStorage. For same-origin setups, the browser can handle auth natively without
+            entering credentials here.
           </div>
         </>
       )}
-      
+
       {error && <p className="text-[11px] text-danger-100">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" size="sm">Add</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" size="sm">
+          Add
+        </Button>
       </div>
     </form>
   )
@@ -1122,7 +1293,8 @@ function AddServerForm({ onAdd, onCancel }: {
 
 function ServersSettings() {
   const [addingServer, setAddingServer] = useState(false)
-  const { servers, activeServer, addServer, removeServer, setActiveServer, checkHealth, checkAllHealth, getHealth } = useServerStore()
+  const { servers, activeServer, addServer, removeServer, setActiveServer, checkHealth, checkAllHealth, getHealth } =
+    useServerStore()
   const { navigateHome, sessionId: routeSessionId } = useRouter()
   const orderedServers = useMemo(() => {
     if (!activeServer) return servers
@@ -1130,21 +1302,26 @@ function ServersSettings() {
     if (!active) return servers
     return [active, ...servers.filter(s => s.id !== active.id)]
   }, [servers, activeServer?.id])
-  
-  useEffect(() => { checkAllHealth() }, [checkAllHealth])
+
+  useEffect(() => {
+    checkAllHealth()
+  }, [checkAllHealth])
 
   // 切换服务器：设置 active + 清理当前 session + 导航回首页
-  const handleSelectServer = useCallback((id: string) => {
-    if (activeServer?.id === id) return // 没变，不做事
-    
-    // 清理当前 session 的 store 状态
-    if (routeSessionId) {
-      messageStore.clearSession(routeSessionId)
-    }
-    
-    setActiveServer(id) // 内部触发 serverChangeListeners → reconnectSSE()
-    navigateHome()
-  }, [activeServer?.id, routeSessionId, setActiveServer, navigateHome])
+  const handleSelectServer = useCallback(
+    (id: string) => {
+      if (activeServer?.id === id) return // 没变，不做事
+
+      // 清理当前 session 的 store 状态
+      if (routeSessionId) {
+        messageStore.clearSession(routeSessionId)
+      }
+
+      setActiveServer(id) // 内部触发 serverChangeListeners → reconnectSSE()
+      navigateHome()
+    },
+    [activeServer?.id, routeSessionId, setActiveServer, navigateHome],
+  )
 
   return (
     <div className="space-y-4">
@@ -1196,9 +1373,7 @@ function ServersSettings() {
           )}
 
           {servers.length === 0 && !addingServer && (
-            <div className="text-[13px] text-text-400 text-center py-8">
-              No servers configured
-            </div>
+            <div className="text-[13px] text-text-400 text-center py-8">No servers configured</div>
           )}
         </div>
       </SettingsCard>
@@ -1258,7 +1433,18 @@ const TAB_GROUPS: { label: string; tabs: SettingsTab[] }[] = [
 // Tab Content Router
 // ============================================
 
-function TabContent({ tab, themeMode, onThemeChange, isWideMode, onToggleWideMode, presetId, onPresetChange, availablePresets, customCSS, onCustomCSSChange }: {
+function TabContent({
+  tab,
+  themeMode,
+  onThemeChange,
+  isWideMode,
+  onToggleWideMode,
+  presetId,
+  onPresetChange,
+  availablePresets,
+  customCSS,
+  onCustomCSSChange,
+}: {
   tab: SettingsTab
   themeMode: ThemeMode
   onThemeChange: (mode: ThemeMode, event?: React.MouseEvent) => void
@@ -1305,8 +1491,18 @@ function TabContent({ tab, themeMode, onThemeChange, isWideMode, onToggleWideMod
 // ============================================
 
 export function SettingsDialog({
-  isOpen, onClose, themeMode, onThemeChange, isWideMode, onToggleWideMode, initialTab = 'servers',
-  presetId, onPresetChange, availablePresets, customCSS, onCustomCSSChange,
+  isOpen,
+  onClose,
+  themeMode,
+  onThemeChange,
+  isWideMode,
+  onToggleWideMode,
+  initialTab = 'servers',
+  presetId,
+  onPresetChange,
+  availablePresets,
+  customCSS,
+  onCustomCSSChange,
 }: SettingsDialogProps) {
   const isMobile = useIsMobile()
   const isTauriDesktop = isTauri() && !isMobile
@@ -1317,14 +1513,10 @@ export function SettingsDialog({
   const [tab, setTab] = useState<SettingsTab>(normalizeTab(initialTab))
 
   const visibleTabs = isTauriDesktop ? TABS : TABS.filter(t => t.id !== 'service')
-  const groupedTabs = TAB_GROUPS
-    .map(group => ({
-      ...group,
-      tabs: group.tabs
-        .map(id => visibleTabs.find(t => t.id === id))
-        .filter((t): t is (typeof TABS)[number] => !!t),
-    }))
-    .filter(group => group.tabs.length > 0)
+  const groupedTabs = TAB_GROUPS.map(group => ({
+    ...group,
+    tabs: group.tabs.map(id => visibleTabs.find(t => t.id === id)).filter((t): t is (typeof TABS)[number] => !!t),
+  })).filter(group => group.tabs.length > 0)
 
   useEffect(() => {
     if (!isOpen) return
@@ -1336,20 +1528,30 @@ export function SettingsDialog({
     setTab(visibleTabs[0]?.id || 'appearance')
   }, [tab, visibleTabs])
 
-  const handleTabKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault()
-      const dir = e.key === 'ArrowDown' ? 1 : -1
-      const ids = visibleTabs.map(t => t.id)
-      if (ids.length === 0) return
-      const next = (ids.indexOf(tab) + dir + ids.length) % ids.length
-      setTab(ids[next])
-    }
-  }, [tab, visibleTabs])
+  const handleTabKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        const dir = e.key === 'ArrowDown' ? 1 : -1
+        const ids = visibleTabs.map(t => t.id)
+        if (ids.length === 0) return
+        const next = (ids.indexOf(tab) + dir + ids.length) % ids.length
+        setTab(ids[next])
+      }
+    },
+    [tab, visibleTabs],
+  )
 
   const contentProps = {
-    themeMode, onThemeChange, isWideMode, onToggleWideMode,
-    presetId, onPresetChange, availablePresets, customCSS, onCustomCSSChange,
+    themeMode,
+    onThemeChange,
+    isWideMode,
+    onToggleWideMode,
+    presetId,
+    onPresetChange,
+    availablePresets,
+    customCSS,
+    onCustomCSSChange,
   }
 
   const activeTabMeta = visibleTabs.find(t => t.id === tab) || visibleTabs[0] || TABS[0]
@@ -1380,9 +1582,7 @@ export function SettingsDialog({
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors whitespace-nowrap shrink-0
-                  ${t.id === tab
-                    ? 'bg-bg-100 text-text-100'
-                    : 'text-text-400 active:bg-bg-100/50'}`}
+                  ${t.id === tab ? 'bg-bg-100 text-text-100' : 'text-text-400 active:bg-bg-100/50'}`}
               >
                 {t.icon}
                 {t.label}
@@ -1404,10 +1604,15 @@ export function SettingsDialog({
     <Dialog isOpen={isOpen} onClose={onClose} title="" width="min(97vw, 1040px)" showCloseButton={false}>
       <div className="flex h-[min(86vh,760px)] -m-5">
         {/* Left Nav */}
-        <nav className="w-[236px] shrink-0 border-r border-border-100/60 bg-bg-050/45 py-4 px-2.5 flex flex-col" onKeyDown={handleTabKeyDown}>
+        <nav
+          className="w-[236px] shrink-0 border-r border-border-100/60 bg-bg-050/45 py-4 px-2.5 flex flex-col"
+          onKeyDown={handleTabKeyDown}
+        >
           <div className="px-3 mb-4">
             <div className="text-sm font-semibold text-text-100">Settings</div>
-            <div className="text-[11px] text-text-400 mt-0.5 leading-relaxed">Customize UI, behavior, and server setup</div>
+            <div className="text-[11px] text-text-400 mt-0.5 leading-relaxed">
+              Customize UI, behavior, and server setup
+            </div>
           </div>
           <div className="space-y-3">
             {groupedTabs.map(group => (
@@ -1422,9 +1627,11 @@ export function SettingsDialog({
                       onClick={() => setTab(t.id)}
                       tabIndex={t.id === tab ? 0 : -1}
                       className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors
-                        ${t.id === tab
-                          ? 'bg-bg-100 text-text-100 ring-1 ring-border-200/60'
-                          : 'text-text-400 hover:text-text-200 hover:bg-bg-100/50'}`}
+                        ${
+                          t.id === tab
+                            ? 'bg-bg-100 text-text-100 ring-1 ring-border-200/60'
+                            : 'text-text-400 hover:text-text-200 hover:bg-bg-100/50'
+                        }`}
                     >
                       {t.icon}
                       {t.label}
@@ -1434,7 +1641,7 @@ export function SettingsDialog({
               </div>
             ))}
           </div>
-          
+
           <div className="mt-auto pt-3 px-3 text-[10px] text-text-400">v0.1.0</div>
         </nav>
 

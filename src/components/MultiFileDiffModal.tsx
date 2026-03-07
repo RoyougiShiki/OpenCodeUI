@@ -1,6 +1,6 @@
 /**
  * MultiFileDiffModal - 全屏多文件 Diff 查看器
- * 
+ *
  * VSCode 风格：全屏铺满 + 毛玻璃背景 + 左侧文件列表 + 右侧 Diff
  */
 
@@ -95,8 +95,12 @@ export const MultiFileDiffModal = memo(function MultiFileDiffModal({
   const language = selectedDiff ? detectLanguage(selectedDiff.file) || 'text' : 'text'
 
   const stats = useMemo(() => {
-    let additions = 0, deletions = 0
-    diffs.forEach(d => { additions += d.additions; deletions += d.deletions })
+    let additions = 0,
+      deletions = 0
+    diffs.forEach(d => {
+      additions += d.additions
+      deletions += d.deletions
+    })
     return { additions, deletions, files: diffs.length }
   }, [diffs])
 
@@ -120,116 +124,129 @@ export const MultiFileDiffModal = memo(function MultiFileDiffModal({
           transform: isVisible ? 'scale(1)' : 'scale(0.98)',
         }}
       >
-      {/* Toolbar */}
-      <div className="flex items-center justify-between h-11 px-4 border-b border-border-100/40 shrink-0">
-        <div className="flex items-center gap-4 min-w-0">
-          <span className="text-text-100 font-medium text-[13px]">Session Changes</span>
-          <div className="flex items-center gap-3 text-[11px] font-mono text-text-400 tabular-nums">
-            <span>{stats.files} file{stats.files !== 1 ? 's' : ''}</span>
-            {(stats.additions > 0 || stats.deletions > 0) && (
-              <div className="flex items-center gap-1.5">
-                {stats.additions > 0 && <span className="text-success-100">+{stats.additions}</span>}
-                {stats.deletions > 0 && <span className="text-danger-100">-{stats.deletions}</span>}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <ViewModeSwitch viewMode={viewMode} onChange={setViewMode} />
-          <div className="w-px h-4 bg-border-200/30" />
-          <button
-            onClick={onClose}
-            className="p-1 text-text-400 hover:text-text-100 hover:bg-bg-200/60 rounded-md transition-colors"
-            title="Close (Esc)"
-          >
-            <CloseIcon size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Sidebar */}
-        <div className="w-56 border-r border-border-100/30 flex flex-col shrink-0">
-          <div className="flex-1 overflow-y-auto custom-scrollbar py-1">
-            {loading ? (
-              <div className="p-4 text-center text-text-400 text-xs">Loading...</div>
-            ) : error ? (
-              <div className="p-4 text-center text-danger-100 text-xs">{error}</div>
-            ) : diffs.length === 0 ? (
-              <div className="p-4 text-center text-text-400 text-xs">No changes found</div>
-            ) : (
-              diffs.map((d, idx) => {
-                const name = d.file.split(/[/\\]/).pop() || d.file
-                const isSelected = selectedFileIndex === idx
-
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedFileIndex(idx)}
-                    className={`w-full min-w-0 text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
-                      isSelected
-                        ? 'bg-accent-main-100/10 text-text-100'
-                        : 'text-text-300 hover:bg-bg-200/40 hover:text-text-200'
-                    }`}
-                  >
-                    <img
-                      src={getMaterialIconUrl(d.file, 'file')}
-                      alt="" width={14} height={14}
-                      className="shrink-0"
-                      loading="lazy" decoding="async"
-                      onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
-                    />
-                    <span className="font-mono truncate flex-1 min-w-0">{name}</span>
-                    <div className="flex items-center gap-1 text-[10px] font-mono tabular-nums shrink-0">
-                      {d.additions > 0 && <span className="text-success-100">+{d.additions}</span>}
-                      {d.deletions > 0 && <span className="text-danger-100">-{d.deletions}</span>}
-                    </div>
-                  </button>
-                )
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Diff View */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {selectedDiff ? (
-            <>
-              {/* File path bar */}
-              <div className="h-8 px-4 border-b border-border-100/20 flex items-center gap-2 shrink-0">
-                <img
-                  src={getMaterialIconUrl(selectedDiff.file, 'file')}
-                  alt="" width={14} height={14}
-                  className="shrink-0"
-                  onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
-                />
-                <span className="font-mono text-[11px] text-text-300 truncate flex-1 min-w-0">{selectedDiff.file}</span>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono tabular-nums shrink-0">
-                  {selectedDiff.additions > 0 && <span className="text-success-100">+{selectedDiff.additions}</span>}
-                  {selectedDiff.deletions > 0 && <span className="text-danger-100">-{selectedDiff.deletions}</span>}
+        {/* Toolbar */}
+        <div className="flex items-center justify-between h-11 px-4 border-b border-border-100/40 shrink-0">
+          <div className="flex items-center gap-4 min-w-0">
+            <span className="text-text-100 font-medium text-[13px]">Session Changes</span>
+            <div className="flex items-center gap-3 text-[11px] font-mono text-text-400 tabular-nums">
+              <span>
+                {stats.files} file{stats.files !== 1 ? 's' : ''}
+              </span>
+              {(stats.additions > 0 || stats.deletions > 0) && (
+                <div className="flex items-center gap-1.5">
+                  {stats.additions > 0 && <span className="text-success-100">+{stats.additions}</span>}
+                  {stats.deletions > 0 && <span className="text-danger-100">-{stats.deletions}</span>}
                 </div>
-              </div>
-
-              <div className="flex-1 min-h-0">
-                <DiffViewer
-                  before={selectedDiff.before}
-                  after={selectedDiff.after}
-                  language={language}
-                  viewMode={viewMode}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-text-400 text-xs">
-              {loading ? 'Loading changes...' : 'Select a file to view changes'}
+              )}
             </div>
-          )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <ViewModeSwitch viewMode={viewMode} onChange={setViewMode} />
+            <div className="w-px h-4 bg-border-200/30" />
+            <button
+              onClick={onClose}
+              className="p-1 text-text-400 hover:text-text-100 hover:bg-bg-200/60 rounded-md transition-colors"
+              title="Close (Esc)"
+            >
+              <CloseIcon size={16} />
+            </button>
+          </div>
         </div>
-      </div>
+
+        {/* Body */}
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          {/* Sidebar */}
+          <div className="w-56 border-r border-border-100/30 flex flex-col shrink-0">
+            <div className="flex-1 overflow-y-auto custom-scrollbar py-1">
+              {loading ? (
+                <div className="p-4 text-center text-text-400 text-xs">Loading...</div>
+              ) : error ? (
+                <div className="p-4 text-center text-danger-100 text-xs">{error}</div>
+              ) : diffs.length === 0 ? (
+                <div className="p-4 text-center text-text-400 text-xs">No changes found</div>
+              ) : (
+                diffs.map((d, idx) => {
+                  const name = d.file.split(/[/\\]/).pop() || d.file
+                  const isSelected = selectedFileIndex === idx
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedFileIndex(idx)}
+                      className={`w-full min-w-0 text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
+                        isSelected
+                          ? 'bg-accent-main-100/10 text-text-100'
+                          : 'text-text-300 hover:bg-bg-200/40 hover:text-text-200'
+                      }`}
+                    >
+                      <img
+                        src={getMaterialIconUrl(d.file, 'file')}
+                        alt=""
+                        width={14}
+                        height={14}
+                        className="shrink-0"
+                        loading="lazy"
+                        decoding="async"
+                        onError={e => {
+                          e.currentTarget.style.visibility = 'hidden'
+                        }}
+                      />
+                      <span className="font-mono truncate flex-1 min-w-0">{name}</span>
+                      <div className="flex items-center gap-1 text-[10px] font-mono tabular-nums shrink-0">
+                        {d.additions > 0 && <span className="text-success-100">+{d.additions}</span>}
+                        {d.deletions > 0 && <span className="text-danger-100">-{d.deletions}</span>}
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Diff View */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {selectedDiff ? (
+              <>
+                {/* File path bar */}
+                <div className="h-8 px-4 border-b border-border-100/20 flex items-center gap-2 shrink-0">
+                  <img
+                    src={getMaterialIconUrl(selectedDiff.file, 'file')}
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="shrink-0"
+                    onError={e => {
+                      e.currentTarget.style.visibility = 'hidden'
+                    }}
+                  />
+                  <span className="font-mono text-[11px] text-text-300 truncate flex-1 min-w-0">
+                    {selectedDiff.file}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono tabular-nums shrink-0">
+                    {selectedDiff.additions > 0 && <span className="text-success-100">+{selectedDiff.additions}</span>}
+                    {selectedDiff.deletions > 0 && <span className="text-danger-100">-{selectedDiff.deletions}</span>}
+                  </div>
+                </div>
+
+                <div className="flex-1 min-h-0">
+                  <DiffViewer
+                    before={selectedDiff.before}
+                    after={selectedDiff.after}
+                    language={language}
+                    viewMode={viewMode}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-text-400 text-xs">
+                {loading ? 'Loading changes...' : 'Select a file to view changes'}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>,
-    document.body
+    document.body,
   )
 })

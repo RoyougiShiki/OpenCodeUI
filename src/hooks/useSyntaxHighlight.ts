@@ -15,11 +15,11 @@ interface CacheEntry<T> {
 class LRUCache<T> {
   private cache = new Map<string, CacheEntry<T>>()
   private maxSize: number
-  
+
   constructor(maxSize: number = 100) {
     this.maxSize = maxSize
   }
-  
+
   get(key: string): T | undefined {
     const entry = this.cache.get(key)
     if (entry) {
@@ -29,7 +29,7 @@ class LRUCache<T> {
     }
     return undefined
   }
-  
+
   set(key: string, value: T): void {
     // 如果已存在，更新
     if (this.cache.has(key)) {
@@ -37,7 +37,7 @@ class LRUCache<T> {
       this.cache.get(key)!.timestamp = Date.now()
       return
     }
-    
+
     // 如果满了，删除最老的
     if (this.cache.size >= this.maxSize) {
       let oldestKey: string | null = null
@@ -50,14 +50,14 @@ class LRUCache<T> {
       }
       if (oldestKey) this.cache.delete(oldestKey)
     }
-    
+
     this.cache.set(key, { value, timestamp: Date.now() })
   }
-  
+
   clear(): void {
     this.cache.clear()
   }
-  
+
   get size(): number {
     return this.cache.size
   }
@@ -85,7 +85,7 @@ function simpleHash(str: string): number {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
+    hash = (hash << 5) - hash + char
     hash = hash & hash // Convert to 32bit integer
   }
   return hash
@@ -104,7 +104,7 @@ async function highlightWithCache(
   code: string,
   lang: string,
   theme: BundledTheme,
-  mode: 'html' | 'tokens'
+  mode: 'html' | 'tokens',
 ): Promise<string | any[][] | null> {
   // 主题切换期间短暂跳过高亮，避免大批量重算
   if (typeof document !== 'undefined') {
@@ -120,15 +120,15 @@ async function highlightWithCache(
     }
     return null
   }
-  
+
   const cacheKey = getCacheKey(code, lang, theme)
-  
+
   if (mode === 'html') {
     const cached = htmlCache.get(cacheKey)
     if (cached !== undefined) {
       return cached
     }
-    
+
     const html = await codeToHtml(code, { lang: lang as any, theme })
     htmlCache.set(cacheKey, html)
     return html
@@ -137,7 +137,7 @@ async function highlightWithCache(
     if (cached !== undefined) {
       return cached
     }
-    
+
     const result = await codeToTokens(code, { lang: lang as any, theme })
     tokensCache.set(cacheKey, result.tokens)
     return result.tokens
@@ -148,7 +148,7 @@ async function highlightWithCache(
 export function getHighlightCacheStats() {
   return {
     htmlCacheSize: htmlCache.size,
-    tokensCacheSize: tokensCache.size
+    tokensCacheSize: tokensCache.size,
   }
 }
 
@@ -174,12 +174,12 @@ class ThemeStateManager {
   private subscribers = new Set<(isDark: boolean) => void>()
   private observer: MutationObserver | null = null
   private mediaQuery: MediaQueryList | null = null
-  
+
   constructor() {
     this.isDark = this.detectTheme()
     this.setupListeners()
   }
-  
+
   private detectTheme(): boolean {
     if (typeof window === 'undefined') return true
     const mode = document.documentElement.getAttribute('data-mode')
@@ -187,10 +187,10 @@ class ThemeStateManager {
     if (mode === 'dark') return true
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   }
-  
+
   private setupListeners() {
     if (typeof window === 'undefined') return
-    
+
     // 监听 data-mode 属性变化
     this.observer = new MutationObserver(() => {
       const newIsDark = this.detectTheme()
@@ -199,12 +199,12 @@ class ThemeStateManager {
         this.notify()
       }
     })
-    
+
     this.observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-mode']
+      attributeFilter: ['data-mode'],
     })
-    
+
     // 监听系统主题变化
     this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = () => {
@@ -219,15 +219,15 @@ class ThemeStateManager {
     }
     this.mediaQuery.addEventListener('change', handleChange)
   }
-  
+
   private notify() {
     this.subscribers.forEach(fn => fn(this.isDark))
   }
-  
+
   getIsDark(): boolean {
     return this.isDark
   }
-  
+
   subscribe(fn: (isDark: boolean) => void): () => void {
     this.subscribers.add(fn)
     return () => this.subscribers.delete(fn)
@@ -248,11 +248,11 @@ function getThemeStateManager(): ThemeStateManager {
 function useIsDarkMode(): boolean {
   const manager = getThemeStateManager()
   const [isDark, setIsDark] = useState(() => manager.getIsDark())
-  
+
   useEffect(() => {
     return manager.subscribe(setIsDark)
   }, [])
-  
+
   return isDark
 }
 
@@ -263,20 +263,26 @@ export interface HighlightOptions {
 }
 
 // Overload for HTML mode (default)
-export function useSyntaxHighlight(code: string, options?: HighlightOptions & { mode?: 'html' }): { output: string | null; isLoading: boolean }
+export function useSyntaxHighlight(
+  code: string,
+  options?: HighlightOptions & { mode?: 'html' },
+): { output: string | null; isLoading: boolean }
 // Overload for Tokens mode
-export function useSyntaxHighlight(code: string, options: HighlightOptions & { mode: 'tokens' }): { output: any[][] | null; isLoading: boolean }
+export function useSyntaxHighlight(
+  code: string,
+  options: HighlightOptions & { mode: 'tokens' },
+): { output: any[][] | null; isLoading: boolean }
 
 export function useSyntaxHighlight(code: string, options: HighlightOptions & { mode?: 'html' | 'tokens' } = {}) {
   const { lang = 'text', theme, mode = 'html', enabled = true } = options
   const normalizedLang = normalizeLanguage(lang)
-  
+
   // 自动检测当前主题模式
   const isDark = useIsDarkMode()
-  
+
   // 如果没有指定主题，则根据 isDark 自动选择
   const selectedTheme = theme || getShikiTheme(isDark)
-  
+
   const [output, setOutput] = useState<string | any[][] | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const prevKeyRef = useRef<{ code: string; lang: string; theme: BundledTheme } | null>(null)
@@ -291,23 +297,22 @@ export function useSyntaxHighlight(code: string, options: HighlightOptions & { m
 
     let cancelled = false
     const prevKey = prevKeyRef.current
-    const isThemeOnlyChange = !!prevKey && prevKey.code === code && prevKey.lang === normalizedLang && prevKey.theme !== selectedTheme
+    const isThemeOnlyChange =
+      !!prevKey && prevKey.code === code && prevKey.lang === normalizedLang && prevKey.theme !== selectedTheme
     prevKeyRef.current = { code, lang: normalizedLang, theme: selectedTheme }
 
     const shouldDefer = isThemeOnlyChange
-    
+
     // 先检查缓存 - 同步返回避免闪烁
     const cacheKey = getCacheKey(code, normalizedLang, selectedTheme)
-    const cachedResult = mode === 'html' 
-      ? htmlCache.get(cacheKey) 
-      : tokensCache.get(cacheKey)
-    
+    const cachedResult = mode === 'html' ? htmlCache.get(cacheKey) : tokensCache.get(cacheKey)
+
     if (cachedResult !== undefined) {
       setOutput(cachedResult)
       setIsLoading(false)
       return
     }
-    
+
     // 没有缓存，异步高亮
     if (!isThemeOnlyChange) {
       setOutput(null)
@@ -332,7 +337,9 @@ export function useSyntaxHighlight(code: string, options: HighlightOptions & { m
     const schedule = () => {
       if (shouldDefer) {
         if (typeof (window as any).requestIdleCallback === 'function') {
-          const idleId = (window as any).requestIdleCallback(() => highlight(), { timeout: THEME_SWITCH_DISABLE_MS * 2 })
+          const idleId = (window as any).requestIdleCallback(() => highlight(), {
+            timeout: THEME_SWITCH_DISABLE_MS * 2,
+          })
           return () => (window as any).cancelIdleCallback?.(idleId)
         }
         const timeoutId = window.setTimeout(() => highlight(), THEME_SWITCH_DISABLE_MS)

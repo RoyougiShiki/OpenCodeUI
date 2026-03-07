@@ -27,7 +27,7 @@ export function parseModelKey(key: string): { providerId: string; modelId: strin
   if (idx === -1) return null
   return {
     providerId: key.slice(0, idx),
-    modelId: key.slice(idx + 1)
+    modelId: key.slice(idx + 1),
   }
 }
 
@@ -56,7 +56,7 @@ interface ModelUsageStats {
 }
 
 interface ModelVariantPrefs {
-  [modelKey: string]: string  // modelKey -> variant
+  [modelKey: string]: string // modelKey -> variant
 }
 
 /**
@@ -77,14 +77,14 @@ export function getModelUsageStats(): ModelUsageStats {
 export function recordModelUsage(model: ModelInfo): void {
   const key = getModelKey(model)
   const stats = getModelUsageStats()
-  
+
   if (!stats[key]) {
     stats[key] = { count: 0, lastUsed: 0 }
   }
-  
+
   stats[key].count += 1
   stats[key].lastUsed = Date.now()
-  
+
   try {
     serverStorage.set(STORAGE_KEY, JSON.stringify(stats))
   } catch (e) {
@@ -122,13 +122,13 @@ export function getModelVariantPrefs(): ModelVariantPrefs {
  */
 export function saveModelVariantPref(modelKey: string, variant: string | undefined): void {
   const prefs = getModelVariantPrefs()
-  
+
   if (variant) {
     prefs[modelKey] = variant
   } else {
     delete prefs[modelKey]
   }
-  
+
   try {
     serverStorage.set(VARIANT_STORAGE_KEY, JSON.stringify(prefs))
   } catch (e) {
@@ -158,20 +158,20 @@ export type ModelSortMode = 'frequency' | 'alphabetical' | 'provider'
  */
 export function sortModelsByFrequency(models: ModelInfo[]): ModelInfo[] {
   const stats = getModelUsageStats()
-  
+
   return [...models].sort((a, b) => {
     const keyA = getModelKey(a)
     const keyB = getModelKey(b)
     const statsA = stats[keyA]
     const statsB = stats[keyB]
-    
+
     // 都没使用过，保持原始顺序
     if (!statsA && !statsB) return 0
-    
+
     // 只有一个使用过，使用过的排前面
     if (!statsA) return 1
     if (!statsB) return -1
-    
+
     // 都使用过，按使用次数排序，次数相同按最近使用时间
     if (statsA.count !== statsB.count) {
       return statsB.count - statsA.count
@@ -192,7 +192,7 @@ export function sortModelsAlphabetically(models: ModelInfo[]): ModelInfo[] {
  */
 export function sortModelsByProvider(models: ModelInfo[]): ModelInfo[] {
   const stats = getModelUsageStats()
-  
+
   // 计算每个 provider 的总使用次数
   const providerUsage: Record<string, number> = {}
   for (const model of models) {
@@ -200,25 +200,26 @@ export function sortModelsByProvider(models: ModelInfo[]): ModelInfo[] {
     const count = stats[key]?.count ?? 0
     providerUsage[model.providerId] = (providerUsage[model.providerId] ?? 0) + count
   }
-  
+
   // 按 provider 使用频率分组
-  const groups = models.reduce((acc, model) => {
-    if (!acc[model.providerId]) {
-      acc[model.providerId] = []
-    }
-    acc[model.providerId].push(model)
-    return acc
-  }, {} as Record<string, ModelInfo[]>)
-  
+  const groups = models.reduce(
+    (acc, model) => {
+      if (!acc[model.providerId]) {
+        acc[model.providerId] = []
+      }
+      acc[model.providerId].push(model)
+      return acc
+    },
+    {} as Record<string, ModelInfo[]>,
+  )
+
   // 按 provider 使用频率排序
   const sortedProviders = Object.keys(groups).sort((a, b) => {
     return (providerUsage[b] ?? 0) - (providerUsage[a] ?? 0)
   })
-  
+
   // 扁平化，每个 provider 内部按使用频率排序
-  return sortedProviders.flatMap(providerId => 
-    sortModelsByFrequency(groups[providerId])
-  )
+  return sortedProviders.flatMap(providerId => sortModelsByFrequency(groups[providerId]))
 }
 
 // ============================================
@@ -236,36 +237,39 @@ export interface ModelGroup {
  */
 export function groupModelsByProvider(models: ModelInfo[]): ModelGroup[] {
   const stats = getModelUsageStats()
-  
+
   // 按 providerName 分组 (合并同名 Provider)
-  const groupMap = models.reduce((acc, model) => {
-    const key = model.providerName // 使用 Name 作为分组键
-    if (!acc[key]) {
-      acc[key] = {
-        providerId: model.providerId, // 这里的 ID 仅作参考，可能不唯一
-        providerName: model.providerName,
-        models: []
+  const groupMap = models.reduce(
+    (acc, model) => {
+      const key = model.providerName // 使用 Name 作为分组键
+      if (!acc[key]) {
+        acc[key] = {
+          providerId: model.providerId, // 这里的 ID 仅作参考，可能不唯一
+          providerName: model.providerName,
+          models: [],
+        }
       }
-    }
-    acc[key].models.push(model)
-    return acc
-  }, {} as Record<string, ModelGroup>)
-  
+      acc[key].models.push(model)
+      return acc
+    },
+    {} as Record<string, ModelGroup>,
+  )
+
   // 按 provider 使用频率排序 (累加该 Name 下所有模型的使用次数)
   const groups = Object.values(groupMap).sort((a, b) => {
     // 计算 Group A 的总权重
     const weightA = a.models.reduce((sum, m) => sum + (stats[getModelKey(m)]?.count ?? 0), 0)
     // 计算 Group B 的总权重
     const weightB = b.models.reduce((sum, m) => sum + (stats[getModelKey(m)]?.count ?? 0), 0)
-    
+
     return weightB - weightA
   })
-  
+
   // 每个 provider 内部按使用频率排序
   for (const group of groups) {
     group.models = sortModelsByFrequency(group.models)
   }
-  
+
   return groups
 }
 
@@ -274,7 +278,7 @@ export function groupModelsByProvider(models: ModelInfo[]): ModelGroup[] {
  */
 export function getRecentModels(models: ModelInfo[], limit = 5): ModelInfo[] {
   const stats = getModelUsageStats()
-  
+
   // 过滤出使用过的模型并按最近使用时间排序
   // 只要有记录且 count > 0 就视为使用过
   const usedModels = models
@@ -288,7 +292,7 @@ export function getRecentModels(models: ModelInfo[], limit = 5): ModelInfo[] {
       // 优先按时间倒序
       return (statsB?.lastUsed ?? 0) - (statsA?.lastUsed ?? 0)
     })
-  
+
   return usedModels.slice(0, limit)
 }
 
@@ -347,16 +351,14 @@ export function toggleModelPin(model: ModelInfo): boolean {
 export function getPinnedModels(models: ModelInfo[]): ModelInfo[] {
   const pinnedKeys = getPinnedModelKeys()
   if (pinnedKeys.length === 0) return []
-  
+
   const keySet = new Set(pinnedKeys)
   const modelMap = new Map<string, ModelInfo>()
   for (const m of models) {
     const k = getModelKey(m)
     if (keySet.has(k)) modelMap.set(k, m)
   }
-  
+
   // 保持置顶顺序
-  return pinnedKeys
-    .map(k => modelMap.get(k))
-    .filter((m): m is ModelInfo => !!m)
+  return pinnedKeys.map(k => modelMap.get(k)).filter((m): m is ModelInfo => !!m)
 }

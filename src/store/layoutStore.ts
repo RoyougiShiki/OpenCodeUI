@@ -27,8 +27,8 @@ export interface PreviewFile {
 
 // 兼容旧的 TerminalTab 类型
 export interface TerminalTab {
-  id: string           // PTY session ID
-  title: string        // 显示标题
+  id: string // PTY session ID
+  title: string // 显示标题
   status: 'connecting' | 'connected' | 'disconnected' | 'exited'
 }
 
@@ -42,17 +42,17 @@ interface LayoutState {
     bottom: string | null
     right: string | null
   }
-  
+
   // 侧边栏
   sidebarExpanded: boolean
-  
+
   // 右侧栏
   rightPanelOpen: boolean
   rightPanelWidth: number
-  
+
   // 文件预览状态
   previewFile: PreviewFile | null
-  
+
   // 底部面板
   bottomPanelOpen: boolean
   bottomPanelHeight: number
@@ -90,7 +90,7 @@ class LayoutStore {
       if (savedSidebar !== null) {
         this.state.sidebarExpanded = savedSidebar !== 'false'
       }
-      
+
       // 右侧面板宽度
       const savedWidth = localStorage.getItem('opencode-right-panel-width')
       if (savedWidth) {
@@ -99,7 +99,7 @@ class LayoutStore {
           this.state.rightPanelWidth = width
         }
       }
-      
+
       // 底部面板高度
       const savedBottomHeight = localStorage.getItem('opencode-bottom-panel-height')
       if (savedBottomHeight) {
@@ -129,11 +129,11 @@ class LayoutStore {
   // ============================================
   // Sidebar
   // ============================================
-  
+
   getSidebarExpanded(): boolean {
     return this.state.sidebarExpanded
   }
-  
+
   setSidebarExpanded(expanded: boolean) {
     if (this.state.sidebarExpanded === expanded) return
     this.state.sidebarExpanded = expanded
@@ -144,7 +144,7 @@ class LayoutStore {
     }
     this.notify()
   }
-  
+
   toggleSidebar() {
     this.setSidebarExpanded(!this.state.sidebarExpanded)
   }
@@ -152,7 +152,7 @@ class LayoutStore {
   // ============================================
   // 辅助方法
   // ============================================
-  
+
   /** 设置指定位置面板的开关状态 */
   private setPanelOpen(position: PanelPosition, open: boolean) {
     if (position === 'bottom') {
@@ -193,7 +193,7 @@ class LayoutStore {
     const newTab: PanelTab = { ...tab, id }
     this.state.panelTabs.push(newTab)
     this.state.activeTabId[tab.position] = id
-    
+
     if (openPanel) {
       this.setPanelOpen(tab.position, true)
     }
@@ -205,14 +205,8 @@ class LayoutStore {
    * 添加单例 tab（同一位置同类型只允许一个）
    * 如果已存在则激活，否则创建新的
    */
-  private addSingletonTab(
-    type: PanelTab['type'], 
-    position: PanelPosition, 
-    fixedId?: string
-  ): string {
-    const existing = this.state.panelTabs.find(
-      t => t.type === type && t.position === position
-    )
+  private addSingletonTab(type: PanelTab['type'], position: PanelPosition, fixedId?: string): string {
+    const existing = this.state.panelTabs.find(t => t.type === type && t.position === position)
     if (existing) {
       this.setActiveTab(position, existing.id)
       this.setPanelOpen(position, true)
@@ -286,20 +280,20 @@ class LayoutStore {
     if (!tab || tab.position === toPosition) return
 
     const fromPosition = tab.position
-    
+
     // 更新位置
     tab.position = toPosition
-    
+
     // 更新活动状态
     // 如果原位置的 activeTab 是这个 tab，切换到其他 tab
     if (this.state.activeTabId[fromPosition] === tabId) {
       const remainingTabs = this.getTabsForPosition(fromPosition)
       this.state.activeTabId[fromPosition] = remainingTabs[0]?.id ?? null
     }
-    
+
     // 新位置设为活动
     this.state.activeTabId[toPosition] = tabId
-    
+
     // 打开目标面板
     if (toPosition === 'bottom') {
       this.state.bottomPanelOpen = true
@@ -324,14 +318,14 @@ class LayoutStore {
     const tabs = this.state.panelTabs
     const draggedIndex = tabs.findIndex(t => t.id === draggedId && t.position === position)
     const targetIndex = tabs.findIndex(t => t.id === targetId && t.position === position)
-    
+
     if (draggedIndex === -1 || targetIndex === -1 || draggedIndex === targetIndex) {
       return
     }
-    
+
     const [draggedTab] = tabs.splice(draggedIndex, 1)
     tabs.splice(targetIndex, 0, draggedTab)
-    
+
     this.notify()
   }
 
@@ -400,7 +394,7 @@ class LayoutStore {
 
   openFilePreview(file: PreviewFile, position?: PanelPosition) {
     this.state.previewFile = file
-    
+
     // 辅助函数：激活指定位置的 files tab
     const activateFilesTab = (pos: PanelPosition) => {
       this.setPanelOpen(pos, true)
@@ -409,7 +403,7 @@ class LayoutStore {
         this.state.activeTabId[pos] = filesTab.id
       }
     }
-    
+
     if (position) {
       // 指定了位置，直接使用
       activateFilesTab(position)
@@ -466,14 +460,17 @@ class LayoutStore {
   // ============================================
 
   addTerminalTab(tab: TerminalTab, openPanel = true, position: PanelPosition = 'bottom') {
-    this.addTab({
-      id: tab.id,
-      type: 'terminal',
-      position,
-      ptyId: tab.id,
-      title: tab.title,
-      status: tab.status,
-    }, openPanel)
+    this.addTab(
+      {
+        id: tab.id,
+        type: 'terminal',
+        position,
+        ptyId: tab.id,
+        title: tab.title,
+        status: tab.status,
+      },
+      openPanel,
+    )
   }
 
   removeTerminalTab(id: string) {
@@ -554,9 +551,5 @@ layoutStore.subscribe(() => {
 })
 
 export function useLayoutStore() {
-  return useSyncExternalStore(
-    (cb) => layoutStore.subscribe(cb),
-    getSnapshot,
-    getSnapshot
-  )
+  return useSyncExternalStore(cb => layoutStore.subscribe(cb), getSnapshot, getSnapshot)
 }

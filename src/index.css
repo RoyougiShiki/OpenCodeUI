@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================
  * Mobile Viewport & Safe Area
@@ -26,7 +26,9 @@
 }
 
 /* 根元素填充整个视口 */
-html, body, #root {
+html,
+body,
+#root {
   height: var(--app-height);
   overflow: hidden;
   overscroll-behavior: none;
@@ -77,7 +79,7 @@ html, body, #root {
   --color-bg-200: hsl(var(--bg-200));
   --color-bg-300: hsl(var(--bg-300));
   --color-bg-400: hsl(var(--bg-400));
-  
+
   /* ============================================
    * Text colors
    * ============================================ */
@@ -88,7 +90,7 @@ html, body, #root {
   --color-text-400: hsl(var(--text-400));
   --color-text-500: hsl(var(--text-500));
   --color-text-600: hsl(var(--text-600));
-  
+
   /* ============================================
    * Accent colors (brand)
    * ============================================ */
@@ -97,7 +99,7 @@ html, body, #root {
   --color-accent-main-100: hsl(var(--accent-main-100));
   --color-accent-main-200: hsl(var(--accent-main-200));
   --color-accent-secondary-100: hsl(var(--accent-secondary-100));
-  
+
   /* ============================================
    * Semantic colors
    * ============================================ */
@@ -105,36 +107,36 @@ html, body, #root {
   --color-success-100: hsl(var(--success-100));
   --color-success-200: hsl(var(--success-200));
   --color-success-bg: hsl(var(--success-bg));
-  
+
   /* Warning (orange/yellow) */
   --color-warning-100: hsl(var(--warning-100));
   --color-warning-200: hsl(var(--warning-200));
   --color-warning-bg: hsl(var(--warning-bg));
-  
+
   /* Danger (red) */
   --color-danger-000: hsl(var(--danger-000));
   --color-danger-100: hsl(var(--danger-100));
   --color-danger-200: hsl(var(--danger-200));
   --color-danger-bg: hsl(var(--danger-bg));
   --color-danger-900: hsl(var(--danger-900));
-  
+
   /* Info (blue) */
   --color-info-100: hsl(var(--info-100));
   --color-info-200: hsl(var(--info-200));
   --color-info-bg: hsl(var(--info-bg));
-  
+
   /* ============================================
    * Border colors
    * ============================================ */
   --color-border-100: hsl(var(--border-100));
   --color-border-200: hsl(var(--border-200));
   --color-border-300: hsl(var(--border-300));
-  
+
   /* ============================================
    * Special colors
    * ============================================ */
   --color-oncolor-100: hsl(var(--oncolor-100));
-  
+
   /* ============================================
    * Border Radius - 统一圆角规范
    * ============================================
@@ -153,7 +155,7 @@ html, body, #root {
   --radius-xl: 16px;
   --radius-2xl: 20px;
   --radius-full: 9999px;
-  
+
   /* ============================================
    * Shadows
    * ============================================ */
@@ -162,13 +164,13 @@ html, body, #root {
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
   --shadow-float: 0 4px 20px 0 rgb(0 0 0 / 0.15);
-  
+
   /* ============================================
    * Sizing - Collapsible Components
    * ============================================ */
   --collapsed-min-w: 160px;
   --collapsed-max-w: 200px;
-  
+
   /* ============================================
    * Sizing - Message Layout
    * ============================================ */
@@ -176,7 +178,7 @@ html, body, #root {
   --attachment-thumb-w: 140px;
   --attachment-expanded-max-w: 500px;
   --menu-width: 360px;
-  
+
   /* ============================================
    * Fonts — 默认使用系统字体栈，用户可通过 Settings 自定义覆盖
    * 
@@ -184,7 +186,9 @@ html, body, #root {
    * --font-sans:    Tailwind font-sans class 使用的变量，指向 --font-ui-sans
    * --font-mono:    代码/等宽字体，Tailwind font-mono class 使用
    * ============================================ */
-  --font-ui-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-ui-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Liberation Sans', sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji';
   --font-sans: var(--font-ui-sans);
   --font-ui-serif: 'Georgia', 'Noto Serif', serif;
   --font-mono: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
@@ -204,7 +208,7 @@ html, body, #root {
   --bg-200: 150 12% 93%;
   --bg-300: 150 10% 89%;
   --bg-400: 150 10% 85%;
-  
+
   /* Text - 墨绿灰 */
   --text-000: 0 0% 100%;
   --text-100: 170 15% 15%;
@@ -213,14 +217,14 @@ html, body, #root {
   --text-400: 170 8% 70%;
   --text-500: 170 6% 78%;
   --text-600: 170 10% 85%;
-  
+
   /* Accent - 桉树绿 */
   --accent-brand: 165 45% 42%;
   --accent-main-000: 165 40% 35%;
   --accent-main-100: 165 45% 42%;
   --accent-main-200: 165 50% 48%;
   --accent-secondary-100: 200 45% 50%;
-  
+
   /* Semantic */
   --success-100: 140 40% 40%;
   --success-200: 140 35% 32%;
@@ -236,12 +240,12 @@ html, body, #root {
   --info-100: 200 50% 50%;
   --info-200: 200 45% 60%;
   --info-bg: 200 40% 95%;
-  
+
   /* Border */
   --border-100: 160 10% 86%;
   --border-200: 160 10% 82%;
   --border-300: 160 10% 75%;
-  
+
   /* Special */
   --always-black: 0 0% 0%;
   --always-white: 0 0% 100%;
@@ -330,7 +334,13 @@ body {
  * ============================================ */
 .input-textarea,
 .input-overlay {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -569,7 +579,7 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
 
 /* 面板统一阴影（可选，用于浮动状态） */
 .panel-shadow {
-  box-shadow: 
+  box-shadow:
     0 0 0 1px hsl(var(--border-200) / 0.5),
     0 4px 12px hsl(var(--always-black) / 0.08);
 }
@@ -585,7 +595,7 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
   .panel-mobile-hide {
     display: none;
   }
-  
+
   /* 面板全屏覆盖模式 */
   .panel-mobile-overlay {
     position: fixed !important;
@@ -595,13 +605,13 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
     z-index: 100;
     border: none !important;
   }
-  
+
   /* 移动端面板头部增大点击区域 */
   .panel-mobile-header {
     min-height: 48px;
     padding: 12px 16px;
   }
-  
+
   /* 移动端 resize handle 更大的触摸区域 */
   .panel-resize-handle-mobile {
     width: 16px;
@@ -609,12 +619,14 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
   }
 
   /* 移动端触摸目标最小尺寸 - 只对独立按钮生效，不影响紧凑组件内部 */
-  button:not(.touch-target-sm):not([role="tab"]):not([role="switch"]):not([data-compact]) {
+  button:not(.touch-target-sm):not([role='tab']):not([role='switch']):not([data-compact]) {
     min-height: 32px;
   }
 
   /* 输入框适配 */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     font-size: 16px !important; /* 防止 iOS 缩放 */
   }
 }
@@ -625,7 +637,7 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
   .panel-tablet-min-w {
     min-width: 280px;
   }
-  
+
   /* 面板最大宽度调整 */
   .panel-tablet-max-w {
     max-width: 50vw;
@@ -634,8 +646,12 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
 
 /* Mobile Drawer Animations */
 @keyframes fade-in-overlay {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-fade-in-overlay {
@@ -675,18 +691,32 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-in-from-bottom {
-  from { transform: translateY(8px); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes scale-in {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Animation utility classes */
@@ -728,8 +758,15 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
 
 /* Custom Animations */
 @keyframes breathe {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
 }
 
 .animate-breathe {
@@ -737,7 +774,8 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
 }
 
 @keyframes reasoning-breath-bar {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.28;
     transform: scaleX(0.94);
     background-position: 0% 50%;
@@ -793,17 +831,17 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
 }
 
 /* Agent mention - uses accent (orange) */
-.mention-tag[data-mention-type="agent"] {
+.mention-tag[data-mention-type='agent'] {
   color: hsl(var(--accent-main-100));
 }
 
 /* File mention - uses info (blue) */
-.mention-tag[data-mention-type="file"] {
+.mention-tag[data-mention-type='file'] {
   color: hsl(var(--info-100));
 }
 
 /* Folder mention - uses success (green) */
-.mention-tag[data-mention-type="folder"] {
+.mention-tag[data-mention-type='folder'] {
   color: hsl(var(--success-100));
 }
 
@@ -831,20 +869,31 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
   animation: content-in 0.3s ease-out both;
 }
 
-.animate-stagger > *:nth-child(1) { animation-delay: 0ms; }
-.animate-stagger > *:nth-child(2) { animation-delay: 80ms; }
-.animate-stagger > *:nth-child(3) { animation-delay: 160ms; }
-.animate-stagger > *:nth-child(4) { animation-delay: 240ms; }
-.animate-stagger > *:nth-child(5) { animation-delay: 320ms; }
+.animate-stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.animate-stagger > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+.animate-stagger > *:nth-child(3) {
+  animation-delay: 160ms;
+}
+.animate-stagger > *:nth-child(4) {
+  animation-delay: 240ms;
+}
+.animate-stagger > *:nth-child(5) {
+  animation-delay: 320ms;
+}
 
 /* ============================================
  * Border Pulse Animation (InputBox waiting)
  * ============================================ */
 @keyframes border-pulse {
-  0%, 100% { 
+  0%,
+  100% {
     border-color: hsl(var(--accent-main-100) / 0.5);
   }
-  50% { 
+  50% {
     border-color: hsl(var(--accent-main-100) / 0.2);
   }
 }
@@ -852,7 +901,6 @@ textarea.custom-scrollbar::-webkit-scrollbar-thumb {
 .animate-border-pulse {
   animation: border-pulse 2s ease-in-out infinite;
 }
-
 
 /* ============================================
  * Utility: Linear Fade Mask

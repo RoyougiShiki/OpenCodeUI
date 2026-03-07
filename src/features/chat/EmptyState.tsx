@@ -9,11 +9,7 @@ interface EmptyStateProps {
   onStartChat: (directory: string) => void
 }
 
-export function EmptyState({
-  currentProject,
-  projects,
-  onStartChat,
-}: EmptyStateProps) {
+export function EmptyState({ currentProject, projects, onStartChat }: EmptyStateProps) {
   const [pathInfo, setPathInfo] = useState<ApiPath | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [customPath, setCustomPath] = useState('')
@@ -45,9 +41,7 @@ export function EmptyState({
   }, [isCustomMode])
 
   // 当前选中的目录
-  const currentDirectory = currentProject?.id === 'global' 
-    ? pathInfo?.directory || ''
-    : currentProject?.worktree || ''
+  const currentDirectory = currentProject?.id === 'global' ? pathInfo?.directory || '' : currentProject?.worktree || ''
 
   // 处理开始聊天
   const handleStart = () => {
@@ -89,18 +83,12 @@ export function EmptyState({
         </div>
 
         {/* Title */}
-        <h2 className="text-xl font-semibold text-text-100 text-center mb-2">
-          Start a new conversation
-        </h2>
-        <p className="text-sm text-text-400 text-center mb-6">
-          Choose a working directory for this session
-        </p>
+        <h2 className="text-xl font-semibold text-text-100 text-center mb-2">Start a new conversation</h2>
+        <p className="text-sm text-text-400 text-center mb-6">Choose a working directory for this session</p>
 
         {/* Directory Selector */}
         <div className="space-y-3">
-          <label className="block text-xs font-medium text-text-400 uppercase tracking-wider">
-            Working Directory
-          </label>
+          <label className="block text-xs font-medium text-text-400 uppercase tracking-wider">Working Directory</label>
 
           {isCustomMode ? (
             // 自定义路径输入
@@ -109,8 +97,8 @@ export function EmptyState({
                 ref={inputRef}
                 type="text"
                 value={customPath}
-                onChange={(e) => setCustomPath(e.target.value)}
-                onKeyDown={(e) => {
+                onChange={e => setCustomPath(e.target.value)}
+                onKeyDown={e => {
                   if (e.key === 'Enter' && customPath.trim()) {
                     handleStart()
                   } else if (e.key === 'Escape') {
@@ -138,7 +126,9 @@ export function EmptyState({
                   <FolderIcon className="w-4 h-4 text-text-400 flex-shrink-0" />
                   <span className="truncate">{currentDirectory || 'Select directory...'}</span>
                 </div>
-                <ChevronDownIcon className={`w-4 h-4 text-text-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDownIcon
+                  className={`w-4 h-4 text-text-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                />
               </button>
 
               {/* Dropdown */}
@@ -156,7 +146,7 @@ export function EmptyState({
                     </button>
 
                     {/* Other project directories */}
-                    {otherDirectories.map((dir) => (
+                    {otherDirectories.map(dir => (
                       <button
                         key={dir}
                         onClick={() => handleSelectDirectory(dir)}

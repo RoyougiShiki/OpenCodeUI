@@ -62,15 +62,29 @@ class ServiceStore {
 
   // ---- Getters ----
 
-  get autoStart() { return this._autoStart }
-  get binaryPath() { return this._binaryPath }
-  get envVars() { return this._envVars }
-  get running() { return this._running }
-  get startedByUs() { return this._startedByUs }
-  get starting() { return this._starting }
+  get autoStart() {
+    return this._autoStart
+  }
+  get binaryPath() {
+    return this._binaryPath
+  }
+  get envVars() {
+    return this._envVars
+  }
+  get running() {
+    return this._running
+  }
+  get startedByUs() {
+    return this._startedByUs
+  }
+  get starting() {
+    return this._starting
+  }
 
   /** 返回实际要用的可执行文件路径，空则回退默认值 */
-  get effectiveBinaryPath() { return this._binaryPath.trim() || 'opencode' }
+  get effectiveBinaryPath() {
+    return this._binaryPath.trim() || 'opencode'
+  }
 
   /** 将 envVars 转为 Record<string, string>，方便传给 Rust */
   get envVarsRecord(): Record<string, string> {
@@ -86,19 +100,31 @@ class ServiceStore {
 
   setAutoStart(v: boolean) {
     this._autoStart = v
-    try { localStorage.setItem(STORAGE_KEY_AUTO_START, String(v)) } catch { /* */ }
+    try {
+      localStorage.setItem(STORAGE_KEY_AUTO_START, String(v))
+    } catch {
+      /* */
+    }
     this._notify()
   }
 
   setBinaryPath(v: string) {
     this._binaryPath = v
-    try { localStorage.setItem(STORAGE_KEY_BINARY_PATH, v) } catch { /* */ }
+    try {
+      localStorage.setItem(STORAGE_KEY_BINARY_PATH, v)
+    } catch {
+      /* */
+    }
     this._notify()
   }
 
   setEnvVars(vars: EnvVar[]) {
     this._envVars = vars
-    try { localStorage.setItem(STORAGE_KEY_ENV_VARS, JSON.stringify(vars)) } catch { /* */ }
+    try {
+      localStorage.setItem(STORAGE_KEY_ENV_VARS, JSON.stringify(vars))
+    } catch {
+      /* */
+    }
     this._notify()
   }
 
@@ -121,7 +147,9 @@ class ServiceStore {
 
   subscribe = (fn: () => void) => {
     this._listeners.add(fn)
-    return () => { this._listeners.delete(fn) }
+    return () => {
+      this._listeners.delete(fn)
+    }
   }
 
   getSnapshot = (): ServiceStoreSnapshot => this._snapshot

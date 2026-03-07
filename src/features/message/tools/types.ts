@@ -12,23 +12,23 @@ export interface ExtractedToolData {
   // Input
   input?: string
   inputLang?: string
-  
+
   // Output
   output?: string
   outputLang?: string
-  
+
   // Error
   error?: string
-  
+
   // Diff (文件编辑)
   diff?: { before: string; after: string } | string
   diffStats?: { additions: number; deletions: number }
   files?: FileDiff[]
-  
+
   // Meta
   filePath?: string
   exitCode?: number
-  
+
   // LSP 诊断
   diagnostics?: DiagnosticInfo[]
 }
@@ -64,16 +64,16 @@ export interface ToolRendererProps {
 export interface ToolConfig {
   /** 匹配函数：判断工具名是否匹配此配置 */
   match: (toolName: string) => boolean
-  
+
   /** 图标组件 */
   icon: ReactNode
-  
-  /** 
+
+  /**
    * 自定义渲染器（可选）
    * 如果不提供，使用默认的 Input/Output 渲染
    */
   renderer?: ComponentType<ToolRendererProps>
-  
+
   /**
    * 数据提取器（可选）
    * 用于从 ToolPart 提取 input/output 等数据

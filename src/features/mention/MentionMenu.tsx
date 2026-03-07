@@ -15,12 +15,12 @@ import { getFileName, toAbsolutePath, normalizePath } from './utils'
 
 interface MentionMenuProps {
   isOpen: boolean
-  query: string          // 从 InputBox 传入的搜索词（@ 之后的文本）
+  query: string // 从 InputBox 传入的搜索词（@ 之后的文本）
   agents: ApiAgent[]
   rootPath?: string
   excludeValues?: Set<string> // 需要排除的项（已选择的）
   onSelect: (item: MentionItem) => void
-  onNavigate?: (folderPath: string) => void  // 点击文件夹时导航（移动端用）
+  onNavigate?: (folderPath: string) => void // 点击文件夹时导航（移动端用）
   onClose: () => void
 }
 
@@ -39,21 +39,15 @@ export interface MentionMenuHandle {
 // MentionMenu Component
 // ============================================
 
-export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(function MentionMenu({
-  isOpen,
-  query,
-  agents,
-  rootPath = '',
-  excludeValues,
-  onSelect,
-  onNavigate,
-  onClose,
-}, ref) {
+export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(function MentionMenu(
+  { isOpen, query, agents, rootPath = '', excludeValues, onSelect, onNavigate, onClose },
+  ref,
+) {
   const [items, setItems] = useState<MentionItem[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const [currentPath, setCurrentPath] = useState('.')
-  
+
   const menuRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const searchAbortRef = useRef<AbortController | null>(null)
@@ -123,81 +117,78 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
   }, [selectedIndex])
 
   // 创建 MentionItem
-  const createItem = useCallback((
-    type: MentionType,
-    name: string,
-    path: string,
-    _description?: string
-  ): MentionItem => {
-    const absolutePath = type !== 'agent' && rootPath
-      ? toAbsolutePath(path, rootPath)
-      : path
-    
-    return {
-      type,
-      value: absolutePath,
-      displayName: name,
-      relativePath: path,
-    }
-  }, [rootPath])
+  const createItem = useCallback(
+    (type: MentionType, name: string, path: string, _description?: string): MentionItem => {
+      const absolutePath = type !== 'agent' && rootPath ? toAbsolutePath(path, rootPath) : path
+
+      return {
+        type,
+        value: absolutePath,
+        displayName: name,
+        relativePath: path,
+      }
+    },
+    [rootPath],
+  )
 
   // 加载目录内容
-  const loadDirectory = useCallback((path: string, filter: string = '') => {
-    setLoading(true)
-    // 确保 path 不带尾斜杠
-    const cleanPath = path.replace(/\/+$/, '') || '.'
-    
-    // 传入 rootPath 作为工作目录
-    listDirectory(cleanPath, rootPath)
-      .then(nodes => {
-        const folders: MentionItem[] = []
-        const files: MentionItem[] = []
-        const lowerFilter = filter.toLowerCase()
-        
-        nodes.forEach(n => {
-          // 过滤
-          if (lowerFilter && !n.name.toLowerCase().includes(lowerFilter)) {
-            return
-          }
-          const fullPath = cleanPath === '.' ? n.name : `${cleanPath}/${n.name}`
-          if (n.type === 'directory') {
-            folders.push(createItem('folder', n.name, fullPath))
+  const loadDirectory = useCallback(
+    (path: string, filter: string = '') => {
+      setLoading(true)
+      // 确保 path 不带尾斜杠
+      const cleanPath = path.replace(/\/+$/, '') || '.'
+
+      // 传入 rootPath 作为工作目录
+      listDirectory(cleanPath, rootPath)
+        .then(nodes => {
+          const folders: MentionItem[] = []
+          const files: MentionItem[] = []
+          const lowerFilter = filter.toLowerCase()
+
+          nodes.forEach(n => {
+            // 过滤
+            if (lowerFilter && !n.name.toLowerCase().includes(lowerFilter)) {
+              return
+            }
+            const fullPath = cleanPath === '.' ? n.name : `${cleanPath}/${n.name}`
+            if (n.type === 'directory') {
+              folders.push(createItem('folder', n.name, fullPath))
+            } else {
+              files.push(createItem('file', n.name, fullPath))
+            }
+          })
+
+          // Agent 列表（只在根目录且无过滤时显示，或过滤匹配时显示）
+          const agentItems: MentionItem[] =
+            path === '.'
+              ? agents
+                  .filter(a => !a.hidden && a.mode === 'subagent')
+                  .filter(a => !lowerFilter || a.name.toLowerCase().includes(lowerFilter))
+                  .map(a => createItem('agent', a.name, a.name, a.description))
+              : []
+
+          const allItems = [...agentItems, ...folders, ...files].filter(item => !excludeValues?.has(item.value))
+
+          setItems(allItems)
+
+          // 如果有记住的文件夹名（从子目录返回时），定位到那个文件夹
+          const restoreFolder = restoreFolderRef.current
+          if (restoreFolder) {
+            const idx = allItems.findIndex(item => item.type === 'folder' && item.displayName === restoreFolder)
+            setSelectedIndex(idx >= 0 ? idx : 0)
+            restoreFolderRef.current = null
           } else {
-            files.push(createItem('file', n.name, fullPath))
+            setSelectedIndex(0)
           }
         })
-        
-        // Agent 列表（只在根目录且无过滤时显示，或过滤匹配时显示）
-        const agentItems: MentionItem[] = path === '.'
-          ? agents
-              .filter(a => !a.hidden && a.mode === 'subagent')
-              .filter(a => !lowerFilter || a.name.toLowerCase().includes(lowerFilter))
-              .map(a => createItem('agent', a.name, a.name, a.description))
-          : []
-        
-        const allItems = [...agentItems, ...folders, ...files]
-          .filter(item => !excludeValues?.has(item.value))
-          
-        setItems(allItems)
-        
-        // 如果有记住的文件夹名（从子目录返回时），定位到那个文件夹
-        const restoreFolder = restoreFolderRef.current
-        if (restoreFolder) {
-          const idx = allItems.findIndex(
-            item => item.type === 'folder' && item.displayName === restoreFolder
-          )
-          setSelectedIndex(idx >= 0 ? idx : 0)
-          restoreFolderRef.current = null
-        } else {
-          setSelectedIndex(0)
-        }
-      })
-      .catch(err => {
-        fileErrorHandler('list directory', err)
-        setItems([])
-      })
-      .finally(() => setLoading(false))
-  }, [agents, createItem, rootPath])
+        .catch(err => {
+          fileErrorHandler('list directory', err)
+          setItems([])
+        })
+        .finally(() => setLoading(false))
+    },
+    [agents, createItem, rootPath],
+  )
 
   // 搜索逻辑 - 基于 query prop
   useEffect(() => {
@@ -206,7 +197,7 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
     // 解析 query：可能是 "src/comp" 这样的路径+过滤
     // 检测是否包含目录分隔符
     const lastSlashIndex = query.lastIndexOf('/')
-    
+
     if (lastSlashIndex >= 0) {
       // 有路径：目录部分 + 过滤部分
       const dirPath = query.slice(0, lastSlashIndex) || '.'
@@ -216,7 +207,7 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
     } else {
       // 无路径：根目录 + 过滤
       setCurrentPath('.')
-      
+
       // 如果 query 为空，加载根目录
       if (query === '') {
         loadDirectory('.', '')
@@ -224,9 +215,9 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
         // 有搜索词，使用全局搜索
         searchAbortRef.current?.abort()
         searchAbortRef.current = new AbortController()
-        
+
         setLoading(true)
-        
+
         searchFiles(query, { limit: 20, directory: rootPath })
           .then(paths => {
             const folders: MentionItem[] = []
@@ -236,7 +227,7 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
               const normalized = normalizePath(path)
               const name = getFileName(normalized)
               const isDir = !name.includes('.') || path.endsWith('/')
-              
+
               if (isDir) {
                 folders.push(createItem('folder', name, normalized))
               } else {
@@ -250,10 +241,9 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
               .filter(a => !a.hidden && a.mode === 'subagent')
               .filter(a => a.name.toLowerCase().includes(lowerQuery))
               .map(a => createItem('agent', a.name, a.name, a.description))
-            
-            const allItems = [...agentItems, ...folders, ...fileItems]
-              .filter(item => !excludeValues?.has(item.value))
-              
+
+            const allItems = [...agentItems, ...folders, ...fileItems].filter(item => !excludeValues?.has(item.value))
+
             setItems(allItems)
             setSelectedIndex(0)
           })
@@ -269,39 +259,43 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
   }, [isOpen, query, agents, loadDirectory, createItem, rootPath])
 
   // 暴露方法给父组件
-  useImperativeHandle(ref, () => ({
-    moveUp: () => {
-      setSelectedIndex(prev => Math.max(prev - 1, 0))
-    },
-    moveDown: () => {
-      setSelectedIndex(prev => Math.min(prev + 1, items.length - 1))
-    },
-    selectCurrent: () => {
-      const selectedItem = items[selectedIndex]
-      if (selectedItem) {
-        onSelect(selectedItem)
-      }
-    },
-    enterFolder: () => {
-      const selectedItem = items[selectedIndex]
-      if (selectedItem?.type === 'folder') {
-        // 返回文件夹路径，让父组件更新 query
-        onSelect({ ...selectedItem, _enterFolder: true } as MentionItem & { _enterFolder: boolean })
-      }
-    },
-    goBack: () => {
-      if (currentPath !== '.') {
-        const parts = normalizePath(currentPath).split('/')
-        parts.pop()
-        const parent = parts.length === 0 ? '.' : parts.join('/')
-        setCurrentPath(parent)
-      }
-    },
-    getSelectedItem: () => items[selectedIndex] || null,
-    setRestoreFolder: (name: string) => {
-      restoreFolderRef.current = name
-    },
-  }), [items, selectedIndex, currentPath, onSelect])
+  useImperativeHandle(
+    ref,
+    () => ({
+      moveUp: () => {
+        setSelectedIndex(prev => Math.max(prev - 1, 0))
+      },
+      moveDown: () => {
+        setSelectedIndex(prev => Math.min(prev + 1, items.length - 1))
+      },
+      selectCurrent: () => {
+        const selectedItem = items[selectedIndex]
+        if (selectedItem) {
+          onSelect(selectedItem)
+        }
+      },
+      enterFolder: () => {
+        const selectedItem = items[selectedIndex]
+        if (selectedItem?.type === 'folder') {
+          // 返回文件夹路径，让父组件更新 query
+          onSelect({ ...selectedItem, _enterFolder: true } as MentionItem & { _enterFolder: boolean })
+        }
+      },
+      goBack: () => {
+        if (currentPath !== '.') {
+          const parts = normalizePath(currentPath).split('/')
+          parts.pop()
+          const parent = parts.length === 0 ? '.' : parts.join('/')
+          setCurrentPath(parent)
+        }
+      },
+      getSelectedItem: () => items[selectedIndex] || null,
+      setRestoreFolder: (name: string) => {
+        restoreFolderRef.current = name
+      },
+    }),
+    [items, selectedIndex, currentPath, onSelect],
+  )
 
   // 点击外部关闭
   useEffect(() => {
@@ -356,25 +350,19 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
 
       {/* Items List */}
       <div ref={listRef} className="flex-1 overflow-y-auto custom-scrollbar">
-        {loading && items.length === 0 && (
-          <div className="px-3 py-4 text-center text-sm text-text-400">
-            Loading...
-          </div>
-        )}
-        
+        {loading && items.length === 0 && <div className="px-3 py-4 text-center text-sm text-text-400">Loading...</div>}
+
         {!loading && items.length === 0 && (
           <div className="px-3 py-4 text-center text-sm text-text-400">
             {query ? 'No results found' : 'Empty folder'}
           </div>
         )}
-        
+
         {items.map((item, index) => (
           <button
             key={`${item.type}-${item.value}`}
             className={`w-full px-3 py-2.5 md:py-2 flex items-center justify-between text-left transition-colors ${
-              index === selectedIndex 
-                ? 'bg-accent-main-100/10' 
-                : 'hover:bg-bg-100 active:bg-bg-100'
+              index === selectedIndex ? 'bg-accent-main-100/10' : 'hover:bg-bg-100 active:bg-bg-100'
             }`}
             onClick={() => {
               // 文件夹：点击进入目录浏览，而不是选中
@@ -396,9 +384,7 @@ export const MentionMenu = forwardRef<MentionMenuHandle, MentionMenuProps>(funct
                 <div className="text-xs text-text-400 truncate">{item.relativePath}</div>
               )}
             </div>
-            {item.type === 'folder' && (
-              <span className="text-text-400 text-xs ml-2">→</span>
-            )}
+            {item.type === 'folder' && <span className="text-text-400 text-xs ml-2">→</span>}
           </button>
         ))}
       </div>
@@ -423,16 +409,12 @@ function TypeBadge({ type }: { type: MentionType }) {
     file: 'text-info-100',
     folder: 'text-success-100',
   }
-  
+
   const labels = {
     agent: 'Agent',
     file: 'File',
     folder: 'Folder',
   }
-  
-  return (
-    <span className={`text-xs font-medium ${colors[type]}`}>
-      {labels[type]}:
-    </span>
-  )
+
+  return <span className={`text-xs font-medium ${colors[type]}`}>{labels[type]}:</span>
 }

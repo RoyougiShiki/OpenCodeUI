@@ -45,16 +45,16 @@ serverStore.onServerChange(() => {
   messageStore.clearAll()
   childSessionStore.clearAll()
   todoStore.clearAll()
-  
+
   // 2. 清空 IndexedDB 消息缓存
   void messageCacheStore.clearAll()
-  
+
   // 3. 重置路径模式缓存（不同服务器可能是不同操作系统）
   resetPathModeCache()
-  
+
   // 4. 重新加载 auto-approve 开关状态（从新服务器的 storage key 读取）
   autoApproveStore.reloadFromStorage()
-  
+
   // 5. 重连 SSE（会自动连到新服务器）
   reconnectSSE()
 })
@@ -80,7 +80,7 @@ if (isTauri()) {
     import('@tauri-apps/api/core').then(({ invoke }) => {
       serviceStore.setStarting(true)
       invoke<boolean>('start_opencode_service', { url: serverUrl, binaryPath, envVars: serviceStore.envVarsRecord })
-        .then((weStarted) => {
+        .then(weStarted => {
           serviceStore.setStartedByUs(weStarted)
           serviceStore.setRunning(true)
           serviceStore.setStarting(false)
@@ -90,7 +90,7 @@ if (isTauri()) {
             console.info('[Service] opencode serve already running')
           }
         })
-        .catch((err) => {
+        .catch(err => {
           serviceStore.setStarting(false)
           console.error('[Service] Failed to auto-start opencode serve:', err)
         })
@@ -99,18 +99,18 @@ if (isTauri()) {
 }
 
 // 全局错误处理 - 防止未捕获错误导致页面刷新
-window.addEventListener('error', (event) => {
+window.addEventListener('error', event => {
   console.error('[Global Error]', event.error)
   event.preventDefault()
 })
 
-window.addEventListener('unhandledrejection', (event) => {
+window.addEventListener('unhandledrejection', event => {
   console.error('[Unhandled Promise Rejection]', event.reason)
   event.preventDefault()
 })
 
 // 调试：追踪页面刷新来源
-window.addEventListener('beforeunload', (_event) => {
+window.addEventListener('beforeunload', _event => {
   console.error('[beforeunload] Page is about to reload! Stack trace:')
   console.trace()
 })

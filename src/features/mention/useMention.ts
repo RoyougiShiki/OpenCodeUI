@@ -78,73 +78,77 @@ export function useMention(options: UseMentionOptions): UseMentionReturn {
   }, [onMenuClose])
 
   // 处理输入事件
-  const handleInput = useCallback((e: React.FormEvent<HTMLDivElement>): string => {
-    const editor = e.currentTarget
-    
-    // 获取纯文本（不包含 mention span 的 data）
-    const plainText = getPlainText(editor)
-    
-    // 获取序列化文本（包含 mention 标记）
-    const serializedText = getSerializedText(editor)
-    serializedTextRef.current = serializedText
-    onTextChange?.(serializedText)
-    
-    // 获取光标位置
-    const cursorPos = getCursorPosition(editor)
-    
-    // 检测 @ 触发
-    const triggerResult = detectMentionTrigger(plainText, cursorPos, trigger)
-    
-    if (triggerResult) {
-      openMenu(triggerResult.query, triggerResult.startIndex)
-    } else {
-      if (menuState.isOpen) {
-        closeMenu()
+  const handleInput = useCallback(
+    (e: React.FormEvent<HTMLDivElement>): string => {
+      const editor = e.currentTarget
+
+      // 获取纯文本（不包含 mention span 的 data）
+      const plainText = getPlainText(editor)
+
+      // 获取序列化文本（包含 mention 标记）
+      const serializedText = getSerializedText(editor)
+      serializedTextRef.current = serializedText
+      onTextChange?.(serializedText)
+
+      // 获取光标位置
+      const cursorPos = getCursorPosition(editor)
+
+      // 检测 @ 触发
+      const triggerResult = detectMentionTrigger(plainText, cursorPos, trigger)
+
+      if (triggerResult) {
+        openMenu(triggerResult.query, triggerResult.startIndex)
+      } else {
+        if (menuState.isOpen) {
+          closeMenu()
+        }
       }
-    }
-    
-    return serializedText
-  }, [trigger, menuState.isOpen, openMenu, closeMenu, onTextChange])
+
+      return serializedText
+    },
+    [trigger, menuState.isOpen, openMenu, closeMenu, onTextChange],
+  )
 
   // 处理 mention 选择
-  const handleSelect = useCallback((item: MentionItem) => {
-    const editor = editorRef.current
-    if (!editor) return
+  const handleSelect = useCallback(
+    (item: MentionItem) => {
+      const editor = editorRef.current
+      if (!editor) return
 
-    // 如果有 rootPath，确保使用绝对路径
-    const finalItem: MentionItem = {
-      ...item,
-      value: item.type !== 'agent' && rootPath
-        ? toAbsolutePath(item.value, rootPath)
-        : item.value,
-    }
+      // 如果有 rootPath，确保使用绝对路径
+      const finalItem: MentionItem = {
+        ...item,
+        value: item.type !== 'agent' && rootPath ? toAbsolutePath(item.value, rootPath) : item.value,
+      }
 
-    // 获取当前纯文本和光标位置
-    const plainText = getPlainText(editor)
-    
-    // 找到要替换的范围：从 @ 到当前光标位置
-    const beforeAt = plainText.slice(0, menuState.startIndex)
-    const afterQuery = plainText.slice(menuState.startIndex + 1 + menuState.query.length)
-    
-    // 重建编辑器内容
-    rebuildEditorContent(editor, beforeAt, finalItem, afterQuery, mentions)
-    
-    // 更新序列化文本
-    serializedTextRef.current = getSerializedText(editor)
-    onTextChange?.(serializedTextRef.current)
-    
-    // 保存 mention
-    setMentions(prev => [...prev, finalItem])
-    
-    // 关闭菜单
-    closeMenu()
-    
-    // 聚焦并移动光标
-    requestAnimationFrame(() => {
-      editor.focus()
-      moveCursorToEnd(editor)
-    })
-  }, [editorRef, menuState, rootPath, mentions, closeMenu, onTextChange])
+      // 获取当前纯文本和光标位置
+      const plainText = getPlainText(editor)
+
+      // 找到要替换的范围：从 @ 到当前光标位置
+      const beforeAt = plainText.slice(0, menuState.startIndex)
+      const afterQuery = plainText.slice(menuState.startIndex + 1 + menuState.query.length)
+
+      // 重建编辑器内容
+      rebuildEditorContent(editor, beforeAt, finalItem, afterQuery, mentions)
+
+      // 更新序列化文本
+      serializedTextRef.current = getSerializedText(editor)
+      onTextChange?.(serializedTextRef.current)
+
+      // 保存 mention
+      setMentions(prev => [...prev, finalItem])
+
+      // 关闭菜单
+      closeMenu()
+
+      // 聚焦并移动光标
+      requestAnimationFrame(() => {
+        editor.focus()
+        moveCursorToEnd(editor)
+      })
+    },
+    [editorRef, menuState, rootPath, mentions, closeMenu, onTextChange],
+  )
 
   // 重置状态
   const reset = useCallback(() => {
@@ -185,7 +189,7 @@ export function useMention(options: UseMentionOptions): UseMentionReturn {
  */
 function getPlainText(editor: HTMLElement): string {
   let text = ''
-  
+
   const walk = (node: Node) => {
     if (node.nodeType === Node.TEXT_NODE) {
       text += node.textContent || ''
@@ -200,7 +204,7 @@ function getPlainText(editor: HTMLElement): string {
       }
     }
   }
-  
+
   editor.childNodes.forEach(walk)
   return text
 }
@@ -210,7 +214,7 @@ function getPlainText(editor: HTMLElement): string {
  */
 function getSerializedText(editor: HTMLElement): string {
   let text = ''
-  
+
   const walk = (node: Node) => {
     if (node.nodeType === Node.TEXT_NODE) {
       text += node.textContent || ''
@@ -229,7 +233,7 @@ function getSerializedText(editor: HTMLElement): string {
       }
     }
   }
-  
+
   editor.childNodes.forEach(walk)
   return text
 }
@@ -240,12 +244,12 @@ function getSerializedText(editor: HTMLElement): string {
 function getCursorPosition(editor: HTMLElement): number {
   const selection = window.getSelection()
   if (!selection || selection.rangeCount === 0) return 0
-  
+
   const range = selection.getRangeAt(0)
   const preCaretRange = range.cloneRange()
   preCaretRange.selectNodeContents(editor)
   preCaretRange.setEnd(range.endContainer, range.endOffset)
-  
+
   // 计算纯文本位置
   let position = 0
   const walk = (node: Node): boolean => {
@@ -255,7 +259,7 @@ function getCursorPosition(editor: HTMLElement): number {
       }
       return true // 找到了
     }
-    
+
     if (node.nodeType === Node.TEXT_NODE) {
       position += node.textContent?.length || 0
     } else if (node.nodeType === Node.ELEMENT_NODE) {
@@ -270,11 +274,11 @@ function getCursorPosition(editor: HTMLElement): number {
     }
     return false
   }
-  
+
   for (const child of Array.from(editor.childNodes)) {
     if (walk(child)) break
   }
-  
+
   return position
 }
 
@@ -286,28 +290,28 @@ function rebuildEditorContent(
   beforeText: string,
   newMention: MentionItem,
   afterText: string,
-  _existingMentions: MentionItem[]
+  _existingMentions: MentionItem[],
 ): void {
   // 保存现有的 mention spans
   const mentionSpans: HTMLSpanElement[] = []
   editor.querySelectorAll('.mention-tag').forEach((span: Element) => {
     mentionSpans.push(span.cloneNode(true) as HTMLSpanElement)
   })
-  
+
   // 清空编辑器
   editor.innerHTML = ''
-  
+
   // 添加 @ 之前的文本
   if (beforeText) {
     editor.appendChild(document.createTextNode(beforeText))
   }
-  
+
   // 创建新的 mention 元素
   const { element: mentionSpan } = createMentionElement(newMention)
   // 注意：这里不需要调用 cleanup，因为 contentEditable 编辑器会在内容被替换时自动移除 DOM 元素
   // 事件监听器会随着 DOM 元素被 GC 一起被清理
   editor.appendChild(mentionSpan)
-  
+
   // 添加空格和后续文本
   const afterContent = ' ' + afterText.trimStart()
   editor.appendChild(document.createTextNode(afterContent))
@@ -319,16 +323,16 @@ function rebuildEditorContent(
 function moveCursorToEnd(editor: HTMLElement): void {
   const lastChild = editor.lastChild
   if (!lastChild) return
-  
+
   const range = document.createRange()
   const sel = window.getSelection()
-  
+
   if (lastChild.nodeType === Node.TEXT_NODE) {
     range.setStart(lastChild, lastChild.textContent?.length || 0)
   } else {
     range.setStartAfter(lastChild)
   }
-  
+
   range.collapse(true)
   sel?.removeAllRanges()
   sel?.addRange(range)

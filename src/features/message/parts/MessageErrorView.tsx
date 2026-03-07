@@ -49,30 +49,24 @@ export const MessageErrorView = memo(function MessageErrorView({ error }: Messag
         onClick={() => hasDetails && setExpanded(!expanded)}
       >
         <AlertCircleIcon className={`w-4 h-4 ${colorClass} flex-shrink-0`} />
-        <span className={`text-sm ${colorClass} flex-1 min-w-0 truncate`}>
-          {title}
-        </span>
+        <span className={`text-sm ${colorClass} flex-1 min-w-0 truncate`}>{title}</span>
         {hasDetails && (
-          <ChevronDownIcon className={`w-4 h-4 text-text-400 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
+          <ChevronDownIcon
+            className={`w-4 h-4 text-text-400 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
+          />
         )}
       </div>
 
-      <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-        expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-      }`}>
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
         <div className="overflow-hidden">
           {shouldRenderBody && (
             <div className={`mt-2 pt-2 space-y-1.5 border-t ${borderClass}`}>
-              <p className="text-xs text-text-300 break-words">
-                {description}
-              </p>
-              {formattedDetails && (
-                <CodeBlock
-                  code={formattedDetails}
-                  language={detailsLang}
-                  maxHeight={240}
-                />
-              )}
+              <p className="text-xs text-text-300 break-words">{description}</p>
+              {formattedDetails && <CodeBlock code={formattedDetails} language={detailsLang} maxHeight={240} />}
             </div>
           )}
         </div>
@@ -95,37 +89,37 @@ function getErrorInfo(error: MessageError): {
       return {
         title: 'Authentication Error',
         description: `Failed to authenticate with ${error.data.providerID}: ${error.data.message}`,
-        severity: 'error'
+        severity: 'error',
       }
-    
+
     case 'MessageOutputLengthError':
       return {
         title: 'Output Too Long',
         description: 'The response exceeded the maximum output length and was truncated.',
-        severity: 'warning'
+        severity: 'warning',
       }
-    
+
     case 'MessageAbortedError':
       return {
         title: 'Message Aborted',
         description: error.data.message || 'The message generation was interrupted.',
-        severity: 'warning'
+        severity: 'warning',
       }
-    
+
     case 'APIError':
       return {
         title: `API Error${error.data.statusCode ? ` (${error.data.statusCode})` : ''}`,
         description: error.data.message,
         details: error.data.responseBody,
-        severity: error.data.isRetryable ? 'warning' : 'error'
+        severity: error.data.isRetryable ? 'warning' : 'error',
       }
-    
+
     case 'UnknownError':
     default:
       return {
         title: 'Error',
         description: error.data?.message || 'An unknown error occurred.',
-        severity: 'error'
+        severity: 'error',
       }
   }
 }

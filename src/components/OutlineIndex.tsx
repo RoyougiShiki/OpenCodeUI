@@ -284,9 +284,12 @@ const DesktopAperture = memo(function DesktopAperture({
     ensureLoop()
   }, [ensureLoop])
 
-  const handleClick = useCallback((messageId: string) => {
-    onScrollToMessageId(messageId)
-  }, [onScrollToMessageId])
+  const handleClick = useCallback(
+    (messageId: string) => {
+      onScrollToMessageId(messageId)
+    },
+    [onScrollToMessageId],
+  )
 
   useEffect(() => {
     return () => cancelAnimationFrame(rafIdRef.current)
@@ -304,7 +307,7 @@ const DesktopAperture = memo(function DesktopAperture({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      {entries.map((entry) => {
+      {entries.map(entry => {
         const isActive = activeSet?.has(entry.messageId) ?? false
         return (
           <div
@@ -330,9 +333,7 @@ const DesktopAperture = memo(function DesktopAperture({
               style={{
                 width: `${isActive ? 13 : TICK_W_MIN}px`,
                 height: `${TICK_H}px`,
-                backgroundColor: isActive
-                  ? 'hsl(var(--accent-main-100) / 0.55)'
-                  : 'hsl(var(--border-300))',
+                backgroundColor: isActive ? 'hsl(var(--accent-main-100) / 0.55)' : 'hsl(var(--border-300))',
               }}
             />
           </div>
@@ -380,13 +381,16 @@ const MobileAperture = memo(function MobileAperture({
   // 震动
   const vibrate = useCallback(() => {
     try {
-      const bridge = (window as unknown as { __opencode_android?: { vibrate?: (ms: number) => void } }).__opencode_android
+      const bridge = (window as unknown as { __opencode_android?: { vibrate?: (ms: number) => void } })
+        .__opencode_android
       if (bridge?.vibrate) {
         bridge.vibrate(8)
         return
       }
       navigator.vibrate?.(5)
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [])
 
   // ---- 动画循环 ----
@@ -424,7 +428,10 @@ const MobileAperture = memo(function MobileAperture({
       if (Math.abs(s - target) > EPSILON) alive = true
 
       // 找最强项
-      if (s > maxS) { maxS = s; focusIdx = i }
+      if (s > maxS) {
+        maxS = s
+        focusIdx = i
+      }
 
       const isActive = item.dataset.active === '1'
       const baseW = isActive ? 10 : MOBILE_TICK_W_MIN
@@ -497,14 +504,17 @@ const MobileAperture = memo(function MobileAperture({
   }, [runLoop])
 
   // ---- Touch handlers ----
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    e.preventDefault()
-    isTouchingRef.current = true
-    prevFocusIdxRef.current = -1
-    touchYRef.current = e.touches[0].clientY
-    setOverlayVisible(true)
-    ensureLoop()
-  }, [ensureLoop])
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      e.preventDefault()
+      isTouchingRef.current = true
+      prevFocusIdxRef.current = -1
+      touchYRef.current = e.touches[0].clientY
+      setOverlayVisible(true)
+      ensureLoop()
+    },
+    [ensureLoop],
+  )
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     e.preventDefault()
@@ -542,7 +552,11 @@ const MobileAperture = memo(function MobileAperture({
           <div
             ref={overlayTitleRef}
             className="text-lg font-semibold text-text-100 px-5 py-2 max-w-[75vw] text-center pointer-events-none"
-            style={{ opacity: 0, transform: 'translateY(4px)', transition: 'opacity 0.15s ease-out, transform 0.15s ease-out' }}
+            style={{
+              opacity: 0,
+              transform: 'translateY(4px)',
+              transition: 'opacity 0.15s ease-out, transform 0.15s ease-out',
+            }}
           />
         </div>
       )}
@@ -561,7 +575,7 @@ const MobileAperture = memo(function MobileAperture({
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
       >
-        {entries.map((entry) => {
+        {entries.map(entry => {
           const isVisibleEntry = activeSet?.has(entry.messageId) ?? false
           return (
             <div
@@ -589,9 +603,7 @@ const MobileAperture = memo(function MobileAperture({
                 style={{
                   width: `${isVisibleEntry ? 10 : MOBILE_TICK_W_MIN}px`,
                   height: `${TICK_H}px`,
-                  backgroundColor: isVisibleEntry
-                    ? 'hsl(var(--accent-main-100) / 0.55)'
-                    : 'hsl(var(--border-300))',
+                  backgroundColor: isVisibleEntry ? 'hsl(var(--accent-main-100) / 0.55)' : 'hsl(var(--border-300))',
                 }}
               />
             </div>

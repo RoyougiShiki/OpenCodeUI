@@ -16,12 +16,7 @@ import {
   AlertCircleIcon,
   ExternalLinkIcon,
 } from './Icons'
-import {
-  listWorktrees,
-  createWorktree,
-  removeWorktree,
-  resetWorktree,
-} from '../api/worktree'
+import { listWorktrees, createWorktree, removeWorktree, resetWorktree } from '../api/worktree'
 import { subscribeToEvents } from '../api/events'
 import { useDirectory, useVcsInfo } from '../hooks'
 import { normalizeToForwardSlash } from '../utils'
@@ -81,7 +76,7 @@ export const WorktreePanel = memo(function WorktreePanel({ isResizing: _isResizi
       onWorktreeReady: () => {
         loadWorktrees()
       },
-      onWorktreeFailed: (data) => {
+      onWorktreeFailed: data => {
         setError(`Worktree failed: ${data.message}`)
         setActionLoading(null)
       },
@@ -92,64 +87,76 @@ export const WorktreePanel = memo(function WorktreePanel({ isResizing: _isResizi
   }, [loadWorktrees, refreshVcs])
 
   // 在 worktree 目录下开启新 session
-  const handleOpenSession = useCallback((worktreeDir: string) => {
-    const normalized = normalizeToForwardSlash(worktreeDir)
-    // 把 worktree 目录加入项目列表（同时切换过去）
-    addDirectory(normalized)
-    // 直接设置 URL hash 到新 session 状态（清掉 sessionId，用 worktree 目录）
-    window.location.hash = `#/?dir=${normalized}`
-  }, [addDirectory])
+  const handleOpenSession = useCallback(
+    (worktreeDir: string) => {
+      const normalized = normalizeToForwardSlash(worktreeDir)
+      // 把 worktree 目录加入项目列表（同时切换过去）
+      addDirectory(normalized)
+      // 直接设置 URL hash 到新 session 状态（清掉 sessionId，用 worktree 目录）
+      window.location.hash = `#/?dir=${normalized}`
+    },
+    [addDirectory],
+  )
 
   // 创建 worktree
-  const handleCreate = useCallback(async (name: string, autoOpen: boolean) => {
-    if (!currentDirectory || !name.trim()) return
+  const handleCreate = useCallback(
+    async (name: string, autoOpen: boolean) => {
+      if (!currentDirectory || !name.trim()) return
 
-    setActionLoading('create')
-    try {
-      const wt = await createWorktree({ name: name.trim() }, currentDirectory)
-      setShowCreateForm(false)
-      await loadWorktrees()
-      if (autoOpen && wt.directory) {
-        handleOpenSession(wt.directory)
+      setActionLoading('create')
+      try {
+        const wt = await createWorktree({ name: name.trim() }, currentDirectory)
+        setShowCreateForm(false)
+        await loadWorktrees()
+        if (autoOpen && wt.directory) {
+          handleOpenSession(wt.directory)
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to create worktree')
+      } finally {
+        setActionLoading(null)
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create worktree')
-    } finally {
-      setActionLoading(null)
-    }
-  }, [currentDirectory, loadWorktrees, handleOpenSession])
+    },
+    [currentDirectory, loadWorktrees, handleOpenSession],
+  )
 
   // 删除 worktree
-  const handleDelete = useCallback(async (directory: string) => {
-    if (!currentDirectory) return
+  const handleDelete = useCallback(
+    async (directory: string) => {
+      if (!currentDirectory) return
 
-    setActionLoading(`delete-${directory}`)
-    try {
-      await removeWorktree({ directory }, currentDirectory)
-      await loadWorktrees()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to remove worktree')
-    } finally {
-      setActionLoading(null)
-      setDeleteConfirm({ isOpen: false, directory: null })
-    }
-  }, [currentDirectory, loadWorktrees])
+      setActionLoading(`delete-${directory}`)
+      try {
+        await removeWorktree({ directory }, currentDirectory)
+        await loadWorktrees()
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to remove worktree')
+      } finally {
+        setActionLoading(null)
+        setDeleteConfirm({ isOpen: false, directory: null })
+      }
+    },
+    [currentDirectory, loadWorktrees],
+  )
 
   // 重置 worktree
-  const handleReset = useCallback(async (directory: string) => {
-    if (!currentDirectory) return
+  const handleReset = useCallback(
+    async (directory: string) => {
+      if (!currentDirectory) return
 
-    setActionLoading(`reset-${directory}`)
-    try {
-      await resetWorktree({ directory }, currentDirectory)
-      await loadWorktrees()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to reset worktree')
-    } finally {
-      setActionLoading(null)
-      setResetConfirm({ isOpen: false, directory: null })
-    }
-  }, [currentDirectory, loadWorktrees])
+      setActionLoading(`reset-${directory}`)
+      try {
+        await resetWorktree({ directory }, currentDirectory)
+        await loadWorktrees()
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to reset worktree')
+      } finally {
+        setActionLoading(null)
+        setResetConfirm({ isOpen: false, directory: null })
+      }
+    },
+    [currentDirectory, loadWorktrees],
+  )
 
   // 从 worktree path 中提取显示名
   const getWorktreeName = useCallback((wtPath: string) => {
@@ -180,7 +187,10 @@ export const WorktreePanel = memo(function WorktreePanel({ isResizing: _isResizi
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => { loadWorktrees(); refreshVcs() }}
+            onClick={() => {
+              loadWorktrees()
+              refreshVcs()
+            }}
             disabled={loading}
             className="p-1 rounded text-text-400 hover:text-text-100 hover:bg-bg-200/50 transition-colors"
             title="Refresh"
@@ -206,9 +216,7 @@ export const WorktreePanel = memo(function WorktreePanel({ isResizing: _isResizi
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border-200/20">
         <div className="flex items-center gap-1.5 text-[11px] text-text-300">
           <span className="font-medium">Worktrees</span>
-          {!loading && (
-            <span className="text-text-400">({worktrees.length})</span>
-          )}
+          {!loading && <span className="text-text-400">({worktrees.length})</span>}
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
@@ -227,10 +235,7 @@ export const WorktreePanel = memo(function WorktreePanel({ isResizing: _isResizi
           <div className="flex-1 min-w-0">
             <span className="text-[11px] text-danger-100 break-all">{error}</span>
           </div>
-          <button
-            onClick={() => setError(null)}
-            className="p-0.5 rounded text-text-400 hover:text-text-100 shrink-0"
-          >
+          <button onClick={() => setError(null)} className="p-0.5 rounded text-text-400 hover:text-text-100 shrink-0">
             <CloseIcon size={10} />
           </button>
         </div>
@@ -265,7 +270,7 @@ export const WorktreePanel = memo(function WorktreePanel({ isResizing: _isResizi
           </div>
         ) : (
           <div className="p-2 space-y-1">
-            {worktrees.map((wt) => (
+            {worktrees.map(wt => (
               <WorktreeItem
                 key={wt}
                 directory={wt}
@@ -340,7 +345,7 @@ function CreateWorktreeForm({ onSubmit, onCancel, isLoading }: CreateWorktreeFor
       <input
         type="text"
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={e => setName(e.target.value)}
         placeholder="Worktree name (e.g. feature-xyz)"
         className="w-full bg-bg-000 border border-border-200 rounded-md px-2.5 py-1.5 text-xs text-text-100 placeholder:text-text-400/60 focus:outline-none focus:border-accent-main-100/50 transition-colors"
         autoFocus
@@ -350,7 +355,7 @@ function CreateWorktreeForm({ onSubmit, onCancel, isLoading }: CreateWorktreeFor
         <input
           type="checkbox"
           checked={autoOpen}
-          onChange={(e) => setAutoOpen(e.target.checked)}
+          onChange={e => setAutoOpen(e.target.checked)}
           disabled={isLoading}
           className="rounded border-border-200 text-accent-main-100 focus:ring-accent-main-100/30 w-3.5 h-3.5"
         />

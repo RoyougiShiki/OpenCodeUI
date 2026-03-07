@@ -30,16 +30,16 @@ A third-party Web frontend for [OpenCode](https://github.com/anomalyco/opencode)
 
 ## Tech Stack
 
-| Category | Technology |
-|----------|-----------|
-| Framework | React 19 + TypeScript |
-| Build | Vite 7 |
-| Styling | Tailwind CSS v4 |
-| Code Highlighting | Shiki |
-| Terminal | xterm.js (WebGL) |
-| Markdown | react-markdown + remark-gfm |
-| Desktop | Tauri 2 |
-| Deployment | Docker (Caddy + Python Router) |
+| Category          | Technology                     |
+| ----------------- | ------------------------------ |
+| Framework         | React 19 + TypeScript          |
+| Build             | Vite 7                         |
+| Styling           | Tailwind CSS v4                |
+| Code Highlighting | Shiki                          |
+| Terminal          | xterm.js (WebGL)               |
+| Markdown          | react-markdown + remark-gfm    |
+| Desktop           | Tauri 2                        |
+| Deployment        | Docker (Caddy + Python Router) |
 
 ## Quick Start
 
@@ -71,10 +71,10 @@ Visit `http://localhost:3000`.
 BACKEND_URL=your-server.com:4096 PORT=8080 docker compose -f docker-compose.standalone.yml up -d
 ```
 
-| Environment Variable | Default | Description |
-|---------------------|---------|-------------|
-| `BACKEND_URL` | `host.docker.internal:4096` | opencode serve address (without protocol prefix) |
-| `PORT` | `3000` | Frontend listening port |
+| Environment Variable | Default                     | Description                                      |
+| -------------------- | --------------------------- | ------------------------------------------------ |
+| `BACKEND_URL`        | `host.docker.internal:4096` | opencode serve address (without protocol prefix) |
+| `PORT`               | `3000`                      | Frontend listening port                          |
 
 ## Docker Deployment
 
@@ -82,24 +82,24 @@ BACKEND_URL=your-server.com:4096 PORT=8080 docker compose -f docker-compose.stan
 
 The deployment consists of three services, unified through the Gateway:
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Gateway | 6658 (`GATEWAY_PORT`) | Unified entry point, reverse proxy for all requests |
-| Gateway | 6659 (`PREVIEW_PORT`) | Dev service preview |
-| Frontend | 3000 (internal) | Static frontend |
-| Backend | 4096 (internal) | OpenCode API |
-| Router | 7070 (internal) | Dynamic port routing (built into Gateway) |
+| Service  | Port                  | Description                                         |
+| -------- | --------------------- | --------------------------------------------------- |
+| Gateway  | 6658 (`GATEWAY_PORT`) | Unified entry point, reverse proxy for all requests |
+| Gateway  | 6659 (`PREVIEW_PORT`) | Dev service preview                                 |
+| Frontend | 3000 (internal)       | Static frontend                                     |
+| Backend  | 4096 (internal)       | OpenCode API                                        |
+| Router   | 7070 (internal)       | Dynamic port routing (built into Gateway)           |
 
 ### Gateway Routing Rules
 
 Requests on port `6658` are forwarded according to these rules:
 
-| Path | Target | Description |
-|------|--------|-------------|
-| `/api/*` | Backend :4096 | OpenCode API, supports SSE |
-| `/routes` | Router :7070 | Dynamic route management panel |
-| `/preview/*` | Router :7070 | Preview port switching API |
-| Other | Frontend :3000 | Frontend static assets |
+| Path         | Target         | Description                    |
+| ------------ | -------------- | ------------------------------ |
+| `/api/*`     | Backend :4096  | OpenCode API, supports SSE     |
+| `/routes`    | Router :7070   | Dynamic route management panel |
+| `/preview/*` | Router :7070   | Preview port switching API     |
+| Other        | Frontend :3000 | Frontend static assets         |
 
 Port `6659` is used to access dev services inside the container. The Router automatically scans ports `3000-9999` and generates preview links via the `/p/{token}/` path.
 
@@ -305,4 +305,4 @@ Some UI styles are inspired by the [Claude](https://claude.ai) interface design.
 
 ---
 
-*This project is driven by Vibe Coding. If you're also interested in AI-assisted programming, feel free to connect.*
+_This project is driven by Vibe Coding. If you're also interested in AI-assisted programming, feel free to connect._

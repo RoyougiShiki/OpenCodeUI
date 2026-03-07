@@ -3,12 +3,12 @@ import { SessionList } from '../../sessions'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog'
 import { ShareDialog } from '../ShareDialog'
 import { ContextDetailsDialog } from './ContextDetailsDialog'
-import { 
-  SidebarIcon, 
-  FolderIcon, 
-  GlobeIcon, 
-  PlusIcon, 
-  TrashIcon, 
+import {
+  SidebarIcon,
+  FolderIcon,
+  GlobeIcon,
+  PlusIcon,
+  TrashIcon,
   SearchIcon,
   ChevronDownIcon,
   CogIcon,
@@ -27,7 +27,13 @@ import { useMessageStore } from '../../../store'
 import { useBusySessions, useBusyCount } from '../../../store/activeSessionStore'
 import { notificationStore, useNotifications, useUnreadNotificationCount } from '../../../store/notificationStore'
 import type { NotificationEntry } from '../../../store/notificationStore'
-import { updateSession, getSession, subscribeToConnectionState, type ApiSession, type ConnectionInfo } from '../../../api'
+import {
+  updateSession,
+  getSession,
+  subscribeToConnectionState,
+  type ApiSession,
+  type ConnectionInfo,
+} from '../../../api'
 import { isSameDirectory } from '../../../utils'
 import { uiErrorHandler } from '../../../utils'
 import type { SessionStats } from '../../../hooks'
@@ -90,23 +96,24 @@ export function SidePanel({
   isWideMode,
   onToggleWideMode,
 }: SidePanelProps) {
-  const { currentDirectory, savedDirectories, setCurrentDirectory, removeDirectory, addDirectory, recentProjects } = useDirectory()
+  const { currentDirectory, savedDirectories, setCurrentDirectory, removeDirectory, addDirectory, recentProjects } =
+    useDirectory()
   const [connectionState, setConnectionState] = useState<ConnectionInfo | null>(null)
   const [projectDeleteConfirm, setProjectDeleteConfirm] = useState<{ isOpen: boolean; projectId: string | null }>({
     isOpen: false,
-    projectId: null
+    projectId: null,
   })
   const [projectsExpanded, setProjectsExpanded] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'recents' | 'active'>('recents')
-  
+
   const showLabels = isExpanded || isMobile
   const newChatShortcut = useKeybindingLabel('newSession')
-  
+
   // Session stats
   const { messages } = useMessageStore()
   const stats = useSessionStats(contextLimit)
   const hasMessages = messages.length > 0
-  
+
   // Active sessions
   const busySessions = useBusySessions()
   const busyCount = useBusyCount()
@@ -114,23 +121,13 @@ export function SidePanel({
   const notifications = useNotifications()
   const unreadNotificationCount = useUnreadNotificationCount()
   const attentionCount = busyCount + unreadNotificationCount
-  
-  
+
   useEffect(() => {
     return subscribeToConnectionState(setConnectionState)
   }, [])
-  
-  const {
-    sessions,
-    isLoading,
-    isLoadingMore,
-    hasMore,
-    search,
-    setSearch,
-    loadMore,
-    deleteSession,
-    refresh,
-  } = useSessionContext()
+
+  const { sessions, isLoading, isLoadingMore, hasMore, search, setSearch, loadMore, deleteSession, refresh } =
+    useSessionContext()
 
   // 缓存通过 API 拉取的 session 数据（sessions 列表中不存在的）
   const [fetchedSessions, setFetchedSessions] = useState<Record<string, ApiSession>>({})
@@ -156,16 +153,14 @@ export function SidePanel({
       ...busySessions.map(e => ({ sessionId: e.sessionId, directory: e.directory })),
       ...notifications.map(e => ({ sessionId: e.sessionId, directory: e.directory })),
     ]
-    const missing = allNeeded.filter(
-      (entry) => !sessionLookup.has(entry.sessionId)
-    )
+    const missing = allNeeded.filter(entry => !sessionLookup.has(entry.sessionId))
     if (missing.length === 0) return
 
     let cancelled = false
     const fetchMissing = async () => {
       const results: Record<string, ApiSession> = {}
       await Promise.allSettled(
-        missing.map(async (entry) => {
+        missing.map(async entry => {
           try {
             const session = await getSession(entry.sessionId, entry.directory)
             if (!cancelled) {
@@ -174,22 +169,26 @@ export function SidePanel({
           } catch {
             // 拉取失败就算了，标题会显示 fallback
           }
-        })
+        }),
       )
       if (!cancelled && Object.keys(results).length > 0) {
-        setFetchedSessions((prev) => ({ ...prev, ...results }))
+        setFetchedSessions(prev => ({ ...prev, ...results }))
       }
     }
     fetchMissing()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [busySessions, notifications, sessionLookup])
 
   const projects = useMemo<ProjectItem[]>(() => {
-    const list: ProjectItem[] = [{
-      id: 'global',
-      worktree: 'All projects',
-      name: 'Global',
-    }]
+    const list: ProjectItem[] = [
+      {
+        id: 'global',
+        worktree: 'All projects',
+        name: 'Global',
+      },
+    ]
     // 按最近使用时间排序，最近使用的排最前
     const sorted = [...savedDirectories].sort((a, b) => {
       const aTime = recentProjects[a.path] || a.addedAt
@@ -210,7 +209,7 @@ export function SidePanel({
     if (!currentDirectory) return projects[0]
     const found = projects.find(p => isSameDirectory(p.id, currentDirectory))
     if (found) return found
-    
+
     // 未保存的目录，从路径提取名称并解码
     const rawName = currentDirectory.split(/[/\\]/).pop() || currentDirectory
     let decodedName = rawName
@@ -226,57 +225,75 @@ export function SidePanel({
     }
   }, [currentDirectory, projects])
 
-  const handleSelectProject = useCallback((projectId: string) => {
-    if (projectId === 'global') {
-      setCurrentDirectory(undefined)
-    } else {
-      setCurrentDirectory(projectId)
-    }
-    setProjectsExpanded(false)
-  }, [setCurrentDirectory])
+  const handleSelectProject = useCallback(
+    (projectId: string) => {
+      if (projectId === 'global') {
+        setCurrentDirectory(undefined)
+      } else {
+        setCurrentDirectory(projectId)
+      }
+      setProjectsExpanded(false)
+    },
+    [setCurrentDirectory],
+  )
 
-  const handleRemoveProject = useCallback((projectId: string) => {
-    removeDirectory(projectId)
-  }, [removeDirectory])
+  const handleRemoveProject = useCallback(
+    (projectId: string) => {
+      removeDirectory(projectId)
+    },
+    [removeDirectory],
+  )
 
-  const handleSelect = useCallback((session: ApiSession) => {
-    // Global 模式下，点击 session 自动切换到该 session 的工作目录并添加到项目列表
-    if (!currentDirectory && session.directory) {
-      addDirectory(session.directory)
-    }
-    onSelectSession(session)
-    if (window.innerWidth < 768 && onCloseMobile) {
-      onCloseMobile()
-    }
-  }, [currentDirectory, addDirectory, onSelectSession, onCloseMobile])
+  const handleSelect = useCallback(
+    (session: ApiSession) => {
+      // Global 模式下，点击 session 自动切换到该 session 的工作目录并添加到项目列表
+      if (!currentDirectory && session.directory) {
+        addDirectory(session.directory)
+      }
+      onSelectSession(session)
+      if (window.innerWidth < 768 && onCloseMobile) {
+        onCloseMobile()
+      }
+    },
+    [currentDirectory, addDirectory, onSelectSession, onCloseMobile],
+  )
 
   // Active tab 专用：跨目录的 session 需要确保目录在项目列表中
-  const handleSelectActive = useCallback((session: ApiSession) => {
-    if (session.directory) {
-      addDirectory(session.directory)
-    }
-    onSelectSession(session)
-    if (window.innerWidth < 768 && onCloseMobile) {
-      onCloseMobile()
-    }
-  }, [addDirectory, onSelectSession, onCloseMobile])
+  const handleSelectActive = useCallback(
+    (session: ApiSession) => {
+      if (session.directory) {
+        addDirectory(session.directory)
+      }
+      onSelectSession(session)
+      if (window.innerWidth < 768 && onCloseMobile) {
+        onCloseMobile()
+      }
+    },
+    [addDirectory, onSelectSession, onCloseMobile],
+  )
 
-  const handleRename = useCallback(async (sessionId: string, newTitle: string) => {
-    try {
-      await updateSession(sessionId, { title: newTitle }, currentDirectory)
-      refresh()
-    } catch (e) {
-      uiErrorHandler('rename session', e)
-    }
-  }, [currentDirectory, refresh])
+  const handleRename = useCallback(
+    async (sessionId: string, newTitle: string) => {
+      try {
+        await updateSession(sessionId, { title: newTitle }, currentDirectory)
+        refresh()
+      } catch (e) {
+        uiErrorHandler('rename session', e)
+      }
+    },
+    [currentDirectory, refresh],
+  )
 
-  const handleDeleteSession = useCallback(async (sessionId: string) => {
-    await deleteSession(sessionId)
+  const handleDeleteSession = useCallback(
+    async (sessionId: string) => {
+      await deleteSession(sessionId)
 
-    if (selectedSessionId === sessionId) {
-      onNewSession()
-    }
-  }, [deleteSession, onNewSession, selectedSessionId])
+      if (selectedSessionId === sessionId) {
+        onNewSession()
+      }
+    },
+    [deleteSession, onNewSession, selectedSessionId],
+  )
 
   useEffect(() => {
     if (!isExpanded) {
@@ -290,9 +307,9 @@ export function SidePanel({
       {/* ===== Header ===== */}
       <div className="h-14 shrink-0 flex items-center">
         {/* Logo 区域 - 展开时显示 */}
-        <div 
+        <div
           className="overflow-hidden transition-all duration-300 ease-out"
-          style={{ 
+          style={{
             width: showLabels ? 'auto' : 0,
             paddingLeft: showLabels ? 16 : 0,
             opacity: showLabels ? 1 : 0,
@@ -302,9 +319,9 @@ export function SidePanel({
             <span className="text-base font-semibold text-text-100 tracking-tight">OpenCode</span>
           </a>
         </div>
-        
+
         {/* Toggle Button - 桌面端和移动端都显示 */}
-        <div 
+        <div
           className="flex-1 flex items-center transition-all duration-300 ease-out"
           style={{ justifyContent: showLabels ? 'flex-end' : 'center', paddingRight: showLabels ? 8 : 0 }}
         >
@@ -324,7 +341,7 @@ export function SidePanel({
         <button
           onClick={onNewSession}
           className="h-8 flex items-center rounded-lg text-text-300 hover:text-text-100 hover:bg-bg-200 active:scale-[0.98] transition-all duration-300 group overflow-hidden"
-          style={{ 
+          style={{
             width: showLabels ? '100%' : 32,
             paddingLeft: 6,
             paddingRight: 6,
@@ -334,13 +351,13 @@ export function SidePanel({
           <span className="size-5 flex items-center justify-center shrink-0">
             <PlusIcon size={16} />
           </span>
-          <span 
+          <span
             className="ml-2 text-sm whitespace-nowrap transition-opacity duration-300"
             style={{ opacity: showLabels ? 1 : 0 }}
           >
             New chat
           </span>
-          <span 
+          <span
             className="ml-auto text-[10px] text-text-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
             style={{ opacity: showLabels ? undefined : 0 }}
           >
@@ -359,33 +376,32 @@ export function SidePanel({
             title={currentProject?.name || 'Global'}
           >
             <span className="size-5 flex items-center justify-center shrink-0">
-              {currentProject?.id === 'global' 
-                ? <GlobeIcon size={16} className="text-accent-main-100" /> 
-                : <FolderIcon size={16} />
-              }
+              {currentProject?.id === 'global' ? (
+                <GlobeIcon size={16} className="text-accent-main-100" />
+              ) : (
+                <FolderIcon size={16} />
+              )}
             </span>
-            <span className="ml-2 text-sm truncate">
-              {currentProject?.name || 'Global'}
-            </span>
-            <ChevronDownIcon 
-              size={14} 
+            <span className="ml-2 text-sm truncate">{currentProject?.name || 'Global'}</span>
+            <ChevronDownIcon
+              size={14}
               className={`ml-auto text-text-400 transition-transform duration-200 shrink-0 ${projectsExpanded ? '' : '-rotate-90'}`}
             />
           </button>
         )}
-        
+
         {/* Projects Dropdown */}
-        <div 
+        <div
           className="overflow-hidden transition-all duration-300 ease-out"
           style={{
-            maxHeight: (showLabels && projectsExpanded) ? 300 : 0,
-            opacity: (showLabels && projectsExpanded) ? 1 : 0,
-            marginTop: (showLabels && projectsExpanded) ? 4 : 0,
+            maxHeight: showLabels && projectsExpanded ? 300 : 0,
+            opacity: showLabels && projectsExpanded ? 1 : 0,
+            marginTop: showLabels && projectsExpanded ? 4 : 0,
           }}
         >
           <div className="rounded-lg border border-border-200/50 bg-bg-100/80 overflow-hidden">
             <div className="max-h-48 overflow-y-auto custom-scrollbar py-1">
-              {projects.map((project) => {
+              {projects.map(project => {
                 const isGlobal = project.id === 'global'
                 const isActive = currentProject?.id === project.id
                 return (
@@ -394,7 +410,7 @@ export function SidePanel({
                     onClick={() => handleSelectProject(project.id)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => {
+                    onKeyDown={e => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
                         handleSelectProject(project.id)
@@ -406,10 +422,7 @@ export function SidePanel({
                     title={project.worktree}
                   >
                     <span className="w-5 h-5 flex items-center justify-center shrink-0">
-                      {isGlobal 
-                        ? <GlobeIcon size={14} className="text-accent-main-100" /> 
-                        : <FolderIcon size={14} />
-                      }
+                      {isGlobal ? <GlobeIcon size={14} className="text-accent-main-100" /> : <FolderIcon size={14} />}
                     </span>
                     <div className="flex-1 min-w-0 text-left">
                       <div className="text-xs truncate">{project.name}</div>
@@ -421,7 +434,7 @@ export function SidePanel({
                     </div>
                     {!isGlobal && (
                       <button
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation()
                           setProjectDeleteConfirm({ isOpen: true, projectId: project.id })
                         }}
@@ -449,7 +462,7 @@ export function SidePanel({
       </div>
 
       {/* ===== Main Content ===== */}
-      <div 
+      <div
         className="flex-1 flex flex-col min-h-0 overflow-hidden transition-all duration-300 ease-out"
         style={{
           opacity: showLabels ? 1 : 0,
@@ -463,7 +476,7 @@ export function SidePanel({
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={e => setSearch(e.target.value)}
               placeholder="Search chats..."
               className="w-full bg-bg-200/40 hover:bg-bg-200/60 focus:bg-bg-000 border border-transparent focus:border-border-200 rounded-lg py-1.5 pl-8 pr-8 text-xs text-text-100 placeholder:text-text-400/70 focus:outline-none transition-all"
             />
@@ -485,9 +498,7 @@ export function SidePanel({
             <button
               onClick={() => setSidebarTab('recents')}
               className={`px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-colors duration-150 ${
-                sidebarTab === 'recents'
-                  ? 'text-text-100'
-                  : 'text-text-500 hover:text-text-300'
+                sidebarTab === 'recents' ? 'text-text-100' : 'text-text-500 hover:text-text-300'
               }`}
             >
               Recents
@@ -495,18 +506,18 @@ export function SidePanel({
             <button
               onClick={() => setSidebarTab('active')}
               className={`px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-colors duration-150 flex items-center gap-1.5 ${
-                sidebarTab === 'active'
-                  ? 'text-text-100'
-                  : 'text-text-500 hover:text-text-300'
+                sidebarTab === 'active' ? 'text-text-100' : 'text-text-500 hover:text-text-300'
               }`}
             >
               Active
               {attentionCount > 0 && (
-                <span className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold rounded-full ${
-                  attentionCount > busyCount
-                    ? 'bg-accent-main-100/15 text-accent-main-100'
-                    : 'bg-success-100/15 text-success-100'
-                }`}>
+                <span
+                  className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold rounded-full ${
+                    attentionCount > busyCount
+                      ? 'bg-accent-main-100/15 text-accent-main-100'
+                      : 'bg-success-100/15 text-success-100'
+                  }`}
+                >
                   {attentionCount}
                 </span>
               )}
@@ -548,7 +559,7 @@ export function SidePanel({
               ) : (
                 <div className="space-y-0.5">
                   {/* Busy sessions */}
-                  {busySessions.map((entry) => {
+                  {busySessions.map(entry => {
                     const resolvedSession = sessionLookup.get(entry.sessionId)
                     return (
                       <ActiveSessionItem
@@ -563,7 +574,9 @@ export function SidePanel({
 
                   {/* Divider + actions between busy and notifications */}
                   {notifications.length > 0 && (
-                    <div className={`flex items-center justify-between gap-2 ${busySessions.length > 0 ? 'mt-2 pt-2 border-t border-border-200/30' : ''}`}>
+                    <div
+                      className={`flex items-center justify-between gap-2 ${busySessions.length > 0 ? 'mt-2 pt-2 border-t border-border-200/30' : ''}`}
+                    >
                       <span className="text-[10px] font-medium text-text-400 uppercase tracking-wider pl-1">
                         Notifications
                       </span>
@@ -607,7 +620,7 @@ export function SidePanel({
 
       {/* Spacer for collapsed */}
       {!showLabels && <div className="flex-1" />}
-      
+
       {/* ===== Footer ===== */}
       <SidebarFooter
         showLabels={showLabels}
@@ -663,13 +676,14 @@ function ActiveSessionItem({ entry, resolvedSession, isSelected, onSelect }: Act
   const directory = resolvedSession?.directory || entry.directory
 
   // 状态显示：permission > question > retry > working
-  const statusConfig = pending?.type === 'permission'
-    ? { label: 'Awaiting Permission', color: 'text-warning-100', dotColor: 'bg-warning-100', pulse: false }
-    : pending?.type === 'question'
-    ? { label: 'Awaiting Answer', color: 'text-info-100', dotColor: 'bg-info-100', pulse: false }
-    : isRetry
-    ? { label: 'Retrying', color: 'text-warning-100', dotColor: 'bg-warning-100', pulse: false }
-    : { label: 'Working', color: 'text-success-100', dotColor: 'bg-success-100', pulse: true }
+  const statusConfig =
+    pending?.type === 'permission'
+      ? { label: 'Awaiting Permission', color: 'text-warning-100', dotColor: 'bg-warning-100', pulse: false }
+      : pending?.type === 'question'
+        ? { label: 'Awaiting Answer', color: 'text-info-100', dotColor: 'bg-info-100', pulse: false }
+        : isRetry
+          ? { label: 'Retrying', color: 'text-warning-100', dotColor: 'bg-warning-100', pulse: false }
+          : { label: 'Working', color: 'text-success-100', dotColor: 'bg-success-100', pulse: true }
 
   const handleClick = () => {
     if (resolvedSession) {
@@ -683,9 +697,7 @@ function ActiveSessionItem({ entry, resolvedSession, isSelected, onSelect }: Act
     <div
       onClick={handleClick}
       className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 border border-transparent ${
-        isSelected
-          ? 'bg-bg-000 shadow-sm ring-1 ring-border-200/50'
-          : 'hover:bg-bg-200/50'
+        isSelected ? 'bg-bg-000 shadow-sm ring-1 ring-border-200/50' : 'hover:bg-bg-200/50'
       } ${!resolvedSession ? 'opacity-50 cursor-default' : ''}`}
     >
       {/* Status dot */}
@@ -698,15 +710,16 @@ function ActiveSessionItem({ entry, resolvedSession, isSelected, onSelect }: Act
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={`text-[13px] truncate font-medium ${
-          isSelected ? 'text-text-100' : 'text-text-200 group-hover:text-text-100'
-        }`} title={displayTitle}>
+        <p
+          className={`text-[13px] truncate font-medium ${
+            isSelected ? 'text-text-100' : 'text-text-200 group-hover:text-text-100'
+          }`}
+          title={displayTitle}
+        >
           {displayTitle}
         </p>
         <div className="flex items-center mt-0.5 h-4 min-w-0 overflow-hidden text-[10px] text-text-400 gap-1 whitespace-nowrap">
-          <span className={`shrink-0 whitespace-nowrap ${statusConfig.color}`}>
-            {statusConfig.label}
-          </span>
+          <span className={`shrink-0 whitespace-nowrap ${statusConfig.color}`}>{statusConfig.label}</span>
           {pending?.description && (
             <>
               <span className="opacity-30 shrink-0">·</span>
@@ -716,7 +729,9 @@ function ActiveSessionItem({ entry, resolvedSession, isSelected, onSelect }: Act
           {isRetry && entry.status.type === 'retry' && (
             <>
               <span className="opacity-30 shrink-0">·</span>
-              <span className="text-text-400 opacity-60 shrink-0 whitespace-nowrap">attempt {entry.status.attempt}</span>
+              <span className="text-text-400 opacity-60 shrink-0 whitespace-nowrap">
+                attempt {entry.status.attempt}
+              </span>
             </>
           )}
           {directory && (
@@ -747,10 +762,10 @@ function formatNotificationTime(ts: number): string {
 }
 
 const notifTypeConfig = {
-  completed:  { icon: CheckIcon, color: 'text-success-100', bgAccent: 'bg-success-bg', label: 'Completed' },
-  error:      { icon: AlertCircleIcon, color: 'text-danger-100', bgAccent: 'bg-danger-bg', label: 'Error' },
+  completed: { icon: CheckIcon, color: 'text-success-100', bgAccent: 'bg-success-bg', label: 'Completed' },
+  error: { icon: AlertCircleIcon, color: 'text-danger-100', bgAccent: 'bg-danger-bg', label: 'Error' },
   permission: { icon: HandIcon, color: 'text-warning-100', bgAccent: 'bg-warning-bg', label: 'Permission' },
-  question:   { icon: QuestionIcon, color: 'text-info-100', bgAccent: 'bg-info-bg', label: 'Question' },
+  question: { icon: QuestionIcon, color: 'text-info-100', bgAccent: 'bg-info-bg', label: 'Question' },
 } as const
 
 interface NotificationItemProps {
@@ -797,9 +812,7 @@ function NotificationItem({ entry, resolvedSession, onSelect }: NotificationItem
           {displayTitle}
         </p>
         <div className="flex items-center mt-0.5 min-w-0 overflow-hidden text-[10px] text-text-400 gap-1">
-          <span className={`shrink-0 ${config.color}`}>
-            {config.label}
-          </span>
+          <span className={`shrink-0 ${config.color}`}>{config.label}</span>
           {entry.body && (
             <>
               <span className="opacity-30 shrink-0">·</span>
@@ -821,9 +834,7 @@ function NotificationItem({ entry, resolvedSession, onSelect }: NotificationItem
 
       {/* Unread dot + dismiss */}
       <div className="shrink-0 flex items-center gap-1">
-        {!entry.read && (
-          <span className="w-1.5 h-1.5 rounded-full bg-accent-main-100" />
-        )}
+        {!entry.read && <span className="w-1.5 h-1.5 rounded-full bg-accent-main-100" />}
         <button
           className="p-0.5 rounded-md text-text-400 opacity-0 group-hover:opacity-100 hover:text-text-200 hover:bg-bg-200 transition-all duration-150 active:scale-90"
           onClick={handleDismiss}
@@ -855,28 +866,36 @@ interface SidebarFooterProps {
 }
 
 // 状态指示器 - 圆环 + 右下角状态点
-function StatusIndicator({ 
-  percent, 
+function StatusIndicator({
+  percent,
   connectionState,
-  size = 24 
-}: { 
+  size = 24,
+}: {
   percent: number
   connectionState: string
-  size?: number 
+  size?: number
 }) {
   const clampedPercent = Math.min(Math.max(percent, 0), 100)
-  
+
   // 进度颜色
-  const progressColor = clampedPercent === 0 ? 'text-text-500' :
-                        clampedPercent >= 90 ? 'text-danger-100' :
-                        clampedPercent >= 70 ? 'text-warning-100' : 
-                        'text-accent-main-100'
-  
+  const progressColor =
+    clampedPercent === 0
+      ? 'text-text-500'
+      : clampedPercent >= 90
+        ? 'text-danger-100'
+        : clampedPercent >= 70
+          ? 'text-warning-100'
+          : 'text-accent-main-100'
+
   // 连接状态颜色
-  const statusColor = connectionState === 'connected' ? 'bg-success-100' :
-                      connectionState === 'connecting' ? 'bg-warning-100 animate-pulse' :
-                      connectionState === 'error' ? 'bg-danger-100' :
-                      'bg-text-500'
+  const statusColor =
+    connectionState === 'connected'
+      ? 'bg-success-100'
+      : connectionState === 'connecting'
+        ? 'bg-warning-100 animate-pulse'
+        : connectionState === 'error'
+          ? 'bg-danger-100'
+          : 'bg-text-500'
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -887,19 +906,19 @@ function StatusIndicator({
         trackClassName="text-bg-300"
         progressClassName={progressColor}
       />
-      
+
       {/* 右下角状态点 - 带背景边框以突出显示 */}
-      <div 
+      <div
         className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-bg-200 ${statusColor}`}
       />
     </div>
   )
 }
 
-function SidebarFooter({ 
-  showLabels, 
-  connectionState, 
-  stats, 
+function SidebarFooter({
+  showLabels,
+  connectionState,
+  stats,
   hasMessages,
   onOpenSettings,
   themeMode = 'system',
@@ -916,27 +935,27 @@ function SidebarFooter({
   const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const closeTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  
-  // 菜单中连接状态显示用
-  const statusColorClass = {
-    connected: 'bg-success-100',
-    connecting: 'bg-warning-100 animate-pulse',
-    disconnected: 'bg-text-500',
-    error: 'bg-danger-100',
-  }[connectionState] || 'bg-text-500'
 
-  const statsColor = stats.contextPercent >= 90 ? 'bg-danger-100' :
-                     stats.contextPercent >= 70 ? 'bg-warning-100' : 
-                     'bg-accent-main-100'
+  // 菜单中连接状态显示用
+  const statusColorClass =
+    {
+      connected: 'bg-success-100',
+      connecting: 'bg-warning-100 animate-pulse',
+      disconnected: 'bg-text-500',
+      error: 'bg-danger-100',
+    }[connectionState] || 'bg-text-500'
+
+  const statsColor =
+    stats.contextPercent >= 90 ? 'bg-danger-100' : stats.contextPercent >= 70 ? 'bg-warning-100' : 'bg-accent-main-100'
 
   // 打开菜单
   const openMenu = useCallback(() => {
     if (!buttonRef.current || !containerRef.current) return
-    
+
     const buttonRect = buttonRef.current.getBoundingClientRect()
     const containerRect = containerRef.current.getBoundingClientRect()
     const menuWidth = showLabels ? containerRect.width : 260
-    
+
     if (showLabels) {
       // 展开模式：菜单底部在容器上方，留点间隙
       setMenuPos({
@@ -954,7 +973,7 @@ function SidebarFooter({
         fromBottom: true, // 也用 bottom 定位
       })
     }
-    
+
     setIsOpen(true)
     requestAnimationFrame(() => setIsVisible(true))
   }, [showLabels])
@@ -977,14 +996,14 @@ function SidebarFooter({
   // 点击外部关闭
   useEffect(() => {
     if (!isOpen) return
-    
+
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node
       if (buttonRef.current?.contains(target)) return
       if (menuRef.current?.contains(target)) return
       closeMenu()
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen, closeMenu])
@@ -998,7 +1017,7 @@ function SidebarFooter({
     document.addEventListener('keydown', handleEsc)
     return () => document.removeEventListener('keydown', handleEsc)
   }, [isOpen, closeMenu])
-  
+
   // 侧边栏状态变化时关闭
   useEffect(() => {
     if (isOpen) closeMenu()
@@ -1015,120 +1034,138 @@ function SidebarFooter({
   }, [])
 
   // 浮动菜单
-  const floatingMenu = isOpen ? createPortal(
-    <div 
-      ref={menuRef}
-      className={`
+  const floatingMenu = isOpen
+    ? createPortal(
+        <div
+          ref={menuRef}
+          className={`
         fixed z-[9999] rounded-xl border border-border-200/60 bg-bg-100 shadow-2xl overflow-hidden
         transition-all duration-150 ease-out
         ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
       `}
-      style={{
-        bottom: window.innerHeight - menuPos.top,
-        left: menuPos.left, 
-        width: menuPos.width,
-        transformOrigin: showLabels ? 'bottom left' : 'bottom left',
-      }}
-    >
-      {/* Context Stats */}
-      <div className="p-3 border-b border-border-200/30">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-text-200">Context Usage</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-text-400">{Math.round(stats.contextPercent)}%</span>
-            <button
-              type="button"
-              onClick={() => {
-                closeMenu()
-                setContextDialogOpen(true)
-              }}
-              className="
+          style={{
+            bottom: window.innerHeight - menuPos.top,
+            left: menuPos.left,
+            width: menuPos.width,
+            transformOrigin: showLabels ? 'bottom left' : 'bottom left',
+          }}
+        >
+          {/* Context Stats */}
+          <div className="p-3 border-b border-border-200/30">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-text-200">Context Usage</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-text-400">{Math.round(stats.contextPercent)}%</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMenu()
+                    setContextDialogOpen(true)
+                  }}
+                  className="
                 shrink-0 h-6 px-2
                 rounded-md border border-border-200/60
                 bg-bg-200/70 hover:bg-bg-300
                 text-[10px] font-medium text-text-200
                 transition-colors
               "
+                >
+                  View details
+                </button>
+              </div>
+            </div>
+            <div className="w-full h-1.5 bg-bg-300 rounded-full overflow-hidden relative mb-2">
+              <div
+                className={`absolute inset-0 ${statsColor} transition-transform duration-500 ease-out origin-left`}
+                style={{ transform: `scaleX(${Math.min(100, stats.contextPercent) / 100})` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-text-400 font-mono">
+              <span>
+                {formatTokens(stats.contextUsed)} / {formatTokens(stats.contextLimit)}
+              </span>
+              <span>{formatCost(stats.totalCost)}</span>
+            </div>
+          </div>
+
+          {/* Theme Selector */}
+          <div className="p-2 border-b border-border-200/30">
+            <div className="text-[10px] font-bold text-text-400 uppercase tracking-wider px-1 mb-1.5">Appearance</div>
+            <div className="flex bg-bg-200/50 p-1 rounded-lg border border-border-200/30 relative isolate">
+              <div
+                className="absolute top-1 bottom-1 left-1 w-[calc((100%-8px)/3)] bg-bg-000 rounded-md shadow-sm ring-1 ring-border-200/50 transition-transform duration-300 ease-out -z-10"
+                style={{
+                  transform:
+                    themeMode === 'system'
+                      ? 'translateX(0%)'
+                      : themeMode === 'light'
+                        ? 'translateX(100%)'
+                        : 'translateX(200%)',
+                }}
+              />
+              {(['system', 'light', 'dark'] as const).map(m => (
+                <button
+                  key={m}
+                  onClick={e => onThemeChange?.(m, e)}
+                  className={`flex-1 flex items-center justify-center py-1.5 rounded-md text-xs font-medium transition-colors duration-200 ${
+                    themeMode === m ? 'text-text-100' : 'text-text-400 hover:text-text-200'
+                  }`}
+                >
+                  {m === 'system' && <SystemIcon size={14} />}
+                  {m === 'light' && <SunIcon size={14} />}
+                  {m === 'dark' && <MoonIcon size={14} />}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Menu Items */}
+          <div className="py-1">
+            {onToggleWideMode && (
+              <button
+                onClick={() => {
+                  onToggleWideMode()
+                  closeMenu()
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-text-300 hover:text-text-100 hover:bg-bg-200/50 transition-colors text-left"
+              >
+                {isWideMode ? <MinimizeIcon size={14} /> : <MaximizeIcon size={14} />}
+                <span>{isWideMode ? 'Standard Width' : 'Wide Mode'}</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                closeMenu()
+                setShareDialogOpen(true)
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-text-300 hover:text-text-100 hover:bg-bg-200/50 transition-colors text-left"
             >
-              View details
+              <ShareIcon size={14} />
+              <span>Share Chat</span>
+            </button>
+
+            <button
+              onClick={() => {
+                closeMenu()
+                onOpenSettings?.()
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-text-300 hover:text-text-100 hover:bg-bg-200/50 transition-colors text-left"
+            >
+              <CogIcon size={14} />
+              <span>Settings</span>
             </button>
           </div>
-        </div>
-        <div className="w-full h-1.5 bg-bg-300 rounded-full overflow-hidden relative mb-2">
-          <div 
-            className={`absolute inset-0 ${statsColor} transition-transform duration-500 ease-out origin-left`} 
-            style={{ transform: `scaleX(${Math.min(100, stats.contextPercent) / 100})` }}
-          />
-        </div>
-        <div className="flex justify-between text-[10px] text-text-400 font-mono">
-          <span>{formatTokens(stats.contextUsed)} / {formatTokens(stats.contextLimit)}</span>
-          <span>{formatCost(stats.totalCost)}</span>
-        </div>
-      </div>
 
-      {/* Theme Selector */}
-      <div className="p-2 border-b border-border-200/30">
-        <div className="text-[10px] font-bold text-text-400 uppercase tracking-wider px-1 mb-1.5">Appearance</div>
-        <div className="flex bg-bg-200/50 p-1 rounded-lg border border-border-200/30 relative isolate">
-          <div
-            className="absolute top-1 bottom-1 left-1 w-[calc((100%-8px)/3)] bg-bg-000 rounded-md shadow-sm ring-1 ring-border-200/50 transition-transform duration-300 ease-out -z-10"
-            style={{
-              transform: themeMode === 'system' ? 'translateX(0%)' : themeMode === 'light' ? 'translateX(100%)' : 'translateX(200%)'
-            }}
-          />
-          {(['system', 'light', 'dark'] as const).map((m) => (
-            <button
-              key={m}
-              onClick={(e) => onThemeChange?.(m, e)}
-              className={`flex-1 flex items-center justify-center py-1.5 rounded-md text-xs font-medium transition-colors duration-200 ${
-                themeMode === m ? 'text-text-100' : 'text-text-400 hover:text-text-200'
-              }`}
-            >
-              {m === 'system' && <SystemIcon size={14} />}
-              {m === 'light' && <SunIcon size={14} />}
-              {m === 'dark' && <MoonIcon size={14} />}
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      {/* Menu Items */}
-      <div className="py-1">
-        {onToggleWideMode && (
-          <button
-            onClick={() => { onToggleWideMode(); closeMenu(); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-text-300 hover:text-text-100 hover:bg-bg-200/50 transition-colors text-left"
-          >
-            {isWideMode ? <MinimizeIcon size={14} /> : <MaximizeIcon size={14} />}
-            <span>{isWideMode ? 'Standard Width' : 'Wide Mode'}</span>
-          </button>
-        )}
-
-        <button
-          onClick={() => { closeMenu(); setShareDialogOpen(true); }}
-          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-text-300 hover:text-text-100 hover:bg-bg-200/50 transition-colors text-left"
-        >
-          <ShareIcon size={14} />
-          <span>Share Chat</span>
-        </button>
-
-        <button
-          onClick={() => { closeMenu(); onOpenSettings?.(); }}
-          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-text-300 hover:text-text-100 hover:bg-bg-200/50 transition-colors text-left"
-        >
-          <CogIcon size={14} />
-          <span>Settings</span>
-        </button>
-      </div>
-
-      {/* Connection Status */}
-      <div className="flex items-center gap-2 px-3 py-2 text-[10px] text-text-400 cursor-default border-t border-border-200/30 bg-bg-200/20">
-        <div className={`w-1.5 h-1.5 rounded-full ${statusColorClass}`} />
-        <span className="capitalize">{connectionState}</span>
-      </div>
-    </div>,
-    document.body
-  ) : null
+          {/* Connection Status */}
+          <div className="flex items-center gap-2 px-3 py-2 text-[10px] text-text-400 cursor-default border-t border-border-200/30 bg-bg-200/20">
+            <div className={`w-1.5 h-1.5 rounded-full ${statusColorClass}`} />
+            <span className="capitalize">{connectionState}</span>
+          </div>
+        </div>,
+        document.body,
+      )
+    : null
 
   return (
     <div className="shrink-0 border-t border-border-200/30 pb-[var(--safe-area-inset-bottom)]">
@@ -1139,12 +1176,9 @@ function SidebarFooter({
           onClick={toggleMenu}
           className={`
             h-8 flex items-center rounded-lg transition-all duration-300 group overflow-hidden
-            ${isOpen 
-              ? 'bg-bg-200 text-text-100' 
-              : 'text-text-300 hover:text-text-100 hover:bg-bg-200'
-            }
+            ${isOpen ? 'bg-bg-200 text-text-100' : 'text-text-300 hover:text-text-100 hover:bg-bg-200'}
           `}
-          style={{ 
+          style={{
             width: showLabels ? '100%' : 32,
             paddingLeft: showLabels ? 6 : 4, // 收起时为了对齐中心线(16px)，24px圆环需要4px padding (4+12=16)
             paddingRight: showLabels ? 8 : 4,
@@ -1152,31 +1186,31 @@ function SidebarFooter({
           title={`Context: ${formatTokens(hasMessages ? stats.contextUsed : 0)} tokens • ${Math.round(stats.contextPercent)}% • ${formatCost(stats.totalCost)}`}
         >
           {/* 状态指示器 */}
-          <StatusIndicator 
-            percent={stats.contextPercent} 
-            connectionState={connectionState}
-            size={24} 
-          />
-          
+          <StatusIndicator percent={stats.contextPercent} connectionState={connectionState} size={24} />
+
           {/* 展开时显示详细信息 */}
-          <span 
+          <span
             className="ml-2 flex-1 flex items-center justify-between min-w-0 transition-opacity duration-300"
             style={{ opacity: showLabels ? 1 : 0 }}
           >
             <span className="text-xs font-mono text-text-300 truncate">
               {hasMessages ? formatTokens(stats.contextUsed) : '0'} / {formatTokens(stats.contextLimit)}
             </span>
-            <span className={`text-xs font-medium ml-2 ${
-              stats.contextPercent >= 90 ? 'text-danger-100' :
-              stats.contextPercent >= 70 ? 'text-warning-100' : 
-              'text-text-400'
-            }`}>
+            <span
+              className={`text-xs font-medium ml-2 ${
+                stats.contextPercent >= 90
+                  ? 'text-danger-100'
+                  : stats.contextPercent >= 70
+                    ? 'text-warning-100'
+                    : 'text-text-400'
+              }`}
+            >
               {Math.round(stats.contextPercent)}%
             </span>
           </span>
         </button>
       </div>
-      
+
       {floatingMenu}
       <ShareDialog isOpen={shareDialogOpen} onClose={() => setShareDialogOpen(false)} />
       <ContextDetailsDialog

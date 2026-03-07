@@ -12,7 +12,7 @@ import type { Attachment } from '../features/attachment'
 export function getEditorText(editor: HTMLElement): string {
   let text = ''
   let lastWasBlock = false
-  
+
   const walk = (node: Node, isFirst: boolean = false) => {
     if (node.nodeType === Node.TEXT_NODE) {
       text += node.textContent || ''
@@ -20,44 +20,44 @@ export function getEditorText(editor: HTMLElement): string {
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as HTMLElement
       const tagName = el.tagName.toLowerCase()
-      
+
       // 处理 <br>
       if (tagName === 'br') {
         text += '\n'
         lastWasBlock = true
         return
       }
-      
+
       // 处理 mention-tag
       if (el.classList.contains('mention-tag')) {
         text += el.textContent || ''
         lastWasBlock = false
         return
       }
-      
+
       // 块级元素（div, p 等）在前面加换行（除非是第一个或已经有换行）
       const isBlock = tagName === 'div' || tagName === 'p'
       if (isBlock && !isFirst && !lastWasBlock && text.length > 0) {
         text += '\n'
       }
-      
+
       // 递归处理子节点
       let childFirst = true
       el.childNodes.forEach(child => {
         walk(child, childFirst)
         childFirst = false
       })
-      
+
       lastWasBlock = isBlock
     }
   }
-  
+
   let first = true
   editor.childNodes.forEach(node => {
     walk(node, first)
     first = false
   })
-  
+
   return text
 }
 
@@ -67,7 +67,7 @@ export function getEditorText(editor: HTMLElement): string {
 export function getTagRanges(editor: HTMLElement): Array<{ start: number; end: number }> {
   const ranges: Array<{ start: number; end: number }> = []
   let offset = 0
-  
+
   const walk = (node: Node) => {
     if (node.nodeType === Node.TEXT_NODE) {
       offset += node.textContent?.length || 0
@@ -82,7 +82,7 @@ export function getTagRanges(editor: HTMLElement): Array<{ start: number; end: n
       }
     }
   }
-  
+
   editor.childNodes.forEach(walk)
   return ranges
 }
@@ -90,7 +90,7 @@ export function getTagRanges(editor: HTMLElement): Array<{ start: number; end: n
 export function getCursorPosition(editor: HTMLElement): number {
   const selection = window.getSelection()
   if (!selection || selection.rangeCount === 0) return 0
-  
+
   const range = selection.getRangeAt(0)
   const preCaretRange = range.cloneRange()
   preCaretRange.selectNodeContents(editor)
@@ -104,7 +104,7 @@ export function getCursorPosition(editor: HTMLElement): number {
 export function setCursorPosition(editor: HTMLElement, position: number): void {
   const selection = window.getSelection()
   if (!selection) return
-  
+
   // 简化实现：遍历文本节点找到位置
   const textNodes: Text[] = []
   const collectTextNodes = (node: Node) => {
@@ -121,7 +121,7 @@ export function setCursorPosition(editor: HTMLElement, position: number): void {
     }
   }
   editor.childNodes.forEach(collectTextNodes)
-  
+
   let currentOffset = 0
   for (const textNode of textNodes) {
     const len = textNode.length
@@ -139,7 +139,7 @@ export function setCursorPosition(editor: HTMLElement, position: number): void {
     }
     currentOffset += len
   }
-  
+
   // 如果没找到，放到末尾
   const range = document.createRange()
   range.selectNodeContents(editor)
@@ -151,44 +151,40 @@ export function setCursorPosition(editor: HTMLElement, position: number): void {
 /**
  * 重建编辑器内容，保留已有的 Tag
  */
-export function rebuildEditorWithText(
-  editor: HTMLElement, 
-  newText: string, 
-  attachments: Attachment[]
-): void {
+export function rebuildEditorWithText(editor: HTMLElement, newText: string, attachments: Attachment[]): void {
   // 按 textRange.start 排序的 mention attachments
   // 只有通过 @ 引用的附件才有 textRange
   const mentionAttachments = attachments
     .filter(a => a.textRange)
     .sort((a, b) => (a.textRange?.start || 0) - (b.textRange?.start || 0))
-  
+
   if (mentionAttachments.length === 0) {
     // 没有 mention，直接设置文本
     editor.textContent = newText
     return
   }
-  
+
   // 检查 attachment 的位置是否还在新文本中有效
   // 如果新文本中对应位置的内容不匹配，就不重建那个 Tag
   editor.innerHTML = ''
   let lastIndex = 0
-  
+
   for (const attachment of mentionAttachments) {
     if (!attachment.textRange) continue
     const { start, end, value } = attachment.textRange
-    
+
     // 检查新文本中对应位置是否匹配
     const textAtPosition = newText.slice(start, end)
     if (textAtPosition !== value) {
       // 不匹配，跳过这个 Tag
       continue
     }
-    
+
     // 添加 Tag 之前的文本
     if (start > lastIndex) {
       editor.appendChild(document.createTextNode(newText.slice(lastIndex, start)))
     }
-    
+
     // 创建 Tag
     const span = document.createElement('span')
     span.contentEditable = 'false'
@@ -198,10 +194,10 @@ export function rebuildEditorWithText(
     span.dataset.mentionValue = attachment.url || attachment.agentName || ''
     span.textContent = value
     editor.appendChild(span)
-    
+
     lastIndex = end
   }
-  
+
   // 添加剩余文本
   if (lastIndex < newText.length) {
     editor.appendChild(document.createTextNode(newText.slice(lastIndex)))
@@ -212,15 +208,12 @@ export function rebuildEditorWithText(
  * 从编辑器 DOM 同步附件状态（更新 textRange）
  * 确保 state 中的位置与 DOM 保持一致
  */
-export function syncAttachmentsFromEditor(
-  editor: HTMLElement, 
-  currentAttachments: Attachment[]
-): Attachment[] {
+export function syncAttachmentsFromEditor(editor: HTMLElement, currentAttachments: Attachment[]): Attachment[] {
   const newAttachments: Attachment[] = []
   const seenIds = new Set<string>()
-  
+
   let currentOffset = 0
-  
+
   const walk = (node: Node) => {
     if (node.nodeType === Node.TEXT_NODE) {
       currentOffset += node.textContent?.length || 0
@@ -229,7 +222,7 @@ export function syncAttachmentsFromEditor(
       if (el.classList.contains('mention-tag')) {
         const id = el.dataset.attachmentId
         const text = el.textContent || ''
-        
+
         if (id) {
           const original = currentAttachments.find(a => a.id === id)
           if (original) {
@@ -239,8 +232,8 @@ export function syncAttachmentsFromEditor(
               textRange: {
                 value: text,
                 start: currentOffset,
-                end: currentOffset + text.length
-              }
+                end: currentOffset + text.length,
+              },
             })
             seenIds.add(id)
           }
@@ -251,11 +244,11 @@ export function syncAttachmentsFromEditor(
       }
     }
   }
-  
+
   editor.childNodes.forEach(walk)
-  
+
   // Keep non-mention attachments (images, etc)
   const nonMentionAttachments = currentAttachments.filter(a => !a.textRange)
-  
+
   return [...newAttachments, ...nonMentionAttachments]
 }

@@ -54,7 +54,7 @@ export function getApiBaseUrl(): string {
 export function getAuthHeader(): Record<string, string> {
   const auth = serverStore.getActiveAuth()
   if (auth?.password) {
-    return { 'Authorization': makeBasicAuthHeader(auth) }
+    return { Authorization: makeBasicAuthHeader(auth) }
   }
   return {}
 }
@@ -85,10 +85,7 @@ export function buildQueryString(params: Record<string, QueryValue>): string {
 /**
  * 构建完整 URL
  */
-export function buildUrl(
-  path: string,
-  params: Record<string, QueryValue> = {}
-): string {
+export function buildUrl(path: string, params: Record<string, QueryValue> = {}): string {
   return `${getApiBaseUrl()}${path}${buildQueryString(params)}`
 }
 
@@ -104,7 +101,7 @@ export interface RequestOptions {
 
 /**
  * 通用 HTTP 请求函数
- * 
+ *
  * 如果活动服务器配置了密码，会自动添加 Authorization header
  * 注意：跨域场景下 Authorization header 会触发 CORS 预检请求，
  * 需要后端正确处理 OPTIONS 请求
@@ -112,20 +109,20 @@ export interface RequestOptions {
 export async function request<T>(
   path: string,
   params: Record<string, QueryValue> = {},
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<T> {
   const { method = 'GET', body, headers = {} } = options
-  
+
   const requestHeaders: Record<string, string> = {
     ...getAuthHeader(),
     ...headers,
   }
-  
+
   const init: RequestInit = {
     method,
     headers: requestHeaders,
   }
-  
+
   if (body !== undefined) {
     init.headers = {
       ...init.headers,
@@ -133,9 +130,9 @@ export async function request<T>(
     }
     init.body = JSON.stringify(body)
   }
-  
+
   const response = await unifiedFetch(buildUrl(path, params), init)
-  
+
   if (!response.ok) {
     let errorMsg = `Request failed: ${response.status}`
     try {
@@ -148,70 +145,51 @@ export async function request<T>(
     }
     throw new Error(errorMsg)
   }
-  
+
   // 204 No Content
   if (response.status === 204) {
     return undefined as T
   }
-  
+
   const text = await response.text()
   if (!text) {
     return undefined as T
   }
-  
+
   return JSON.parse(text)
 }
 
 /**
  * GET 请求
  */
-export async function get<T>(
-  path: string,
-  params: Record<string, QueryValue> = {}
-): Promise<T> {
+export async function get<T>(path: string, params: Record<string, QueryValue> = {}): Promise<T> {
   return request<T>(path, params, { method: 'GET' })
 }
 
 /**
  * POST 请求
  */
-export async function post<T>(
-  path: string,
-  params: Record<string, QueryValue> = {},
-  body?: unknown
-): Promise<T> {
+export async function post<T>(path: string, params: Record<string, QueryValue> = {}, body?: unknown): Promise<T> {
   return request<T>(path, params, { method: 'POST', body })
 }
 
 /**
  * PATCH 请求
  */
-export async function patch<T>(
-  path: string,
-  params: Record<string, QueryValue> = {},
-  body?: unknown
-): Promise<T> {
+export async function patch<T>(path: string, params: Record<string, QueryValue> = {}, body?: unknown): Promise<T> {
   return request<T>(path, params, { method: 'PATCH', body })
 }
 
 /**
  * PUT 请求
  */
-export async function put<T>(
-  path: string,
-  params: Record<string, QueryValue> = {},
-  body?: unknown
-): Promise<T> {
+export async function put<T>(path: string, params: Record<string, QueryValue> = {}, body?: unknown): Promise<T> {
   return request<T>(path, params, { method: 'PUT', body })
 }
 
 /**
  * DELETE 请求
  */
-export async function del<T>(
-  path: string,
-  params: Record<string, QueryValue> = {},
-  body?: unknown
-): Promise<T> {
+export async function del<T>(path: string, params: Record<string, QueryValue> = {}, body?: unknown): Promise<T> {
   return request<T>(path, params, { method: 'DELETE', body })
 }

@@ -19,10 +19,7 @@ export async function listWorktrees(directory?: string): Promise<string[]> {
  * 创建新的 worktree
  * POST /experimental/worktree -> Worktree
  */
-export async function createWorktree(
-  params: WorktreeCreateInput,
-  directory?: string
-): Promise<Worktree> {
+export async function createWorktree(params: WorktreeCreateInput, directory?: string): Promise<Worktree> {
   return post<Worktree>('/experimental/worktree', { directory: formatPathForApi(directory) }, params)
 }
 
@@ -30,10 +27,7 @@ export async function createWorktree(
  * 删除 worktree
  * DELETE /experimental/worktree -> boolean
  */
-export async function removeWorktree(
-  params: WorktreeRemoveInput,
-  directory?: string
-): Promise<boolean> {
+export async function removeWorktree(params: WorktreeRemoveInput, directory?: string): Promise<boolean> {
   return del<boolean>('/experimental/worktree', { directory: formatPathForApi(directory) }, params)
 }
 
@@ -41,9 +35,6 @@ export async function removeWorktree(
  * 重置 worktree
  * POST /experimental/worktree/reset -> boolean
  */
-export async function resetWorktree(
-  params: WorktreeResetInput,
-  directory?: string
-): Promise<boolean> {
+export async function resetWorktree(params: WorktreeResetInput, directory?: string): Promise<boolean> {
   return post<boolean>('/experimental/worktree/reset', { directory: formatPathForApi(directory) }, params)
 }

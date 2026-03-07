@@ -21,11 +21,11 @@ interface TodoItem {
 
 export function TodoRenderer({ part }: ToolRendererProps) {
   const todos = extractTodos(part)
-  
+
   if (todos.length === 0) {
     return null
   }
-  
+
   return <TodoList todos={todos} />
 }
 
@@ -38,11 +38,11 @@ function TodoList({ todos }: { todos: TodoItem[] }) {
   const shouldRenderBody = useDelayedRender(!collapsed)
   const completed = todos.filter(t => t.status === 'completed').length
   const total = todos.length
-  
+
   return (
     <div className="border border-border-200/50 rounded-lg overflow-hidden bg-bg-100 text-xs">
       {/* Header */}
-      <div 
+      <div
         className="flex items-center justify-between px-3 py-1.5 bg-bg-200/50 hover:bg-bg-200 cursor-pointer select-none transition-colors"
         onClick={() => setCollapsed(!collapsed)}
       >
@@ -52,29 +52,33 @@ function TodoList({ todos }: { todos: TodoItem[] }) {
           </span>
           <span className="text-text-300 font-medium font-mono">Tasks</span>
         </div>
-        <span className="text-text-500 tabular-nums font-mono">{completed}/{total}</span>
+        <span className="text-text-500 tabular-nums font-mono">
+          {completed}/{total}
+        </span>
       </div>
-      
+
       {/* List */}
-      <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-        collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
-      }`}>
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+          collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
+        }`}
+      >
         <div className="overflow-hidden">
           {shouldRenderBody && (
             <div className="divide-y divide-border-200/30">
               {todos.map(todo => (
-                <div 
+                <div
                   key={todo.id}
                   className={`flex items-center gap-2 px-3 py-2 ${
                     todo.status === 'completed' ? 'text-text-500' : 'text-text-200'
                   }`}
                 >
                   <span className="shrink-0 flex items-center">{getTodoIcon(todo.status)}</span>
-                  <span className={todo.status === 'completed' ? 'line-through' : ''}>
-                    {todo.content}
-                  </span>
+                  <span className={todo.status === 'completed' ? 'line-through' : ''}>{todo.content}</span>
                   {todo.priority === 'high' && todo.status !== 'completed' && (
-                    <span className="text-[10px] text-warning-100 bg-warning-100/10 px-1 rounded ml-auto shrink-0">!</span>
+                    <span className="text-[10px] text-warning-100 bg-warning-100/10 px-1 rounded ml-auto shrink-0">
+                      !
+                    </span>
                   )}
                 </div>
               ))}
@@ -105,7 +109,7 @@ function getTodoIcon(status: TodoItem['status']) {
     cancelled: 'text-text-500',
     pending: 'text-text-500',
   }[status]
-  
+
   switch (status) {
     case 'completed':
       return <CheckIcon size={size} className={cls} strokeWidth={2.5} />

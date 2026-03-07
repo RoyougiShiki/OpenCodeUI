@@ -80,7 +80,10 @@ export const AttachmentDetailModal = memo(function AttachmentDetailModal({
   useEffect(() => {
     if (!isOpen) return
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); e.stopPropagation() }
+      if (e.key === 'Escape') {
+        onClose()
+        e.stopPropagation()
+      }
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
@@ -91,7 +94,9 @@ export const AttachmentDetailModal = memo(function AttachmentDetailModal({
     if (!isOpen) return
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
+    return () => {
+      document.body.style.overflow = prev
+    }
   }, [isOpen])
 
   // 防止背景误触：触摸设备不走背景关闭，鼠标需要 pointerdown+click 都在背景上
@@ -100,12 +105,15 @@ export const AttachmentDetailModal = memo(function AttachmentDetailModal({
     if (e.pointerType === 'touch') return
     mouseDownOnBackdrop.current = e.target === e.currentTarget
   }, [])
-  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && mouseDownOnBackdrop.current) {
-      onClose()
-    }
-    mouseDownOnBackdrop.current = false
-  }, [onClose])
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget && mouseDownOnBackdrop.current) {
+        onClose()
+      }
+      mouseDownOnBackdrop.current = false
+    },
+    [onClose],
+  )
 
   if (!shouldRender || !attachment) return null
 
@@ -124,13 +132,7 @@ export const AttachmentDetailModal = memo(function AttachmentDetailModal({
       onClick={handleBackdropClick}
     >
       {/* 顶部工具栏 */}
-      <ToolBar
-        attachment={attachment}
-        isImage={!!isImage}
-        hasContent={hasContent}
-        hasUrl={hasUrl}
-        onClose={onClose}
-      />
+      <ToolBar attachment={attachment} isImage={!!isImage} hasContent={hasContent} hasUrl={hasUrl} onClose={onClose} />
 
       {/* 主内容区 */}
       <div className="flex-1 min-h-0 relative">
@@ -139,13 +141,11 @@ export const AttachmentDetailModal = memo(function AttachmentDetailModal({
         ) : hasContent ? (
           <TextViewer content={attachment.content!} />
         ) : (
-          <div className="flex items-center justify-center h-full text-text-400 text-sm">
-            No preview available
-          </div>
+          <div className="flex items-center justify-center h-full text-text-400 text-sm">No preview available</div>
         )}
       </div>
     </div>,
-    document.body
+    document.body,
   )
 })
 
@@ -167,7 +167,7 @@ function ToolBar({ attachment, isImage, hasContent, hasUrl, onClose }: ToolBarPr
   return (
     <div
       className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 shrink-0 border-b border-white/10"
-      onClick={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
     >
       {/* 左侧：文件信息 */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -177,17 +177,13 @@ function ToolBar({ attachment, isImage, hasContent, hasUrl, onClose }: ToolBarPr
         <span className="text-sm text-white/90 truncate" title={attachment.displayName}>
           {attachment.displayName}
         </span>
-        <span className="text-xs text-white/40 shrink-0 hidden sm:inline">
-          {attachment.mime || ''}
-        </span>
+        <span className="text-xs text-white/40 shrink-0 hidden sm:inline">{attachment.mime || ''}</span>
       </div>
 
       {/* 右侧：操作按钮 */}
       <div className="flex items-center gap-0.5 shrink-0">
         {hasContent && <InlineCopyButton text={attachment.content!} />}
-        {(hasContent || (isImage && hasUrl)) && (
-          <InlineDownloadButton attachment={attachment} />
-        )}
+        {(hasContent || (isImage && hasUrl)) && <InlineDownloadButton attachment={attachment} />}
         <div className="w-px h-4 bg-white/20 mx-0.5 sm:mx-1" />
         <button
           onClick={onClose}
@@ -268,28 +264,34 @@ function ZoomableImage({ url, alt }: { url: string; alt: string }) {
   }, [])
 
   // 以某个点为中心缩放
-  const zoomToPoint = useCallback((newScale: number, pointX: number, pointY: number) => {
-    const { cx, cy } = getContainerCenter()
-    const mx = pointX - cx
-    const my = pointY - cy
-    const cur = stateRef.current
-    const ratio = newScale / cur.scale
-    setScale(newScale)
-    setTranslate({
-      x: mx - ratio * (mx - cur.translate.x),
-      y: my - ratio * (my - cur.translate.y),
-    })
-  }, [getContainerCenter])
+  const zoomToPoint = useCallback(
+    (newScale: number, pointX: number, pointY: number) => {
+      const { cx, cy } = getContainerCenter()
+      const mx = pointX - cx
+      const my = pointY - cy
+      const cur = stateRef.current
+      const ratio = newScale / cur.scale
+      setScale(newScale)
+      setTranslate({
+        x: mx - ratio * (mx - cur.translate.x),
+        y: my - ratio * (my - cur.translate.y),
+      })
+    },
+    [getContainerCenter],
+  )
 
   // ---- 滚轮缩放 ----
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const cur = stateRef.current
-    const delta = -e.deltaY * ZOOM_WHEEL_FACTOR
-    const newScale = clamp(cur.scale * (1 + delta), MIN_SCALE, MAX_SCALE)
-    zoomToPoint(newScale, e.clientX, e.clientY)
-  }, [zoomToPoint])
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const cur = stateRef.current
+      const delta = -e.deltaY * ZOOM_WHEEL_FACTOR
+      const newScale = clamp(cur.scale * (1 + delta), MIN_SCALE, MAX_SCALE)
+      zoomToPoint(newScale, e.clientX, e.clientY)
+    },
+    [zoomToPoint],
+  )
 
   // ---- 按钮缩放 ----
   const zoomIn = useCallback(() => {
@@ -300,22 +302,26 @@ function ZoomableImage({ url, alt }: { url: string; alt: string }) {
   }, [])
 
   // ---- 双击/双击切换 ----
-  const toggleZoomAtPoint = useCallback((px: number, py: number) => {
-    const cur = stateRef.current
-    const isDefault = Math.abs(cur.scale - 1) < 0.05
-      && Math.abs(cur.translate.x) < 2
-      && Math.abs(cur.translate.y) < 2
-    if (isDefault) {
-      zoomToPoint(2, px, py)
-    } else {
-      resetView()
-    }
-  }, [zoomToPoint, resetView])
+  const toggleZoomAtPoint = useCallback(
+    (px: number, py: number) => {
+      const cur = stateRef.current
+      const isDefault = Math.abs(cur.scale - 1) < 0.05 && Math.abs(cur.translate.x) < 2 && Math.abs(cur.translate.y) < 2
+      if (isDefault) {
+        zoomToPoint(2, px, py)
+      } else {
+        resetView()
+      }
+    },
+    [zoomToPoint, resetView],
+  )
 
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    toggleZoomAtPoint(e.clientX, e.clientY)
-  }, [toggleZoomAtPoint])
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      toggleZoomAtPoint(e.clientX, e.clientY)
+    },
+    [toggleZoomAtPoint],
+  )
 
   // ---- 鼠标拖拽 ----
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -347,10 +353,14 @@ function ZoomableImage({ url, alt }: { url: string; alt: string }) {
   // 用原生 addEventListener + { passive: false } 才能 preventDefault
   // React 合成事件的 touch 默认是 passive，无法阻止浏览器缩放/滚动
   const toggleZoomRef = useRef(toggleZoomAtPoint)
-  useEffect(() => { toggleZoomRef.current = toggleZoomAtPoint }, [toggleZoomAtPoint])
+  useEffect(() => {
+    toggleZoomRef.current = toggleZoomAtPoint
+  }, [toggleZoomAtPoint])
 
   const getContainerCenterRef = useRef(getContainerCenter)
-  useEffect(() => { getContainerCenterRef.current = getContainerCenter }, [getContainerCenter])
+  useEffect(() => {
+    getContainerCenterRef.current = getContainerCenter
+  }, [getContainerCenter])
 
   useEffect(() => {
     const el = containerRef.current
@@ -452,11 +462,7 @@ function ZoomableImage({ url, alt }: { url: string; alt: string }) {
   }, []) // 不依赖外部状态，全部通过 ref 访问
 
   if (imgError) {
-    return (
-      <div className="flex items-center justify-center h-full text-white/40 text-sm">
-        Failed to load image
-      </div>
-    )
+    return <div className="flex items-center justify-center h-full text-white/40 text-sm">Failed to load image</div>
   }
 
   const scalePercent = Math.round(scale * 100)
@@ -472,7 +478,7 @@ function ZoomableImage({ url, alt }: { url: string; alt: string }) {
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onDoubleClick={handleDoubleClick}
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         <div
           className="absolute inset-0 flex items-center justify-center"
@@ -499,7 +505,7 @@ function ZoomableImage({ url, alt }: { url: string; alt: string }) {
       {imgLoaded && (
         <div
           className="flex items-center justify-center gap-1 py-1.5 sm:py-2 shrink-0"
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
         >
           <ToolButton onClick={zoomOut} disabled={scale <= MIN_SCALE} title="Zoom out">
             <MinusIcon size={14} />
@@ -561,7 +567,7 @@ function TextViewer({ content }: { content: string }) {
     <div
       className="w-full h-full overflow-auto custom-scrollbar overscroll-contain"
       style={{ WebkitOverflowScrolling: 'touch' }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
     >
       <table className="w-full border-collapse text-xs font-mono leading-relaxed">
         <tbody>
@@ -573,9 +579,7 @@ function TextViewer({ content }: { content: string }) {
               >
                 {i + 1}
               </td>
-              <td className="px-4 py-0 text-white/80 whitespace-pre-wrap break-all select-text">
-                {line || '\u00A0'}
-              </td>
+              <td className="px-4 py-0 text-white/80 whitespace-pre-wrap break-all select-text">{line || '\u00A0'}</td>
             </tr>
           ))}
         </tbody>
@@ -593,20 +597,25 @@ function InlineCopyButton({ text }: { text: string }) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
   }, [])
 
-  const handleCopy = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-      timeoutRef.current = setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      clipboardErrorHandler('copy', err)
-    }
-  }, [text])
+  const handleCopy = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation()
+      try {
+        await navigator.clipboard.writeText(text)
+        setCopied(true)
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        timeoutRef.current = setTimeout(() => setCopied(false), 2000)
+      } catch (err) {
+        clipboardErrorHandler('copy', err)
+      }
+    },
+    [text],
+  )
 
   return (
     <button
@@ -641,7 +650,10 @@ function InlineDownloadButton({ attachment }: { attachment: Attachment }) {
 
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); handleDownload() }}
+      onClick={e => {
+        e.stopPropagation()
+        handleDownload()
+      }}
       className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs text-white/60 hover:text-white active:text-white hover:bg-white/10 active:bg-white/10 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 justify-center"
       title="Save to file"
     >

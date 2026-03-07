@@ -53,7 +53,6 @@ function getFilterText(path: string): string {
   return normalized.substring(lastSep + 1)
 }
 
-
 // ============================================
 // Component
 // ============================================
@@ -74,7 +73,7 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
   // Computed
   const currentDir = useMemo(() => getDirectoryPath(inputValue), [inputValue])
   const filterText = useMemo(() => getFilterText(inputValue), [inputValue])
-  
+
   const filteredItems = useMemo(() => {
     if (!filterText) return items
     const lower = filterText.toLowerCase()
@@ -90,14 +89,16 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
       // 重置缓存，确保每次打开都加载最新数据
       loadedPathRef.current = ''
       setItems([])
-      
+
       const initPath = async () => {
         let path = initialPath
         if (!path) {
           try {
             const p = await getPath()
             path = p.home
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
         path = normalizePath(path)
         if (!path.endsWith(PATH_SEP)) path += PATH_SEP
@@ -121,7 +122,7 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
 
     setIsLoading(true)
     setError(null)
-    
+
     listDirectory(currentDir)
       .then(nodes => {
         const fileItems = nodes
@@ -130,12 +131,12 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
           .map(n => ({
             name: n.name,
             path: normalizePath(n.absolute),
-            type: n.type
+            type: n.type,
           }))
-        
+
         setItems(fileItems)
         loadedPathRef.current = currentDir
-        
+
         if (pendingSelectionRef.current) {
           const idx = fileItems.findIndex(item => item.name === pendingSelectionRef.current)
           setSelectedIndex(idx !== -1 ? idx : 0)
@@ -173,7 +174,7 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
     } else {
       current = current.slice(0, -1)
     }
-    
+
     const parent = getDirectoryPath(current)
     if (parent && parent !== current + PATH_SEP) {
       const folderName = current.split(PATH_SEP).pop()
@@ -187,10 +188,13 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
     inputRef.current?.focus()
   }, [])
 
-  const handleSelectFolder = useCallback((folderPath: string) => {
-    onSelect(folderPath)
-    onClose()
-  }, [onSelect, onClose])
+  const handleSelectFolder = useCallback(
+    (folderPath: string) => {
+      onSelect(folderPath)
+      onClose()
+    },
+    [onSelect, onClose],
+  )
 
   const handleConfirmCurrent = useCallback(() => {
     // 去掉尾斜杠，但保留根路径（/ 或 C:/）
@@ -204,60 +208,63 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
     onClose()
   }, [inputValue, onSelect, onClose])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault()
-        setSelectedIndex(prev => Math.min(prev + 1, filteredItems.length - 1))
-        break
-      case 'ArrowUp':
-        e.preventDefault()
-        setSelectedIndex(prev => Math.max(prev - 1, 0))
-        break
-      case 'ArrowRight':
-      case 'Tab':
-        if (filteredItems.length > 0) {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowDown':
           e.preventDefault()
-          const selected = filteredItems[selectedIndex]
-          setInputValue(selected.path + PATH_SEP)
-          setSelectedIndex(0)
-        }
-        break
-      case 'ArrowLeft': {
-        const inputEl = e.currentTarget as HTMLInputElement
-        const isAtStart = inputEl.selectionStart === 0 && inputEl.selectionEnd === 0
-        if (isAtStart || inputValue.endsWith(PATH_SEP)) {
+          setSelectedIndex(prev => Math.min(prev + 1, filteredItems.length - 1))
+          break
+        case 'ArrowUp':
           e.preventDefault()
-          handleGoBack()
+          setSelectedIndex(prev => Math.max(prev - 1, 0))
+          break
+        case 'ArrowRight':
+        case 'Tab':
+          if (filteredItems.length > 0) {
+            e.preventDefault()
+            const selected = filteredItems[selectedIndex]
+            setInputValue(selected.path + PATH_SEP)
+            setSelectedIndex(0)
+          }
+          break
+        case 'ArrowLeft': {
+          const inputEl = e.currentTarget as HTMLInputElement
+          const isAtStart = inputEl.selectionStart === 0 && inputEl.selectionEnd === 0
+          if (isAtStart || inputValue.endsWith(PATH_SEP)) {
+            e.preventDefault()
+            handleGoBack()
+          }
+          break
         }
-        break
+        case 'Enter':
+          e.preventDefault()
+          if (filteredItems.length > 0) {
+            const selectedPath = filteredItems[selectedIndex].path
+            if (selectedPath) {
+              onSelect(selectedPath)
+              onClose()
+            }
+          } else {
+            // 去掉尾斜杠，但保留根路径（/ 或 C:/）
+            let path = inputValue
+            if (path.endsWith(PATH_SEP) && path !== PATH_SEP && !/^[a-zA-Z]:\/$/.test(path)) {
+              path = path.slice(0, -1)
+            }
+            if (path && path !== '.') {
+              onSelect(path)
+              onClose()
+            }
+          }
+          break
+        case 'Escape':
+          e.preventDefault()
+          onClose()
+          break
       }
-      case 'Enter':
-        e.preventDefault()
-        if (filteredItems.length > 0) {
-          const selectedPath = filteredItems[selectedIndex].path
-          if (selectedPath) {
-            onSelect(selectedPath)
-            onClose()
-          }
-        } else {
-          // 去掉尾斜杠，但保留根路径（/ 或 C:/）
-          let path = inputValue
-          if (path.endsWith(PATH_SEP) && path !== PATH_SEP && !/^[a-zA-Z]:\/$/.test(path)) {
-            path = path.slice(0, -1)
-          }
-          if (path && path !== '.') {
-            onSelect(path)
-            onClose()
-          }
-        }
-        break
-      case 'Escape':
-        e.preventDefault()
-        onClose()
-        break
-    }
-  }, [filteredItems, selectedIndex, inputValue, handleGoBack, onSelect, onClose])
+    },
+    [filteredItems, selectedIndex, inputValue, handleGoBack, onSelect, onClose],
+  )
 
   // ==========================================
   // Render
@@ -309,7 +316,10 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
                 icon={<ArrowUpIcon className="w-3.5 h-3.5" />}
                 label=".. (Parent)"
                 isSelected={selectedIndex === -1}
-                onClick={() => { handleGoBack(); inputRef.current?.focus() }}
+                onClick={() => {
+                  handleGoBack()
+                  inputRef.current?.focus()
+                }}
                 onMouseEnter={() => setSelectedIndex(-1)}
               />
             )}
@@ -334,8 +344,11 @@ export function ProjectDialog({ isOpen, onClose, onSelect, initialPath = '' }: P
                 onMouseEnter={() => setSelectedIndex(index)}
                 action={
                   index === selectedIndex && (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleSelectFolder(item.path) }}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        handleSelectFolder(item.path)
+                      }}
                       className="flex items-center gap-1 text-[10px] bg-accent-main-100 hover:bg-accent-main-200 px-2 py-0.5 rounded text-oncolor-100 font-medium transition-colors"
                     >
                       <PlusIcon className="w-2.5 h-2.5" />
@@ -388,9 +401,10 @@ function ListItem({ id, icon, label, isSelected, onClick, onMouseEnter, action }
       onMouseEnter={onMouseEnter}
       className={`
         flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-150
-        ${isSelected 
-          ? 'bg-bg-000 shadow-sm ring-1 ring-border-200/50 text-text-100' 
-          : 'text-text-300 hover:bg-bg-200/50'
+        ${
+          isSelected
+            ? 'bg-bg-000 shadow-sm ring-1 ring-border-200/50 text-text-100'
+            : 'text-text-300 hover:bg-bg-200/50'
         }
       `}
     >

@@ -1,13 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Dialog } from '../../../components/ui'
 import { CodeBlock } from '../../../components/CodeBlock'
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  CpuIcon,
-  DollarSignIcon,
-  SpinnerIcon,
-} from '../../../components/Icons'
+import { ChevronDownIcon, ChevronUpIcon, CpuIcon, DollarSignIcon, SpinnerIcon } from '../../../components/Icons'
 import { useMessageStore, messageStore } from '../../../store'
 import { useSessionStats, formatTokens, formatCost } from '../../../hooks'
 import type { Message, TokenUsage } from '../../../types/message'
@@ -82,7 +76,7 @@ export function ContextDetailsDialog({ isOpen, onClose, contextLimit }: ContextD
     async (msg: Message) => {
       const id = msg.info.id
       const isOpening = expandedId !== id
-      setExpandedId((prev) => (prev === id ? null : id))
+      setExpandedId(prev => (prev === id ? null : id))
 
       if (!isOpening) return
       if (!sessionId) return
@@ -92,12 +86,12 @@ export function ContextDetailsDialog({ isOpen, onClose, contextLimit }: ContextD
       try {
         await messageStore.hydrateMessageParts(sessionId, id)
       } finally {
-        setHydratingId((current) => (current === id ? null : current))
+        setHydratingId(current => (current === id ? null : current))
       }
     },
-    [expandedId, sessionId]
+    [expandedId, sessionId],
   )
-  
+
   return (
     <Dialog isOpen={isOpen} onClose={onClose} title="Context" width={900} className="w-full">
       <div className="flex flex-col gap-4">
@@ -117,7 +111,10 @@ export function ContextDetailsDialog({ isOpen, onClose, contextLimit }: ContextD
             <Stat label="Input" value={formatTokens(contextTokens.input)} />
             <Stat label="Output" value={formatTokens(contextTokens.output)} />
             <Stat label="Reasoning" value={formatTokens(contextTokens.reasoning)} />
-            <Stat label="Cache (r/w)" value={`${formatTokens(contextTokens.cache.read)} / ${formatTokens(contextTokens.cache.write)}`} />
+            <Stat
+              label="Cache (r/w)"
+              value={`${formatTokens(contextTokens.cache.read)} / ${formatTokens(contextTokens.cache.write)}`}
+            />
           </div>
         )}
 
@@ -135,15 +132,14 @@ export function ContextDetailsDialog({ isOpen, onClose, contextLimit }: ContextD
       <div className="mt-6">
         <div className="text-[11px] font-medium text-text-400 mb-2">Raw Messages</div>
         <div className="space-y-1">
-          {messages.map((msg) => {
+          {messages.map(msg => {
             const isExpanded = expandedId === msg.info.id
             const isHydrating = hydratingId === msg.info.id
 
             const headerLabel = `${msg.info.role} • ${msg.info.id}`
             const time = formatTimestamp(msg.info.time?.created)
 
-            const assistantTokens =
-              msg.info.role === 'assistant' ? tokenTotal(msg.info.tokens) : null
+            const assistantTokens = msg.info.role === 'assistant' ? tokenTotal(msg.info.tokens) : null
             const assistantCost = msg.info.role === 'assistant' ? msg.info.cost : null
 
             return (

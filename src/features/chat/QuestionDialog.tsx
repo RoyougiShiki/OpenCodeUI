@@ -12,21 +12,29 @@ interface QuestionDialogProps {
   onCollapsedChange?: (collapsed: boolean) => void
 }
 
-export function QuestionDialog({ request, onReply, onReject, queueLength = 1, isReplying = false, collapsed = false, onCollapsedChange }: QuestionDialogProps) {
+export function QuestionDialog({
+  request,
+  onReply,
+  onReject,
+  queueLength = 1,
+  isReplying = false,
+  collapsed = false,
+  onCollapsedChange,
+}: QuestionDialogProps) {
   // 每个问题选中的选项 labels
   const [answers, setAnswers] = useState<Map<number, Set<string>>>(() => {
     const map = new Map<number, Set<string>>()
     request.questions.forEach((_, idx) => map.set(idx, new Set()))
     return map
   })
-  
+
   // 每个问题是否启用了自定义输入
   const [customEnabled, setCustomEnabled] = useState<Map<number, boolean>>(() => {
     const map = new Map<number, boolean>()
     request.questions.forEach((_, idx) => map.set(idx, false))
     return map
   })
-  
+
   // 每个问题的自定义输入值
   const [customValues, setCustomValues] = useState<Map<number, string>>(() => {
     const map = new Map<number, string>()
@@ -102,7 +110,7 @@ export function QuestionDialog({ request, onReply, onReject, queueLength = 1, is
       const selected = Array.from(answers.get(idx) || [])
       const isCustomEnabled = customEnabled.get(idx)
       const customValue = customValues.get(idx)?.trim()
-      
+
       if (q.multiple) {
         // 多选：合并选中的选项 + 启用的自定义值
         if (isCustomEnabled && customValue && q.custom !== false) {
@@ -125,7 +133,7 @@ export function QuestionDialog({ request, onReply, onReject, queueLength = 1, is
     const selected = answers.get(idx) || new Set()
     const isCustomEnabled = customEnabled.get(idx)
     const customValue = customValues.get(idx)?.trim()
-    
+
     if (q.multiple) {
       // 多选：有选项或（启用自定义且有值）
       return selected.size > 0 || (isCustomEnabled && customValue)
@@ -140,7 +148,10 @@ export function QuestionDialog({ request, onReply, onReject, queueLength = 1, is
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-[10]">
-      <div className="mx-auto max-w-3xl px-4 pb-2" style={{ paddingBottom: 'max(8px, var(--safe-area-inset-bottom, 8px))' }}>
+      <div
+        className="mx-auto max-w-3xl px-4 pb-2"
+        style={{ paddingBottom: 'max(8px, var(--safe-area-inset-bottom, 8px))' }}
+      >
         <div className="border border-border-300/40 rounded-[14px] shadow-float bg-bg-100 overflow-hidden">
           <div className="bg-bg-000 rounded-t-[14px]">
             {/* Header */}
@@ -151,9 +162,7 @@ export function QuestionDialog({ request, onReply, onReject, queueLength = 1, is
                 </div>
                 <h3 className="text-sm font-medium text-text-100">Question</h3>
                 {queueLength > 1 && (
-                  <span className="text-xs text-text-400 bg-bg-200 px-1.5 py-0.5 rounded">
-                    +{queueLength - 1} more
-                  </span>
+                  <span className="text-xs text-text-400 bg-bg-200 px-1.5 py-0.5 rounded">+{queueLength - 1} more</span>
                 )}
               </div>
               <button
@@ -176,11 +185,11 @@ export function QuestionDialog({ request, onReply, onReject, queueLength = 1, is
                   selected={answers.get(qIdx) || new Set()}
                   isCustomEnabled={customEnabled.get(qIdx) || false}
                   customValue={customValues.get(qIdx) || ''}
-                  onSelectOption={(label) => selectOption(qIdx, label)}
+                  onSelectOption={label => selectOption(qIdx, label)}
                   onSelectCustom={() => selectCustom(qIdx)}
-                  onToggleOption={(label) => toggleOption(qIdx, label)}
+                  onToggleOption={label => toggleOption(qIdx, label)}
                   onToggleCustom={() => toggleCustom(qIdx)}
-                  onCustomValueChange={(value) => updateCustomValue(qIdx, value)}
+                  onCustomValueChange={value => updateCustomValue(qIdx, value)}
                 />
               ))}
             </div>
@@ -275,24 +284,20 @@ function QuestionItem({
       <div className="space-y-1.5">
         {question.options.map((option, idx) => {
           const isSelected = selected.has(option.label)
-          
+
           return (
             <button
               key={idx}
-              onClick={() => isMultiple ? onToggleOption(option.label) : onSelectOption(option.label)}
+              onClick={() => (isMultiple ? onToggleOption(option.label) : onSelectOption(option.label))}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-colors text-left ${
-                isSelected
-                  ? 'border-text-100 bg-bg-200'
-                  : 'border-border-200/50 hover:bg-bg-200'
+                isSelected ? 'border-text-100 bg-bg-200' : 'border-border-200/50 hover:bg-bg-200'
               }`}
             >
               <Indicator type={isMultiple ? 'checkbox' : 'radio'} checked={isSelected} />
-              
+
               <div className="flex-1 min-w-0">
                 <span className="text-sm text-text-100">{option.label}</span>
-                {option.description && (
-                  <p className="text-xs text-text-400 mt-0.5">{option.description}</p>
-                )}
+                {option.description && <p className="text-xs text-text-400 mt-0.5">{option.description}</p>}
               </div>
             </button>
           )
@@ -301,25 +306,23 @@ function QuestionItem({
         {/* Custom option */}
         {allowCustom && (
           <div
-            onClick={() => isMultiple ? onToggleCustom() : onSelectCustom()}
+            onClick={() => (isMultiple ? onToggleCustom() : onSelectCustom())}
             className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-lg border transition-colors cursor-pointer ${
-              isCustomEnabled
-                ? 'border-text-100 bg-bg-200'
-                : 'border-border-200/50 hover:bg-bg-200'
+              isCustomEnabled ? 'border-text-100 bg-bg-200' : 'border-border-200/50 hover:bg-bg-200'
             }`}
           >
             <div className="pt-0.5">
               <Indicator type={isMultiple ? 'checkbox' : 'radio'} checked={isCustomEnabled} />
             </div>
-            
+
             <textarea
               ref={textareaRef}
               value={customValue}
-              onChange={(e) => {
+              onChange={e => {
                 onCustomValueChange(e.target.value)
                 adjustTextareaHeight()
               }}
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation()
                 if (!isCustomEnabled) {
                   if (isMultiple) onToggleCustom()
@@ -341,15 +344,7 @@ function QuestionItem({
 function Indicator({ type, checked }: { type: 'radio' | 'checkbox'; checked: boolean }) {
   const baseClass = `flex-shrink-0 w-[18px] h-[18px] border-2 flex items-center justify-center transition-colors`
   const shapeClass = type === 'radio' ? 'rounded-full' : 'rounded'
-  const stateClass = checked
-    ? 'border-text-100 bg-text-100 text-bg-000'
-    : 'border-border-300'
+  const stateClass = checked ? 'border-text-100 bg-text-100 text-bg-000' : 'border-border-300'
 
-  return (
-    <span className={`${baseClass} ${shapeClass} ${stateClass}`}>
-      {checked && <CheckIcon />}
-    </span>
-  )
+  return <span className={`${baseClass} ${shapeClass} ${stateClass}`}>{checked && <CheckIcon />}</span>
 }
-
-

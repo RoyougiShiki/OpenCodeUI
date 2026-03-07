@@ -1,4 +1,3 @@
-
 import type { ApiPermissionRequest, PermissionReply } from '../../api'
 import { PermissionListIcon, UsersIcon, ReturnIcon, ChevronDownIcon } from '../../components/Icons'
 import { DiffView } from '../../components/DiffView'
@@ -8,39 +7,45 @@ import { childSessionStore, autoApproveStore } from '../../store'
 interface PermissionDialogProps {
   request: ApiPermissionRequest
   onReply: (reply: PermissionReply) => void
-  onAutoApprove?: (sessionId: string, permission: string, patterns: string[]) => void  // 添加本地规则
-  queueLength?: number  // 队列中的请求数量
-  isReplying?: boolean  // 是否正在回复
-  currentSessionId?: string | null  // 当前主 session ID，用于判断是否来自子 agent
+  onAutoApprove?: (sessionId: string, permission: string, patterns: string[]) => void // 添加本地规则
+  queueLength?: number // 队列中的请求数量
+  isReplying?: boolean // 是否正在回复
+  currentSessionId?: string | null // 当前主 session ID，用于判断是否来自子 agent
   collapsed?: boolean
   onCollapsedChange?: (collapsed: boolean) => void
 }
 
-export function PermissionDialog({ request, onReply, onAutoApprove, queueLength = 1, isReplying = false, currentSessionId, collapsed = false, onCollapsedChange }: PermissionDialogProps) {
-
+export function PermissionDialog({
+  request,
+  onReply,
+  onAutoApprove,
+  queueLength = 1,
+  isReplying = false,
+  currentSessionId,
+  collapsed = false,
+  onCollapsedChange,
+}: PermissionDialogProps) {
   // 从 metadata 中提取 diff 信息
   const metadata = request.metadata
   const diff = metadata?.diff as string | undefined
   const filepath = metadata?.filepath as string | undefined
-  
+
   // Extract structured filediff if available
   let before: string | undefined
   let after: string | undefined
-  
+
   if (metadata?.filediff && typeof metadata.filediff === 'object') {
     const fd = metadata.filediff as Record<string, unknown>
     before = String(fd.before || '')
     after = String(fd.after || '')
   }
-  
+
   // 判断是否是文件编辑类权限
   const isFileEdit = request.permission === 'edit' || request.permission === 'write'
 
   // 判断是否来自子 session
   const isFromChildSession = currentSessionId && request.sessionID !== currentSessionId
-  const childSessionInfo = isFromChildSession 
-    ? childSessionStore.getSessionInfo(request.sessionID) 
-    : null
+  const childSessionInfo = isFromChildSession ? childSessionStore.getSessionInfo(request.sessionID) : null
 
   // 折叠态：由 InputBox 渲染胶囊，这里不渲染
   if (collapsed) {
@@ -49,7 +54,10 @@ export function PermissionDialog({ request, onReply, onAutoApprove, queueLength 
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-[10]">
-      <div className="mx-auto max-w-3xl px-4 pb-2" style={{ paddingBottom: 'max(8px, var(--safe-area-inset-bottom, 8px))' }}>
+      <div
+        className="mx-auto max-w-3xl px-4 pb-2"
+        style={{ paddingBottom: 'max(8px, var(--safe-area-inset-bottom, 8px))' }}
+      >
         <div className="border border-border-300/40 rounded-[14px] shadow-float bg-bg-100 overflow-hidden">
           <div className="bg-bg-000 rounded-t-[14px]">
             {/* Header */}
@@ -60,9 +68,7 @@ export function PermissionDialog({ request, onReply, onAutoApprove, queueLength 
                 </div>
                 <h3 className="text-sm font-medium text-text-100">Permission: {request.permission}</h3>
                 {queueLength > 1 && (
-                  <span className="text-xs text-text-400 bg-bg-200 px-1.5 py-0.5 rounded">
-                    +{queueLength - 1} more
-                  </span>
+                  <span className="text-xs text-text-400 bg-bg-200 px-1.5 py-0.5 rounded">+{queueLength - 1} more</span>
                 )}
               </div>
               <button
@@ -78,9 +84,7 @@ export function PermissionDialog({ request, onReply, onAutoApprove, queueLength 
             {isFromChildSession && (
               <div className="px-4 pb-2 flex items-center gap-2">
                 <UsersIcon className="w-3.5 h-3.5 text-info-100" />
-                <span className="text-xs text-info-100">
-                  From subtask: {childSessionInfo?.title || 'Subtask'}
-                </span>
+                <span className="text-xs text-info-100">From subtask: {childSessionInfo?.title || 'Subtask'}</span>
               </div>
             )}
 
@@ -92,8 +96,8 @@ export function PermissionDialog({ request, onReply, onAutoApprove, queueLength 
               {isFileEdit && diff && (
                 <div>
                   <p className="text-xs text-text-400 mb-2">Changes preview</p>
-                  <DiffView 
-                    diff={diff} 
+                  <DiffView
+                    diff={diff}
                     before={before}
                     after={after}
                     filePath={filepath}
@@ -137,16 +141,13 @@ export function PermissionDialog({ request, onReply, onAutoApprove, queueLength 
                 <span>{isReplying ? 'Sending...' : 'Allow once'}</span>
                 {!isReplying && <ReturnIcon />}
               </button>
-              
+
               {/* Secondary: Always allow */}
               <button
-              onClick={() => {
+                onClick={() => {
                   if (autoApproveStore.enabled) {
                     // 同时存 always + patterns，确保下次不管哪种格式都能命中
-                    const rulePatterns = [
-                      ...(request.always || []),
-                      ...(request.patterns || []),
-                    ]
+                    const rulePatterns = [...(request.always || []), ...(request.patterns || [])]
                     // 去重
                     const unique = [...new Set(rulePatterns)]
                     if (unique.length > 0) {
@@ -179,16 +180,14 @@ export function PermissionDialog({ request, onReply, onAutoApprove, queueLength 
               </button>
 
               <p className="text-[11px] text-text-500 pt-1 px-1 leading-relaxed">
-                {autoApproveStore.enabled 
+                {autoApproveStore.enabled
                   ? 'Auto-approve enabled. Refresh browser to reset permissions.'
                   : 'You can change permission settings at any time.'}
               </p>
             </div>
           </div>
-
         </div>
       </div>
     </div>
   )
 }
-

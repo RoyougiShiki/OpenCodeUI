@@ -80,7 +80,7 @@ jobs:
           # Actually, tauri-action documentation says it will upload if GITHUB_TOKEN is present.
           # So we REMOVE GITHUB_TOKEN and tagName to prevent release/upload.
           args: ${{ matrix.args }}
-        
+
       # Manually find and upload artifacts
       - name: Prepare artifacts
         shell: bash
@@ -90,7 +90,7 @@ jobs:
           if [[ "${{ matrix.os }}" == "macos" ]]; then
             BUNDLE_DIR="src-tauri/target/${{ matrix.arch }}-apple-darwin/release/bundle"
           fi
-          
+
           # Find and copy build assets to a flat directory
           if [[ "${{ matrix.os }}" == "windows" ]]; then
             if [[ -d "$BUNDLE_DIR/nsis" ]]; then
@@ -108,7 +108,7 @@ jobs:
               find "$BUNDLE_DIR/appimage" -name "*.AppImage" -exec cp {} release-artifacts/ \;
             fi
           fi
-          
+
           echo "Artifacts to upload:"
           ls -R release-artifacts
 
@@ -191,7 +191,7 @@ jobs:
           RELEASE_APK=$(find src-tauri/gen/android/app/build/outputs/apk -path '*/release/*.apk' -name '*.apk' -type f 2>/dev/null | head -1)
           APK_PATH="${SIGNED_APK:-$RELEASE_APK}"
           DEST="OpenCodeUI-${VERSION}-android-arm64.apk"
-          
+
           if $BT/apksigner verify "$APK_PATH" 2>/dev/null; then
             cp "$APK_PATH" "$DEST"
           else
@@ -203,7 +203,7 @@ jobs:
               --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
               --out "$DEST" "${APK_PATH}.aligned"
           fi
-          
+
           mkdir -p release-artifacts
           mv "$DEST" release-artifacts/
           rm -rf src-tauri/gen/android/app/build/outputs/apk
@@ -221,7 +221,7 @@ jobs:
           RELEASE_APK=$(find src-tauri/gen/android/app/build/outputs/apk -path '*/release/*.apk' -name '*.apk' -type f 2>/dev/null | head -1)
           APK_PATH="${SIGNED_APK:-$RELEASE_APK}"
           DEST="OpenCodeUI-${VERSION}-android-armv7.apk"
-          
+
           if $BT/apksigner verify "$APK_PATH" 2>/dev/null; then
             cp "$APK_PATH" "$DEST"
           else
@@ -233,7 +233,7 @@ jobs:
               --key-pass pass:${{ secrets.ANDROID_KEY_PASSWORD }} \
               --out "$DEST" "${APK_PATH}.aligned"
           fi
-          
+
           mv "$DEST" release-artifacts/
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/29.0.14206865

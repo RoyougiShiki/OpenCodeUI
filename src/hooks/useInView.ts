@@ -16,7 +16,7 @@ export function useInView(options: IntersectionObserverInit & { triggerOnce?: bo
         }
       } else {
         if (!options.triggerOnce) {
-            setInView(false)
+          setInView(false)
         }
       }
     }, options)

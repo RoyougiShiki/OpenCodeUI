@@ -1,6 +1,6 @@
 /**
  * 主题状态管理 Store
- * 
+ *
  * 管理：
  * - 主题风格选择（claude / breeze / custom）
  * - 日夜模式（system / light / dark）
@@ -17,13 +17,13 @@ import type { ThemePreset, ThemeColors } from '../themes'
 
 /**
  * 将浏览器 getComputedStyle 返回的任意格式颜色字符串转为 #RRGGBB 十六进制
- * 
+ *
  * 现代 Chromium WebView 可能返回多种格式：
  * - rgb(29, 36, 50)   — 逗号分隔
  * - rgb(29 36 50)     — 空格分隔 (CSS Color Level 4)
  * - color(srgb 0.11 0.14 0.20) — sRGB 函数
  * - oklch(...)        — OKLab 色彩空间
- * 
+ *
  * 利用 Canvas 2D 做万能转换，让浏览器自己解析任何合法 CSS 颜色
  */
 function computedColorToHex(cssColor: string): string | null {
@@ -115,22 +115,25 @@ const STYLE_ID_CUSTOM = 'opencode-custom-css'
 class ThemeStore {
   private state: ThemeState
   private listeners = new Set<() => void>()
-  
+
   constructor() {
     const savedPreset = localStorage.getItem(STORAGE_KEY_PRESET) || DEFAULT_THEME_ID
-    const savedMode = localStorage.getItem(STORAGE_KEY_COLOR_MODE) as ColorMode || 'system'
+    const savedMode = (localStorage.getItem(STORAGE_KEY_COLOR_MODE) as ColorMode) || 'system'
     const savedCSS = localStorage.getItem(STORAGE_KEY_CUSTOM_CSS) || ''
     const savedCollapse = localStorage.getItem(STORAGE_KEY_COLLAPSE_USER_MESSAGES)
     const collapseUserMessages = savedCollapse === null ? true : savedCollapse === 'true'
     const savedReasoningDisplay = localStorage.getItem(STORAGE_KEY_REASONING_DISPLAY_MODE)
-    const reasoningDisplayMode: ReasoningDisplayMode = savedReasoningDisplay === 'italic' ? 'italic' : DEFAULT_REASONING_DISPLAY_MODE
-    
+    const reasoningDisplayMode: ReasoningDisplayMode =
+      savedReasoningDisplay === 'italic' ? 'italic' : DEFAULT_REASONING_DISPLAY_MODE
+
     let stepFinishDisplay = DEFAULT_STEP_FINISH_DISPLAY
     try {
       const saved = localStorage.getItem(STORAGE_KEY_STEP_FINISH_DISPLAY)
       if (saved) stepFinishDisplay = { ...DEFAULT_STEP_FINISH_DISPLAY, ...JSON.parse(saved) }
-    } catch { /* ignore */ }
-    
+    } catch {
+      /* ignore */
+    }
+
     this.state = {
       presetId: savedPreset,
       colorMode: savedMode,
@@ -140,25 +143,37 @@ class ThemeStore {
       reasoningDisplayMode,
     }
   }
-  
+
   // ---- Getters ----
-  
+
   getState(): ThemeState {
     return this.state
   }
-  
-  get presetId() { return this.state.presetId }
-  get colorMode() { return this.state.colorMode }
-  get customCSS() { return this.state.customCSS }
-  get collapseUserMessages() { return this.state.collapseUserMessages }
-  get stepFinishDisplay() { return this.state.stepFinishDisplay }
-  get reasoningDisplayMode() { return this.state.reasoningDisplayMode }
-  
+
+  get presetId() {
+    return this.state.presetId
+  }
+  get colorMode() {
+    return this.state.colorMode
+  }
+  get customCSS() {
+    return this.state.customCSS
+  }
+  get collapseUserMessages() {
+    return this.state.collapseUserMessages
+  }
+  get stepFinishDisplay() {
+    return this.state.stepFinishDisplay
+  }
+  get reasoningDisplayMode() {
+    return this.state.reasoningDisplayMode
+  }
+
   /** 获取当前主题预设（内置主题返回对象，自定义返回 undefined） */
   getPreset(): ThemePreset | undefined {
     return getThemePreset(this.state.presetId)
   }
-  
+
   /** 获取所有可用主题列表 */
   getAvailablePresets(): { id: string; name: string; description: string }[] {
     const presets = builtinThemes.map(t => ({
@@ -173,7 +188,7 @@ class ThemeStore {
     })
     return presets
   }
-  
+
   /** 解析实际生效的暗/亮模式 */
   getResolvedMode(): 'light' | 'dark' {
     if (this.state.colorMode === 'system') {
@@ -181,13 +196,13 @@ class ThemeStore {
     }
     return this.state.colorMode
   }
-  
+
   get isDark(): boolean {
     return this.getResolvedMode() === 'dark'
   }
-  
+
   // ---- Mutations ----
-  
+
   setPreset(id: string) {
     if (this.state.presetId === id) return
     this.state = { ...this.state, presetId: id }
@@ -195,7 +210,7 @@ class ThemeStore {
     this.applyTheme()
     this.emit()
   }
-  
+
   setColorMode(mode: ColorMode) {
     if (this.state.colorMode === mode) return
     this.state = { ...this.state, colorMode: mode }
@@ -203,21 +218,21 @@ class ThemeStore {
     this.applyTheme()
     this.emit()
   }
-  
+
   setCustomCSS(css: string) {
     this.state = { ...this.state, customCSS: css }
     localStorage.setItem(STORAGE_KEY_CUSTOM_CSS, css)
     this.applyCustomCSS()
     this.emit()
   }
-  
+
   setCollapseUserMessages(enabled: boolean) {
     if (this.state.collapseUserMessages === enabled) return
     this.state = { ...this.state, collapseUserMessages: enabled }
     localStorage.setItem(STORAGE_KEY_COLLAPSE_USER_MESSAGES, String(enabled))
     this.emit()
   }
-  
+
   setStepFinishDisplay(display: Partial<StepFinishDisplay>) {
     const next = { ...this.state.stepFinishDisplay, ...display }
     this.state = { ...this.state, stepFinishDisplay: next }
@@ -231,13 +246,13 @@ class ThemeStore {
     localStorage.setItem(STORAGE_KEY_REASONING_DISPLAY_MODE, mode)
     this.emit()
   }
-  
+
   // ---- Theme Application ----
-  
+
   /** 初始化：应用当前主题到 DOM */
   init() {
     this.applyTheme()
-    
+
     // 监听系统主题变化
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     mediaQuery.addEventListener('change', () => {
@@ -247,19 +262,19 @@ class ThemeStore {
       }
     })
   }
-  
+
   /** 将主题 CSS 变量注入到 DOM */
   applyTheme() {
     const root = document.documentElement
     const resolvedMode = this.getResolvedMode()
-    
+
     // 1. 设置 data-mode（驱动 CSS 中日/夜模式相关的非颜色规则，以及 Terminal、Shiki 等联动）
     if (this.state.colorMode === 'system') {
       root.removeAttribute('data-mode')
     } else {
       root.setAttribute('data-mode', this.state.colorMode)
     }
-    
+
     // 2. 注入主题颜色变量
     const preset = this.getPreset()
     if (preset) {
@@ -273,10 +288,10 @@ class ThemeStore {
         this.injectThemeStyle(colors)
       }
     }
-    
+
     // 3. 应用自定义 CSS
     this.applyCustomCSS()
-    
+
     // 4. 更新 meta theme-color
     requestAnimationFrame(() => {
       const bg = getComputedStyle(root).getPropertyValue('--color-bg-100').trim()
@@ -290,13 +305,15 @@ class ThemeStore {
       const meta = document.querySelector('meta[name="theme-color"]')
       if (meta) meta.setAttribute('content', hex)
 
-      const androidBridge = (window as unknown as { __opencode_android?: { setSystemBars?: (mode: string, bg: string) => void } }).__opencode_android
+      const androidBridge = (
+        window as unknown as { __opencode_android?: { setSystemBars?: (mode: string, bg: string) => void } }
+      ).__opencode_android
       if (androidBridge?.setSystemBars) {
         androidBridge.setSystemBars(resolvedMode, hex)
       }
     })
   }
-  
+
   private injectThemeStyle(colors: ThemeColors) {
     let el = document.getElementById(STYLE_ID_THEME) as HTMLStyleElement | null
     if (!el) {
@@ -304,21 +321,21 @@ class ThemeStore {
       el.id = STYLE_ID_THEME
       document.head.appendChild(el)
     }
-    
+
     // 用高优先级选择器覆盖 :root 中的默认值
     // 使用 :root:root 提升特异性，确保覆盖 index.css 中的所有定义
     el.textContent = `:root:root {\n  ${themeColorsToCSSVars(colors)}\n}`
   }
-  
+
   private applyCustomCSS() {
     const css = this.state.customCSS.trim()
     let el = document.getElementById(STYLE_ID_CUSTOM) as HTMLStyleElement | null
-    
+
     if (!css) {
       if (el) el.remove()
       return
     }
-    
+
     if (!el) {
       el = document.createElement('style')
       el.id = STYLE_ID_CUSTOM
@@ -326,18 +343,18 @@ class ThemeStore {
     }
     el.textContent = css
   }
-  
+
   // ---- Subscription (useSyncExternalStore compatible) ----
-  
+
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)
   }
-  
+
   getSnapshot = (): ThemeState => {
     return this.state
   }
-  
+
   private emit() {
     this.listeners.forEach(fn => fn())
   }

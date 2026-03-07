@@ -15,7 +15,7 @@ interface ScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
   ({ children, maxHeight, hideScrollbar = false, className = '', style, ...props }, ref) => {
     const scrollbarClass = hideScrollbar ? 'no-scrollbar' : 'custom-scrollbar'
-    
+
     return (
       <div
         ref={ref}
@@ -29,7 +29,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
         {children}
       </div>
     )
-  }
+  },
 )
 
 ScrollArea.displayName = 'ScrollArea'
@@ -54,7 +54,7 @@ export const CodeScrollArea = forwardRef<HTMLDivElement, CodeScrollAreaProps>(
         {children}
       </ScrollArea>
     )
-  }
+  },
 )
 
 CodeScrollArea.displayName = 'CodeScrollArea'

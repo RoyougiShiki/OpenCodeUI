@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, type ReactNode } from 'react'
-import { 
-  getSessions, 
-  createSession as apiCreateSession, 
-  deleteSession as apiDeleteSession, 
+import {
+  getSessions,
+  createSession as apiCreateSession,
+  deleteSession as apiDeleteSession,
   subscribeToEvents,
-  type ApiSession, 
-  type SessionListParams 
+  type ApiSession,
+  type SessionListParams,
 } from '../api'
 import { childSessionStore } from '../store/childSessionStore'
 import { todoStore } from '../store/todoStore'
@@ -31,7 +31,7 @@ const SessionContext = createContext<SessionContextValue | null>(null)
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const { currentDirectory } = useDirectory()
-  
+
   const [sessions, setSessions] = useState<ApiSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -43,10 +43,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const searchTimerRef = useRef<number | null>(null)
   const currentDirectoryRef = useRef(currentDirectory)
   const searchRef = useRef(search)
-  const isLoadingMoreRef = useRef(false)  // 防止并发 loadMore
+  const isLoadingMoreRef = useRef(false) // 防止并发 loadMore
   const fetchSessionsRef = useRef<() => Promise<void>>(() => Promise.resolve())
-  const currentLimitRef = useRef(30)  // 当前 limit，loadMore 时递增
-  
+  const currentLimitRef = useRef(30) // 当前 limit，loadMore 时递增
+
   // 保持 ref 同步
   useEffect(() => {
     currentDirectoryRef.current = currentDirectory
@@ -55,59 +55,62 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     searchRef.current = search
   }, [search])
-  
+
   // 核心获取逻辑
   // 注意：directory 传给 getSessions 时使用正斜杠格式
   // http 层的 fetchWithBothSlashesAndMerge 会处理两种斜杠格式的兼容
-  const fetchSessions = useCallback(async (params: SessionListParams & { append?: boolean } = {}) => {
-    const { append = false, ...queryParams } = params
-    const requestId = ++requestIdRef.current
-
-    if (append) {
-      setIsLoadingMore(true)
-    } else {
-      setIsLoading(true)
-    }
-
-    try {
-      // 使用正斜杠格式传给 API（http 层会处理兼容）
-      const targetDir = normalizeToForwardSlash(currentDirectory) || undefined
-
-      const data = await getSessions({
-        roots: true,
-        limit: currentLimitRef.current,
-        directory: targetDir,
-        search: search || undefined,
-        ...queryParams,
-      })
-
-      if (requestId !== requestIdRef.current) return
-
-      // 自动检测路径风格（从后端返回的 directory 字段）
-      if (data.length > 0 && data[0].directory) {
-        autoDetectPathStyle(data[0].directory)
-      }
+  const fetchSessions = useCallback(
+    async (params: SessionListParams & { append?: boolean } = {}) => {
+      const { append = false, ...queryParams } = params
+      const requestId = ++requestIdRef.current
 
       if (append) {
-        // 去重：过滤掉已存在的 session
-        setSessions(prev => {
-          const existingIds = new Set(prev.map(s => s.id))
-          const newSessions = data.filter(s => !existingIds.has(s.id))
-          return [...prev, ...newSessions]
-        })
+        setIsLoadingMore(true)
       } else {
-        setSessions(data)
+        setIsLoading(true)
       }
-      setHasMore(data.length >= currentLimitRef.current)
-    } catch (e) {
-      sessionErrorHandler('fetch sessions', e)
-    } finally {
-      if (requestId === requestIdRef.current) {
-        setIsLoading(false)
-        setIsLoadingMore(false)
+
+      try {
+        // 使用正斜杠格式传给 API（http 层会处理兼容）
+        const targetDir = normalizeToForwardSlash(currentDirectory) || undefined
+
+        const data = await getSessions({
+          roots: true,
+          limit: currentLimitRef.current,
+          directory: targetDir,
+          search: search || undefined,
+          ...queryParams,
+        })
+
+        if (requestId !== requestIdRef.current) return
+
+        // 自动检测路径风格（从后端返回的 directory 字段）
+        if (data.length > 0 && data[0].directory) {
+          autoDetectPathStyle(data[0].directory)
+        }
+
+        if (append) {
+          // 去重：过滤掉已存在的 session
+          setSessions(prev => {
+            const existingIds = new Set(prev.map(s => s.id))
+            const newSessions = data.filter(s => !existingIds.has(s.id))
+            return [...prev, ...newSessions]
+          })
+        } else {
+          setSessions(data)
+        }
+        setHasMore(data.length >= currentLimitRef.current)
+      } catch (e) {
+        sessionErrorHandler('fetch sessions', e)
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setIsLoading(false)
+          setIsLoadingMore(false)
+        }
       }
-    }
-  }, [currentDirectory, search])
+    },
+    [currentDirectory, search],
+  )
 
   // 保持 fetchSessions ref 同步（用于 SSE onReconnected 回调）
   fetchSessionsRef.current = fetchSessions
@@ -119,13 +122,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // 监听 directory 和 search 变化
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-    
+
     // 切换目录或搜索时重置 limit
     currentLimitRef.current = 30
-    
-    searchTimerRef.current = window.setTimeout(() => {
-      fetchSessions()
-    }, search ? 300 : 0)
+
+    searchTimerRef.current = window.setTimeout(
+      () => {
+        fetchSessions()
+      },
+      search ? 300 : 0,
+    )
 
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
@@ -135,7 +141,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // 订阅 SSE 事件，实时更新 session 列表
   useEffect(() => {
     const unsubscribe = subscribeToEvents({
-      onSessionCreated: (session) => {
+      onSessionCreated: session => {
         // 忽略子 session（有 parentID 的是子 agent 创建的）
         if (session.parentID) return
 
@@ -152,7 +158,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           return [session, ...prev]
         })
       },
-      onSessionUpdated: (session) => {
+      onSessionUpdated: session => {
         if (session.parentID) return
 
         if (searchRef.current) {
@@ -179,21 +185,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           return [session, ...updated]
         })
       },
-      onTodoUpdated: (data) => {
+      onTodoUpdated: data => {
         // 更新 todoStore
         todoStore.setTodos(data.sessionID, data.todos)
       },
-      onReconnected: (reason) => {
+      onReconnected: reason => {
         // SSE 重连成功后
         // 清空旧 session 列表，重新从服务器拉取
         setSessions([])
-        
+
         if (reason === 'server-switch') {
           // 切换服务器：旧 session 在新服务器上不存在，必须清除
           setCurrentSessionId(null)
         }
         // 网络重连：保留 currentSessionId，不把用户踢出当前 session
-        
+
         // 重新加载 session 列表
         fetchSessionsRef.current()
       },
@@ -209,7 +215,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     // 使用 ref 检查，防止并发请求
     if (isLoadingMoreRef.current || !hasMore || sessions.length === 0) return
     isLoadingMoreRef.current = true
-    
+
     try {
       // 跟官方 webui 一样，递增 limit 重新请求整个列表
       currentLimitRef.current += 15
@@ -221,60 +227,65 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [hasMore, sessions, fetchSessions])
 
-  const createSession = useCallback(async (title?: string) => {
-    // 使用正斜杠格式传给后端
-    const targetDir = normalizeToForwardSlash(currentDirectory) || undefined
-    
-    const newSession = await apiCreateSession({ 
-      title,
-      directory: targetDir
-    })
-    // SSE 会处理添加到列表，这里只是更新 currentSessionId
-    setCurrentSessionId(newSession.id)
-    return newSession
-  }, [currentDirectory])
+  const createSession = useCallback(
+    async (title?: string) => {
+      // 使用正斜杠格式传给后端
+      const targetDir = normalizeToForwardSlash(currentDirectory) || undefined
 
-  const deleteSession = useCallback(async (id: string) => {
-    const targetDir = normalizeToForwardSlash(currentDirectory) || undefined
-    await apiDeleteSession(id, targetDir)
-    // 清理该 session 的子 session 记录，防止内存泄漏
-    childSessionStore.clearChildren(id)
-    setSessions(prev => prev.filter(s => s.id !== id))
-    if (currentSessionId === id) setCurrentSessionId(null)
-  }, [currentSessionId, currentDirectory])
+      const newSession = await apiCreateSession({
+        title,
+        directory: targetDir,
+      })
+      // SSE 会处理添加到列表，这里只是更新 currentSessionId
+      setCurrentSessionId(newSession.id)
+      return newSession
+    },
+    [currentDirectory],
+  )
+
+  const deleteSession = useCallback(
+    async (id: string) => {
+      const targetDir = normalizeToForwardSlash(currentDirectory) || undefined
+      await apiDeleteSession(id, targetDir)
+      // 清理该 session 的子 session 记录，防止内存泄漏
+      childSessionStore.clearChildren(id)
+      setSessions(prev => prev.filter(s => s.id !== id))
+      if (currentSessionId === id) setCurrentSessionId(null)
+    },
+    [currentSessionId, currentDirectory],
+  )
 
   // 稳定化 Provider value，避免每次渲染创建新对象导致子组件不必要重渲染
-  const value = useMemo<SessionContextValue>(() => ({
-    sessions,
-    isLoading,
-    isLoadingMore,
-    hasMore,
-    search,
-    setSearch,
-    refresh,
-    loadMore,
-    createSession,
-    deleteSession,
-    currentSessionId,
-    setCurrentSessionId
-  }), [
-    sessions,
-    isLoading,
-    isLoadingMore,
-    hasMore,
-    search,
-    refresh,
-    loadMore,
-    createSession,
-    deleteSession,
-    currentSessionId,
-  ])
-
-  return (
-    <SessionContext.Provider value={value}>
-      {children}
-    </SessionContext.Provider>
+  const value = useMemo<SessionContextValue>(
+    () => ({
+      sessions,
+      isLoading,
+      isLoadingMore,
+      hasMore,
+      search,
+      setSearch,
+      refresh,
+      loadMore,
+      createSession,
+      deleteSession,
+      currentSessionId,
+      setCurrentSessionId,
+    }),
+    [
+      sessions,
+      isLoading,
+      isLoadingMore,
+      hasMore,
+      search,
+      refresh,
+      loadMore,
+      createSession,
+      deleteSession,
+      currentSessionId,
+    ],
   )
+
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }
 
 export function useSessionContext() {

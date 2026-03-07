@@ -5,10 +5,7 @@ import { useEffect, useRef } from 'react'
  * @param callback - Function to call when click outside is detected
  * @param enabled - Whether the hook is active (default: true)
  */
-export function useClickOutside<T extends HTMLElement = HTMLElement>(
-  callback: () => void,
-  enabled: boolean = true
-) {
+export function useClickOutside<T extends HTMLElement = HTMLElement>(callback: () => void, enabled: boolean = true) {
   const ref = useRef<T>(null)
 
   useEffect(() => {

@@ -19,9 +19,9 @@ interface BottomPanelProps {
 export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelProps) {
   const { bottomPanelOpen, bottomPanelHeight, previewFile } = useLayoutStore()
   const { sessionId } = useMessageStore()
-  
+
   const [isRestoring, setIsRestoring] = useState(false)
-  
+
   // 追踪面板 resize 状态
   const [isPanelResizing, setIsPanelResizing] = useState(false)
   useEffect(() => {
@@ -46,22 +46,22 @@ export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelP
     const restoreSessions = async () => {
       try {
         setIsRestoring(true)
-        
+
         // 先清掉所有旧的终端 tab
         const oldTabs = layoutStore.getTerminalTabs()
         for (const tab of oldTabs) {
           layoutStore.removeTerminalTab(tab.id)
         }
-        
+
         // 拉取新目录下的 PTY 会话
         const sessions = await listPtySessions(directory)
         console.log('[BottomPanel] PTY sessions for', directory, ':', sessions)
-        
+
         for (const pty of sessions) {
           const tab: TerminalTab = {
             id: pty.id,
             title: pty.title || 'Terminal',
-            status: (pty.status === 'running' || pty.running) ? 'connecting' : 'exited',
+            status: pty.status === 'running' || pty.running ? 'connecting' : 'exited',
           }
           layoutStore.addTerminalTab(tab, false)
         }
@@ -93,76 +93,75 @@ export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelP
   }, [directory])
 
   // 关闭终端
-  const handleCloseTerminal = useCallback(async (ptyId: string) => {
-    try {
-      await removePtySession(ptyId, directory)
-    } catch {
-      // ignore - may already be closed
-    }
-  }, [directory])
+  const handleCloseTerminal = useCallback(
+    async (ptyId: string) => {
+      try {
+        await removePtySession(ptyId, directory)
+      } catch {
+        // ignore - may already be closed
+      }
+    },
+    [directory],
+  )
 
   // 渲染内容
-  const renderContent = useCallback((activeTab: PanelTab | null) => {
-    if (isRestoring) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full text-text-400 text-sm gap-2">
-          <TerminalIcon size={24} className="opacity-30 animate-pulse" />
-          <span>Restoring sessions...</span>
-        </div>
-      )
-    }
-
-    if (!activeTab) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full text-text-400 text-sm gap-2">
-          <TerminalIcon size={24} className="opacity-30" />
-          <span>No content</span>
-          <button
-            onClick={handleNewTerminal}
-            className="px-3 py-1.5 text-xs bg-bg-200/50 hover:bg-bg-200 text-text-200 rounded-md transition-colors"
-          >
-            Create Terminal
-          </button>
-        </div>
-      )
-    }
-
-    switch (activeTab.type) {
-      case 'terminal':
+  const renderContent = useCallback(
+    (activeTab: PanelTab | null) => {
+      if (isRestoring) {
         return (
-          <TerminalContent
-            activeTab={activeTab}
-            directory={directory}
-          />
+          <div className="flex flex-col items-center justify-center h-full text-text-400 text-sm gap-2">
+            <TerminalIcon size={24} className="opacity-30 animate-pulse" />
+            <span>Restoring sessions...</span>
+          </div>
         )
-      case 'files':
+      }
+
+      if (!activeTab) {
         return (
-          <FileExplorer 
-            directory={directory ?? ''}
-            previewFile={previewFile}
-            position="bottom"
-            isPanelResizing={isPanelResizing}
-          />
+          <div className="flex flex-col items-center justify-center h-full text-text-400 text-sm gap-2">
+            <TerminalIcon size={24} className="opacity-30" />
+            <span>No content</span>
+            <button
+              onClick={handleNewTerminal}
+              className="px-3 py-1.5 text-xs bg-bg-200/50 hover:bg-bg-200 text-text-200 rounded-md transition-colors"
+            >
+              Create Terminal
+            </button>
+          </div>
         )
-      case 'changes':
-        if (!sessionId) {
+      }
+
+      switch (activeTab.type) {
+        case 'terminal':
+          return <TerminalContent activeTab={activeTab} directory={directory} />
+        case 'files':
           return (
-            <div className="flex items-center justify-center h-full text-text-400 text-xs">
-              No active session
-            </div>
+            <FileExplorer
+              directory={directory ?? ''}
+              previewFile={previewFile}
+              position="bottom"
+              isPanelResizing={isPanelResizing}
+            />
           )
-        }
-        return <SessionChangesPanel sessionId={sessionId} isResizing={isPanelResizing} />
-      case 'mcp':
-        return <McpPanel isResizing={isPanelResizing} />
-      case 'skill':
-        return <SkillPanel isResizing={isPanelResizing} />
-      case 'worktree':
-        return <WorktreePanel isResizing={isPanelResizing} />
-      default:
-        return null
-    }
-  }, [isRestoring, handleNewTerminal, directory, previewFile, sessionId, isPanelResizing])
+        case 'changes':
+          if (!sessionId) {
+            return (
+              <div className="flex items-center justify-center h-full text-text-400 text-xs">No active session</div>
+            )
+          }
+          return <SessionChangesPanel sessionId={sessionId} isResizing={isPanelResizing} />
+        case 'mcp':
+          return <McpPanel isResizing={isPanelResizing} />
+        case 'skill':
+          return <SkillPanel isResizing={isPanelResizing} />
+        case 'worktree':
+          return <WorktreePanel isResizing={isPanelResizing} />
+        default:
+          return null
+      }
+    },
+    [isRestoring, handleNewTerminal, directory, previewFile, sessionId, isPanelResizing],
+  )
 
   return (
     <ResizablePanel
@@ -173,11 +172,7 @@ export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelP
       onClose={layoutStore.closeBottomPanel}
       className="pb-[var(--safe-area-inset-bottom)]"
     >
-      <PanelContainer
-        position="bottom"
-        onNewTerminal={handleNewTerminal}
-        onCloseTerminal={handleCloseTerminal}
-      >
+      <PanelContainer position="bottom" onNewTerminal={handleNewTerminal} onCloseTerminal={handleCloseTerminal}>
         {renderContent}
       </PanelContainer>
     </ResizablePanel>
@@ -193,26 +188,16 @@ interface TerminalContentProps {
   directory?: string
 }
 
-const TerminalContent = memo(function TerminalContent({ 
-  activeTab,
-  directory,
-}: TerminalContentProps) {
+const TerminalContent = memo(function TerminalContent({ activeTab, directory }: TerminalContentProps) {
   const { panelTabs } = useLayoutStore()
-  
+
   // 获取所有 bottom 位置的 terminal tabs
-  const terminalTabs = panelTabs.filter(
-    t => t.position === 'bottom' && t.type === 'terminal'
-  )
+  const terminalTabs = panelTabs.filter(t => t.position === 'bottom' && t.type === 'terminal')
 
   return (
     <>
-      {terminalTabs.map((tab) => (
-        <Terminal
-          key={tab.id}
-          ptyId={tab.id}
-          directory={directory}
-          isActive={tab.id === activeTab.id}
-        />
+      {terminalTabs.map(tab => (
+        <Terminal key={tab.id} ptyId={tab.id} directory={directory} isActive={tab.id === activeTab.id} />
       ))}
     </>
   )

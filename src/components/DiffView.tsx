@@ -42,7 +42,7 @@ function escapeHtml(str: string) {
 }
 
 // Parse start line numbers from unified diff string
-function getStartLine(diffString?: string): { old: number, new: number } {
+function getStartLine(diffString?: string): { old: number; new: number } {
   if (!diffString) return { old: 1, new: 1 }
   // Match the first hunk header: @@ -1,1 +1,2 @@
   const match = diffString.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/m)
@@ -53,33 +53,33 @@ function getStartLine(diffString?: string): { old: number, new: number } {
 }
 
 // Extract content (before/after) from unified diff string
-function extractContentFromDiff(diff: string): { before: string, after: string } {
-  const lines = diff.split('\n');
-  let before = '';
-  let after = '';
-  
+function extractContentFromDiff(diff: string): { before: string; after: string } {
+  const lines = diff.split('\n')
+  let before = ''
+  let after = ''
+
   for (const line of lines) {
-    if (line.startsWith('Index:')) continue;
-    if (line.startsWith('===')) continue;
-    if (line.startsWith('---')) continue;
-    if (line.startsWith('+++')) continue;
-    if (line.startsWith('@@')) continue; 
-    if (line.startsWith('\\ No newline')) continue;
-    
+    if (line.startsWith('Index:')) continue
+    if (line.startsWith('===')) continue
+    if (line.startsWith('---')) continue
+    if (line.startsWith('+++')) continue
+    if (line.startsWith('@@')) continue
+    if (line.startsWith('\\ No newline')) continue
+
     if (line.startsWith(' ')) {
-      const content = line.slice(1) + '\n';
-      before += content;
-      after += content;
+      const content = line.slice(1) + '\n'
+      before += content
+      after += content
     } else if (line.startsWith('-')) {
-      const content = line.slice(1) + '\n';
-      before += content;
+      const content = line.slice(1) + '\n'
+      before += content
     } else if (line.startsWith('+')) {
-      const content = line.slice(1) + '\n';
-      after += content;
+      const content = line.slice(1) + '\n'
+      after += content
     }
   }
-  
-  return { before: before.trimEnd(), after: after.trimEnd() };
+
+  return { before: before.trimEnd(), after: after.trimEnd() }
 }
 
 // Hook to highlight code using tokens API (Robust)
@@ -87,10 +87,10 @@ function useHighlightedDiff(before: string, after: string, language: string) {
   // Use generic hooks for highlighting
   const { output: oldTokens } = useSyntaxHighlight(before, { lang: language, mode: 'tokens' })
   const { output: newTokens } = useSyntaxHighlight(after, { lang: language, mode: 'tokens' })
-  
-  const [result, setResult] = useState<{ 
-    lines: DiffLine[], 
-    stats: { additions: number, deletions: number } 
+
+  const [result, setResult] = useState<{
+    lines: DiffLine[]
+    stats: { additions: number; deletions: number }
   } | null>(null)
 
   useEffect(() => {
@@ -101,74 +101,71 @@ function useHighlightedDiff(before: string, after: string, language: string) {
     }
 
     try {
-        // 1. Calculate diff on raw text
-        const changes = diffLines(before, after, { newlineIsToken: false })
-        
-        // 2. Convert tokens to HTML strings per line
-        const tokensToHtmlLines = (tokenLines: any[][]) => {
-          return tokenLines.map(lineTokens => {
-             if (lineTokens.length === 0) return ' ' // Empty line
-             return lineTokens.map(t => 
-               `<span style="color:${t.color}">${escapeHtml(t.content)}</span>`
-             ).join('')
-          })
-        }
+      // 1. Calculate diff on raw text
+      const changes = diffLines(before, after, { newlineIsToken: false })
 
-        const oldLinesHtml = tokensToHtmlLines(oldTokens)
-        const newLinesHtml = tokensToHtmlLines(newTokens)
-
-        // 3. Map diff changes to highlighted lines
-        const finalLines: DiffLine[] = []
-        let oldIndex = 0
-        let newIndex = 0
-        let additions = 0
-        let deletions = 0
-
-        for (const change of changes) {
-          const count = change.count || 0
-          
-          if (change.removed) {
-            deletions += count
-            for (let i = 0; i < count; i++) {
-              finalLines.push({
-                type: 'delete',
-                content: oldLinesHtml[oldIndex + i] || ' ', 
-                oldLineNo: oldIndex + i + 1
-              })
-            }
-            oldIndex += count
-          } else if (change.added) {
-            additions += count
-            for (let i = 0; i < count; i++) {
-              finalLines.push({
-                type: 'add',
-                content: newLinesHtml[newIndex + i] || ' ', 
-                newLineNo: newIndex + i + 1
-              })
-            }
-            newIndex += count
-          } else {
-            // Context (unchanged)
-            for (let i = 0; i < count; i++) {
-              finalLines.push({
-                type: 'context',
-                content: newLinesHtml[newIndex + i] || ' ', // Prefer new version for context
-                oldLineNo: oldIndex + i + 1,
-                newLineNo: newIndex + i + 1
-              })
-            }
-            oldIndex += count
-            newIndex += count
-          }
-        }
-
-        setResult({
-          lines: finalLines,
-          stats: { additions, deletions }
+      // 2. Convert tokens to HTML strings per line
+      const tokensToHtmlLines = (tokenLines: any[][]) => {
+        return tokenLines.map(lineTokens => {
+          if (lineTokens.length === 0) return ' ' // Empty line
+          return lineTokens.map(t => `<span style="color:${t.color}">${escapeHtml(t.content)}</span>`).join('')
         })
+      }
 
+      const oldLinesHtml = tokensToHtmlLines(oldTokens)
+      const newLinesHtml = tokensToHtmlLines(newTokens)
+
+      // 3. Map diff changes to highlighted lines
+      const finalLines: DiffLine[] = []
+      let oldIndex = 0
+      let newIndex = 0
+      let additions = 0
+      let deletions = 0
+
+      for (const change of changes) {
+        const count = change.count || 0
+
+        if (change.removed) {
+          deletions += count
+          for (let i = 0; i < count; i++) {
+            finalLines.push({
+              type: 'delete',
+              content: oldLinesHtml[oldIndex + i] || ' ',
+              oldLineNo: oldIndex + i + 1,
+            })
+          }
+          oldIndex += count
+        } else if (change.added) {
+          additions += count
+          for (let i = 0; i < count; i++) {
+            finalLines.push({
+              type: 'add',
+              content: newLinesHtml[newIndex + i] || ' ',
+              newLineNo: newIndex + i + 1,
+            })
+          }
+          newIndex += count
+        } else {
+          // Context (unchanged)
+          for (let i = 0; i < count; i++) {
+            finalLines.push({
+              type: 'context',
+              content: newLinesHtml[newIndex + i] || ' ', // Prefer new version for context
+              oldLineNo: oldIndex + i + 1,
+              newLineNo: newIndex + i + 1,
+            })
+          }
+          oldIndex += count
+          newIndex += count
+        }
+      }
+
+      setResult({
+        lines: finalLines,
+        stats: { additions, deletions },
+      })
     } catch (err) {
-        syntaxErrorHandler('diff highlighting', err)
+      syntaxErrorHandler('diff highlighting', err)
     }
   }, [before, after, oldTokens, newTokens])
 
@@ -182,11 +179,11 @@ export const DiffView = memo(function DiffView({
   filePath,
   defaultCollapsed = false,
   maxHeight = 300,
-  language: explicitLanguage
+  language: explicitLanguage,
 }: DiffViewProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed)
   const [modalOpen, setModalOpen] = useState(false)
-  
+
   // Determine content to diff
   const content = useMemo(() => {
     if (before !== undefined && after !== undefined) {
@@ -199,28 +196,28 @@ export const DiffView = memo(function DiffView({
   }, [before, after, diff])
 
   const hasContent = content !== null
-  
+
   // Hook calls must be unconditional
   const language = useMemo(() => {
     return explicitLanguage || detectLanguage(filePath)
   }, [filePath, explicitLanguage])
 
   const diffResult = useHighlightedDiff(content?.before || '', content?.after || '', language)
-  
+
   // Calculate start lines from unified diff header to show correct line numbers
   const startLines = useMemo(() => getStartLine(diff), [diff])
 
   // Fallback for unified diff string only (should rarely happen now as we extract content)
   if (!hasContent && diff) {
-     return (
-        <div className="border border-border-200/50 rounded-lg bg-bg-100 overflow-auto p-2 text-xs font-mono whitespace-pre text-text-200">
-           {diff}
-        </div>
-     )
+    return (
+      <div className="border border-border-200/50 rounded-lg bg-bg-100 overflow-auto p-2 text-xs font-mono whitespace-pre text-text-200">
+        {diff}
+      </div>
+    )
   }
 
   if (!hasContent) return null
-  
+
   // Loading state
   if (hasContent && !diffResult) {
     return (
@@ -236,33 +233,25 @@ export const DiffView = memo(function DiffView({
   return (
     <div className="border border-border-200/50 rounded-lg overflow-hidden bg-bg-100 font-mono text-xs">
       {/* Header */}
-      <div 
+      <div
         className="flex items-center gap-3 px-3 py-2 bg-bg-200/50 cursor-pointer hover:bg-bg-200 transition-colors select-none"
         onClick={() => setCollapsed(!collapsed)}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className={`transition-transform duration-200 ${collapsed ? '' : 'rotate-180'} text-text-400`}>
-             <ChevronDownIcon />
+            <ChevronDownIcon />
           </div>
-          {fileName && (
-            <span className="text-text-200 font-medium truncate flex-1 min-w-0">{fileName}</span>
-          )}
+          {fileName && <span className="text-text-200 font-medium truncate flex-1 min-w-0">{fileName}</span>}
         </div>
         <div className="flex items-center gap-3 tabular-nums font-medium shrink-0 whitespace-nowrap">
-          {stats.additions > 0 && (
-            <span className="text-success-100">+{stats.additions}</span>
-          )}
-          {stats.deletions > 0 && (
-            <span className="text-danger-100">-{stats.deletions}</span>
-          )}
-          {stats.additions === 0 && stats.deletions === 0 && (
-             <span className="text-text-400">No changes</span>
-          )}
-          
+          {stats.additions > 0 && <span className="text-success-100">+{stats.additions}</span>}
+          {stats.deletions > 0 && <span className="text-danger-100">-{stats.deletions}</span>}
+          {stats.additions === 0 && stats.deletions === 0 && <span className="text-text-400">No changes</span>}
+
           {/* 放大按钮 */}
           <button
             className="p-1 text-text-400 hover:text-text-200 hover:bg-bg-300/50 rounded transition-colors"
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation()
               setModalOpen(true)
             }}
@@ -274,15 +263,14 @@ export const DiffView = memo(function DiffView({
       </div>
 
       {/* Content - 使用 grid 实现平滑展开动画 */}
-      <div className={clsx(
-        "grid transition-[grid-template-rows] duration-300 ease-in-out",
-        collapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
-      )}>
+      <div
+        className={clsx(
+          'grid transition-[grid-template-rows] duration-300 ease-in-out',
+          collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]',
+        )}
+      >
         <div className="overflow-hidden">
-          <div 
-            className="overflow-auto custom-scrollbar"
-            style={{ maxHeight }}
-          >
+          <div className="overflow-auto custom-scrollbar" style={{ maxHeight }}>
             <table className="min-w-full border-collapse">
               <colgroup>
                 <col className="w-[32px]" />
@@ -293,45 +281,53 @@ export const DiffView = memo(function DiffView({
               <tbody>
                 {lines.map((line, idx) => {
                   const rowBgClass = clsx(
-                    line.type === 'add' && "bg-success-bg",
-                    line.type === 'delete' && "bg-danger-bg"
+                    line.type === 'add' && 'bg-success-bg',
+                    line.type === 'delete' && 'bg-danger-bg',
                   )
                   return (
-                  <tr 
-                    key={idx} 
-                    className="hover:bg-opacity-50 transition-colors"
-                  >
-                    {/* Old Line Number */}
-                    <td className={clsx("px-1 py-0.5 text-right text-text-500 border-r border-border-200/10 select-none opacity-50 tabular-nums align-top", rowBgClass)}>
-                      {line.type !== 'add' && (line.oldLineNo! + startLines.old - 1)}
-                    </td>
-                    
-                    {/* New Line Number */}
-                    <td className={clsx("px-1 py-0.5 text-right text-text-500 border-r border-border-200/10 select-none opacity-50 tabular-nums align-top", rowBgClass)}>
-                      {line.type !== 'delete' && (line.newLineNo! + startLines.new - 1)}
-                    </td>
+                    <tr key={idx} className="hover:bg-opacity-50 transition-colors">
+                      {/* Old Line Number */}
+                      <td
+                        className={clsx(
+                          'px-1 py-0.5 text-right text-text-500 border-r border-border-200/10 select-none opacity-50 tabular-nums align-top',
+                          rowBgClass,
+                        )}
+                      >
+                        {line.type !== 'add' && line.oldLineNo! + startLines.old - 1}
+                      </td>
 
-                    {/* +/- Indicator */}
-                    <td className={clsx("py-0.5 text-center select-none align-top", rowBgClass)}>
-                      {line.type === 'add' && <span className="text-success-100 font-bold">+</span>}
-                      {line.type === 'delete' && <span className="text-danger-100 font-bold">−</span>}
-                    </td>
+                      {/* New Line Number */}
+                      <td
+                        className={clsx(
+                          'px-1 py-0.5 text-right text-text-500 border-r border-border-200/10 select-none opacity-50 tabular-nums align-top',
+                          rowBgClass,
+                        )}
+                      >
+                        {line.type !== 'delete' && line.newLineNo! + startLines.new - 1}
+                      </td>
 
-                    {/* Code Content */}
-                    <td className={clsx("pr-4 py-0.5 align-top", rowBgClass)}>
-                      <div 
-                        className="whitespace-pre font-mono text-text-100"
-                        dangerouslySetInnerHTML={{ __html: line.content }}
-                      />
-                    </td>
-                  </tr>
-                )})}
+                      {/* +/- Indicator */}
+                      <td className={clsx('py-0.5 text-center select-none align-top', rowBgClass)}>
+                        {line.type === 'add' && <span className="text-success-100 font-bold">+</span>}
+                        {line.type === 'delete' && <span className="text-danger-100 font-bold">−</span>}
+                      </td>
+
+                      {/* Code Content */}
+                      <td className={clsx('pr-4 py-0.5 align-top', rowBgClass)}>
+                        <div
+                          className="whitespace-pre font-mono text-text-100"
+                          dangerouslySetInnerHTML={{ __html: line.content }}
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         </div>
       </div>
-      
+
       {/* Diff Modal */}
       {content && (
         <FullscreenViewer

@@ -10,7 +10,7 @@ import type { Message, TextPart, ToolPart } from '../../../../types/message'
 
 // ============================================
 // Task Tool Renderer (子 agent)
-// 
+//
 // 设计原则：
 // 1. 渐进式展开 - 默认显示摘要，点击展开详情
 // 2. 视觉层次 - 左侧缩进线区分嵌套层级
@@ -20,37 +20,38 @@ import type { Message, TextPart, ToolPart } from '../../../../types/message'
 
 export const TaskRenderer = memo(function TaskRenderer({ part }: ToolRendererProps) {
   const { state } = part
-  const [expanded, setExpanded] = useState(() => 
-    state.status === 'running' || state.status === 'pending'
-  )
+  const [expanded, setExpanded] = useState(() => state.status === 'running' || state.status === 'pending')
   const shouldRenderBody = useDelayedRender(expanded)
-  
+
   // 从 input 中提取任务信息
   const input = state.input as Record<string, unknown> | undefined
-  const description = input?.description as string || 'Subtask'
-  const prompt = input?.prompt as string || ''
-  const agentType = input?.subagent_type as string || 'general'
-  
+  const description = (input?.description as string) || 'Subtask'
+  const prompt = (input?.prompt as string) || ''
+  const agentType = (input?.subagent_type as string) || 'general'
+
   // 获取子 session ID —— 只信任 metadata.sessionId，它是后端为这个 tool call 精确设置的
   // 不再用 useChildSessions fallback 取"最新子 session"，因为同一父 session 下多个 task
   // 同时运行时，fallback 会导致所有 task 都渲染最新的那个子 session
   const metadata = state.metadata as Record<string, unknown> | undefined
   const targetSessionId = metadata?.sessionId as string | undefined
-  
+
   const isRunning = state.status === 'running' || state.status === 'pending'
   const isCompleted = state.status === 'completed'
   const isError = state.status === 'error'
 
   // Stop handler
-  const handleStop = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!targetSessionId) return
-    const childInfo = childSessionStore.getSessionInfo(targetSessionId)
-    const parentSessionId = childInfo?.parentID || messageStore.getCurrentSessionId()
-    const parentState = parentSessionId ? messageStore.getSessionState(parentSessionId) : null
-    const directory = parentState?.directory || ''
-    abortSession(targetSessionId, directory)
-  }, [targetSessionId])
+  const handleStop = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (!targetSessionId) return
+      const childInfo = childSessionStore.getSessionInfo(targetSessionId)
+      const parentSessionId = childInfo?.parentID || messageStore.getCurrentSessionId()
+      const parentState = parentSessionId ? messageStore.getSessionState(parentSessionId) : null
+      const directory = parentState?.directory || ''
+      abortSession(targetSessionId, directory)
+    },
+    [targetSessionId],
+  )
 
   // 运行时自动展开
   useEffect(() => {
@@ -60,13 +61,18 @@ export const TaskRenderer = memo(function TaskRenderer({ part }: ToolRendererPro
   return (
     <div className="relative overflow-hidden min-w-0">
       {/* 左侧装饰线 */}
-      <div className={`absolute left-0 top-0 bottom-0 w-0.5 rounded-full transition-colors ${
-        isRunning ? 'bg-accent-main-100 animate-pulse' :
-        isError ? 'bg-danger-100' :
-        isCompleted ? 'bg-accent-secondary-100/50' :
-        'bg-border-300/30'
-      }`} />
-      
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-0.5 rounded-full transition-colors ${
+          isRunning
+            ? 'bg-accent-main-100 animate-pulse'
+            : isError
+              ? 'bg-danger-100'
+              : isCompleted
+                ? 'bg-accent-secondary-100/50'
+                : 'bg-border-300/30'
+        }`}
+      />
+
       <div className="pl-3">
         {/* Header */}
         <TaskHeader
@@ -78,11 +84,13 @@ export const TaskRenderer = memo(function TaskRenderer({ part }: ToolRendererPro
           sessionId={targetSessionId}
           onStop={isRunning ? handleStop : undefined}
         />
-        
+
         {/* Body */}
-        <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-        }`}>
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+            expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          }`}
+        >
           <div className="overflow-hidden">
             {shouldRenderBody && (
               <div className="pt-2 space-y-3">
@@ -92,15 +100,10 @@ export const TaskRenderer = memo(function TaskRenderer({ part }: ToolRendererPro
                     {prompt.length > 300 ? prompt.slice(0, 300) + '...' : prompt}
                   </div>
                 )}
-                
+
                 {/* 子会话内容 */}
-                {targetSessionId && (
-                  <SubSessionView 
-                    sessionId={targetSessionId} 
-                    isParentRunning={isRunning}
-                  />
-                )}
-                
+                {targetSessionId && <SubSessionView sessionId={targetSessionId} isParentRunning={isRunning} />}
+
                 {/* 完成时的输出 */}
                 {isCompleted && state.output !== undefined && state.output !== null && (
                   <ContentBlock
@@ -110,7 +113,7 @@ export const TaskRenderer = memo(function TaskRenderer({ part }: ToolRendererPro
                     maxHeight={150}
                   />
                 )}
-                
+
                 {/* 错误信息 */}
                 {isError && state.error !== undefined && (
                   <ContentBlock
@@ -142,57 +145,60 @@ interface TaskHeaderProps {
   onStop?: (e: React.MouseEvent) => void
 }
 
-const TaskHeader = memo(function TaskHeader({ 
-  agentType, 
-  description, 
-  status, 
-  expanded, 
+const TaskHeader = memo(function TaskHeader({
+  agentType,
+  description,
+  status,
+  expanded,
   onToggle,
   sessionId,
-  onStop
+  onStop,
 }: TaskHeaderProps) {
-  const handleOpenSession = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!sessionId) return
-    
-    const childInfo = childSessionStore.getSessionInfo(sessionId)
-    const parentSessionId = childInfo?.parentID || messageStore.getCurrentSessionId()
-    const parentState = parentSessionId ? messageStore.getSessionState(parentSessionId) : null
-    const directory = parentState?.directory || ''
-    
-    const hash = directory ? `#/session/${sessionId}?dir=${directory}` : `#/session/${sessionId}`
-    window.location.hash = hash
-  }, [sessionId])
+  const handleOpenSession = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (!sessionId) return
+
+      const childInfo = childSessionStore.getSessionInfo(sessionId)
+      const parentSessionId = childInfo?.parentID || messageStore.getCurrentSessionId()
+      const parentState = parentSessionId ? messageStore.getSessionState(parentSessionId) : null
+      const directory = parentState?.directory || ''
+
+      const hash = directory ? `#/session/${sessionId}?dir=${directory}` : `#/session/${sessionId}`
+      window.location.hash = hash
+    },
+    [sessionId],
+  )
 
   const isRunning = status === 'running' || status === 'pending'
   const isError = status === 'error'
   const isCompleted = status === 'completed'
 
   return (
-    <div 
-      className="flex items-center gap-2 py-1 cursor-pointer group"
-      onClick={onToggle}
-    >
+    <div className="flex items-center gap-2 py-1 cursor-pointer group" onClick={onToggle}>
       {/* Expand icon */}
       <span className={`text-text-400 transition-transform ${expanded ? 'rotate-90' : ''}`}>
         <ChevronRightIcon size={12} />
       </span>
-      
+
       {/* Agent type badge */}
-      <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
-        isRunning ? 'bg-accent-main-100/20 text-accent-main-100' :
-        isError ? 'bg-danger-100/20 text-danger-100' :
-        isCompleted ? 'bg-accent-secondary-100/20 text-accent-secondary-100' :
-        'bg-bg-300 text-text-300'
-      }`}>
+      <span
+        className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+          isRunning
+            ? 'bg-accent-main-100/20 text-accent-main-100'
+            : isError
+              ? 'bg-danger-100/20 text-danger-100'
+              : isCompleted
+                ? 'bg-accent-secondary-100/20 text-accent-secondary-100'
+                : 'bg-bg-300 text-text-300'
+        }`}
+      >
         {agentType}
       </span>
-      
+
       {/* Description */}
-      <span className="text-xs text-text-300 truncate flex-1 min-w-0">
-        {description}
-      </span>
-      
+      <span className="text-xs text-text-300 truncate flex-1 min-w-0">{description}</span>
+
       {/* Stop button (running) */}
       {onStop && (
         <div
@@ -231,7 +237,7 @@ interface SubSessionViewProps {
 const SubSessionView = memo(function SubSessionView({ sessionId }: SubSessionViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const loadedRef = useRef(false)
-  
+
   const sessionState = useSessionState(sessionId)
   const messages = sessionState?.messages || []
   const isStreaming = sessionState?.isStreaming || false
@@ -240,16 +246,16 @@ const SubSessionView = memo(function SubSessionView({ sessionId }: SubSessionVie
   // 挂载即加载（SubSessionView 只在 task 展开时才渲染，loadedRef 防止重复请求）
   useEffect(() => {
     if (loadedRef.current) return
-    
+
     const state = messageStore.getSessionState(sessionId)
     if (state && (state.messages.length > 0 || state.isStreaming)) {
       loadedRef.current = true
       return
     }
-    
+
     loadedRef.current = true
     messageStore.setLoadState(sessionId, 'loading')
-    
+
     getSessionMessages(sessionId, 20)
       .then(apiMessages => {
         const currentState = messageStore.getSessionState(sessionId)
@@ -276,13 +282,13 @@ const SubSessionView = memo(function SubSessionView({ sessionId }: SubSessionVie
   }, [messages, isStreaming])
 
   // 过滤有内容的消息
-  const visibleMessages = messages.filter((msg: Message) => 
+  const visibleMessages = messages.filter((msg: Message) =>
     msg.parts.some((part: Message['parts'][0]) => {
       if (part.type === 'text') return (part as TextPart).text?.trim()
       if (part.type === 'tool') return true
       if (part.type === 'reasoning') return true
       return false
-    })
+    }),
   )
 
   if (isLoading && messages.length === 0) {
@@ -290,17 +296,13 @@ const SubSessionView = memo(function SubSessionView({ sessionId }: SubSessionVie
   }
 
   if (visibleMessages.length === 0) {
-    return (
-      <div className="text-xs text-text-500 italic py-2">
-        Waiting for response...
-      </div>
-    )
+    return <div className="text-xs text-text-500 italic py-2">Waiting for response...</div>
   }
 
   return (
     <div className="rounded-lg bg-bg-100/50 border border-border-200/30 overflow-hidden">
       {/* Messages */}
-      <div 
+      <div
         ref={scrollRef}
         className="overflow-y-auto custom-scrollbar px-3 py-2 space-y-2"
         style={{ maxHeight: '240px' }}
@@ -309,7 +311,6 @@ const SubSessionView = memo(function SubSessionView({ sessionId }: SubSessionVie
           <MessageItem key={msg.info.id} message={msg} isLast={idx === visibleMessages.length - 1} />
         ))}
       </div>
-      
     </div>
   )
 })
@@ -326,11 +327,14 @@ interface MessageItemProps {
 const MessageItem = memo(function MessageItem({ message, isLast }: MessageItemProps) {
   const { info, parts } = message
   const isUser = info.role === 'user'
-  
+
   const textParts = parts.filter((p): p is TextPart => p.type === 'text' && !!p.text?.trim())
   const toolParts = parts.filter((p): p is ToolPart => p.type === 'tool')
-  
-  const textContent = textParts.map(p => p.text).join('\n').trim()
+
+  const textContent = textParts
+    .map(p => p.text)
+    .join('\n')
+    .trim()
 
   if (isUser) {
     return (
@@ -348,13 +352,10 @@ const MessageItem = memo(function MessageItem({ message, isLast }: MessageItemPr
       {/* Text content */}
       {textContent && (
         <div className="text-[11px] text-text-200 leading-relaxed whitespace-pre-wrap">
-          {textContent.length > 500 && !isLast 
-            ? textContent.slice(0, 500) + '...' 
-            : textContent
-          }
+          {textContent.length > 500 && !isLast ? textContent.slice(0, 500) + '...' : textContent}
         </div>
       )}
-      
+
       {/* Tool calls - compact summary */}
       {toolParts.length > 0 && (
         <div className="flex flex-wrap gap-1">
@@ -375,16 +376,20 @@ const ToolBadge = memo(function ToolBadge({ tool }: { tool: ToolPart }) {
   const { state, tool: toolName } = tool
   const isRunning = state.status === 'running' || state.status === 'pending'
   const isError = state.status === 'error'
-  
+
   const title = state.title || formatToolName(toolName)
   const displayTitle = title.length > 30 ? title.slice(0, 30) + '...' : title
-  
+
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono ${
-      isRunning ? 'bg-accent-main-100/10 text-accent-main-100' :
-      isError ? 'bg-danger-100/10 text-danger-100' :
-      'bg-bg-200 text-text-400'
-    }`}>
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono ${
+        isRunning
+          ? 'bg-accent-main-100/10 text-accent-main-100'
+          : isError
+            ? 'bg-danger-100/10 text-danger-100'
+            : 'bg-bg-200 text-text-400'
+      }`}
+    >
       {isRunning && <span className="w-1 h-1 rounded-full bg-current animate-pulse" />}
       {displayTitle}
     </span>

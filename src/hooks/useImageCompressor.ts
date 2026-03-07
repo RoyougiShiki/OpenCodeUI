@@ -25,12 +25,9 @@ export function useImageCompressor() {
   // 初始化 Worker
   useEffect(() => {
     // 动态导入 Worker
-    workerRef.current = new Worker(
-      new URL('../workers/imageCompressor.worker.ts', import.meta.url),
-      { type: 'module' }
-    )
+    workerRef.current = new Worker(new URL('../workers/imageCompressor.worker.ts', import.meta.url), { type: 'module' })
 
-    workerRef.current.onmessage = (e) => {
+    workerRef.current.onmessage = e => {
       const { type, id, result, mimeType, width, height, error } = e.data
 
       const pending = pendingRef.current.get(id)
@@ -59,7 +56,7 @@ export function useImageCompressor() {
       }
     }
 
-    workerRef.current.onerror = (err) => {
+    workerRef.current.onerror = err => {
       console.error('[ImageCompressor] Worker error:', err)
     }
 
@@ -80,44 +77,44 @@ export function useImageCompressor() {
    * @param options 压缩选项
    * @returns 压缩后的 DataURL 和元信息
    */
-  const compress = useCallback(async (
-    file: File,
-    options: { maxSize?: number; quality?: number } = {}
-  ): Promise<CompressResult> => {
-    const { maxSize = 2048, quality = 0.85 } = options
+  const compress = useCallback(
+    async (file: File, options: { maxSize?: number; quality?: number } = {}): Promise<CompressResult> => {
+      const { maxSize = 2048, quality = 0.85 } = options
 
-    // 如果 Worker 不可用，回退到主线程处理
-    if (!workerRef.current) {
-      return compressFallback(file, maxSize, quality)
-    }
+      // 如果 Worker 不可用，回退到主线程处理
+      if (!workerRef.current) {
+        return compressFallback(file, maxSize, quality)
+      }
 
-    const id = `img-${++idCounterRef.current}`
-    const arrayBuffer = await file.arrayBuffer()
+      const id = `img-${++idCounterRef.current}`
+      const arrayBuffer = await file.arrayBuffer()
 
-    return new Promise((resolve, reject) => {
-      pendingRef.current.set(id, { resolve, reject })
+      return new Promise((resolve, reject) => {
+        pendingRef.current.set(id, { resolve, reject })
 
-      workerRef.current!.postMessage(
-        {
-          type: 'compress',
-          id,
-          imageData: arrayBuffer,
-          mimeType: file.type,
-          maxSize,
-          quality,
-        },
-        { transfer: [arrayBuffer] }
-      )
+        workerRef.current!.postMessage(
+          {
+            type: 'compress',
+            id,
+            imageData: arrayBuffer,
+            mimeType: file.type,
+            maxSize,
+            quality,
+          },
+          { transfer: [arrayBuffer] },
+        )
 
-      // 超时处理
-      setTimeout(() => {
-        if (pendingRef.current.has(id)) {
-          pendingRef.current.delete(id)
-          reject(new Error('Compression timeout'))
-        }
-      }, 30000) // 30 秒超时
-    })
-  }, [])
+        // 超时处理
+        setTimeout(() => {
+          if (pendingRef.current.has(id)) {
+            pendingRef.current.delete(id)
+            reject(new Error('Compression timeout'))
+          }
+        }, 30000) // 30 秒超时
+      })
+    },
+    [],
+  )
 
   /**
    * 检查是否需要压缩
@@ -133,11 +130,7 @@ export function useImageCompressor() {
 /**
  * 主线程回退方案（Worker 不可用时）
  */
-async function compressFallback(
-  file: File,
-  maxSize: number,
-  quality: number
-): Promise<CompressResult> {
+async function compressFallback(file: File, maxSize: number, quality: number): Promise<CompressResult> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const objectUrl = URL.createObjectURL(file)

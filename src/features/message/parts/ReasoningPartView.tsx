@@ -15,18 +15,17 @@ interface ReasoningPartViewProps {
 }
 
 export const ReasoningPartView = memo(function ReasoningPartView({ part, isStreaming }: ReasoningPartViewProps) {
-  if (!part.text?.trim()) return null
   const { reasoningDisplayMode } = useTheme()
   const rawText = part.text || ''
-  
+
   const isPartStreaming = isStreaming && !part.time?.end
   const hasContent = !!rawText.trim()
-  
+
   // 使用 smooth streaming 实现打字机效果
   const { displayText } = useSmoothStream(
     rawText,
     !!isPartStreaming,
-    { charDelay: 6, disableAnimation: !isPartStreaming }  // 稍快一点，因为是思考过程
+    { charDelay: 6, disableAnimation: !isPartStreaming }, // 稍快一点，因为是思考过程
   )
   const [expanded, setExpanded] = useState(false)
   const shouldRenderBody = useDelayedRender(expanded)
@@ -34,10 +33,7 @@ export const ReasoningPartView = memo(function ReasoningPartView({ part, isStrea
   const summaryContainerRef = useRef<HTMLDivElement>(null)
   const summaryMeasureRef = useRef<HTMLSpanElement>(null)
   const [summaryOverflow, setSummaryOverflow] = useState(false)
-  const collapsedPreview = useMemo(
-    () => (displayText || '').replace(/\s+/g, ' ').trim(),
-    [displayText]
-  )
+  const collapsedPreview = useMemo(() => (displayText || '').replace(/\s+/g, ' ').trim(), [displayText])
   const thoughtDurationLabel = useMemo(() => {
     const start = part.time?.start
     const end = part.time?.end
@@ -56,7 +52,7 @@ export const ReasoningPartView = memo(function ReasoningPartView({ part, isStrea
     const measureEl = summaryMeasureRef.current
     if (!containerEl || !measureEl) return
     const overflow = measureEl.scrollWidth - containerEl.clientWidth > 1
-    setSummaryOverflow(prev => prev === overflow ? prev : overflow)
+    setSummaryOverflow(prev => (prev === overflow ? prev : overflow))
   }, [reasoningDisplayMode])
 
   useEffect(() => {
@@ -96,6 +92,8 @@ export const ReasoningPartView = memo(function ReasoningPartView({ part, isStrea
     }
   }, [reasoningDisplayMode, summaryText, measureSummaryOverflow])
 
+  if (!hasContent) return null
+
   if (reasoningDisplayMode === 'italic') {
     const shouldUseToggle = isPartStreaming || hasLineBreak || summaryOverflow
     const expandedMetaText = isPartStreaming
@@ -134,14 +132,18 @@ export const ReasoningPartView = memo(function ReasoningPartView({ part, isStrea
               {summaryText}
             </span>
           </div>
-          <span className={`inline-flex h-5 w-3 items-center justify-center shrink-0 text-text-500 group-hover/reasoning:text-text-300 transition-[transform,color] duration-200 ${expanded ? 'rotate-180' : ''}`}>
+          <span
+            className={`inline-flex h-5 w-3 items-center justify-center shrink-0 text-text-500 group-hover/reasoning:text-text-300 transition-[transform,color] duration-200 ${expanded ? 'rotate-180' : ''}`}
+          >
             <ChevronDownIcon size={12} />
           </span>
         </button>
 
-        <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
-          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-75'
-        }`}>
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+            expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-75'
+          }`}
+        >
           <div className="overflow-hidden">
             {shouldRenderBody && (
               <div
@@ -155,9 +157,7 @@ export const ReasoningPartView = memo(function ReasoningPartView({ part, isStrea
       </>
     ) : (
       <div ref={summaryContainerRef} className="relative min-w-0 overflow-hidden">
-        <span
-          className={`block min-w-0 text-[12px] leading-5 italic whitespace-pre-wrap break-words ${bodyClassName}`}
-        >
+        <span className={`block min-w-0 text-[12px] leading-5 italic whitespace-pre-wrap break-words ${bodyClassName}`}>
           {displayText}
         </span>
         <span
@@ -175,15 +175,13 @@ export const ReasoningPartView = memo(function ReasoningPartView({ part, isStrea
         {ITALIC_SHOW_LEADING_GLYPH ? (
           <div className="grid grid-cols-[14px_minmax(0,1fr)] gap-x-1.5 items-start">
             <span className="inline-flex h-5 w-[14px] items-start justify-center pt-[2px] text-text-500">
-              {isPartStreaming ? (
-                <SpinnerIcon className="animate-spin" size={14} />
-              ) : (
-                <LightbulbIcon size={14} />
-              )}
+              {isPartStreaming ? <SpinnerIcon className="animate-spin" size={14} /> : <LightbulbIcon size={14} />}
             </span>
             <div className="min-w-0">{content}</div>
           </div>
-        ) : content}
+        ) : (
+          content
+        )}
 
         <span className="sr-only" role="status" aria-live="polite">
           {summaryText}
@@ -193,9 +191,11 @@ export const ReasoningPartView = memo(function ReasoningPartView({ part, isStrea
   }
 
   return (
-    <div className={`ring-1 ring-inset ring-border-300/20 rounded-xl overflow-hidden transition-all duration-300 ease-out ${
-      expanded ? 'w-full' : 'w-[260px]'
-    }`}>
+    <div
+      className={`ring-1 ring-inset ring-border-300/20 rounded-xl overflow-hidden transition-all duration-300 ease-out ${
+        expanded ? 'w-full' : 'w-[260px]'
+      }`}
+    >
       <button
         onClick={() => setExpanded(!expanded)}
         disabled={!hasContent && !isPartStreaming}
@@ -213,14 +213,18 @@ export const ReasoningPartView = memo(function ReasoningPartView({ part, isStrea
         <span className="text-xs font-medium leading-5 whitespace-nowrap text-left">
           {isPartStreaming ? 'Thinking...' : 'Thinking'}
         </span>
-        <span className={`inline-flex h-5 w-3 items-center justify-center shrink-0 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>
+        <span
+          className={`inline-flex h-5 w-3 items-center justify-center shrink-0 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
+        >
           <ChevronDownIcon size={12} />
         </span>
       </button>
 
-      <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-        expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-      }`}>
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
         <div className="overflow-hidden">
           {shouldRenderBody && (
             <ScrollArea ref={scrollAreaRef} maxHeight={192} className="border-t border-border-300/20 bg-bg-200/30">

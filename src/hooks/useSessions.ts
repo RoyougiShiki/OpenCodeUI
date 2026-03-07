@@ -50,46 +50,49 @@ export function useSessions(options: UseSessionsOptions = {}): UseSessionsResult
   const searchTimerRef = useRef<number | null>(null)
 
   // 获取会话列表
-  const fetchSessions = useCallback(async (params: SessionListParams & { append?: boolean } = {}) => {
-    const { append = false, ...queryParams } = params
-    const requestId = ++requestIdRef.current
-
-    if (append) {
-      setIsLoadingMore(true)
-    } else {
-      setIsLoading(true)
-      setError(null)
-    }
-
-    try {
-      const data = await getSessions({
-        roots: rootsOnly,
-        limit: pageSize,
-        directory: normalizedDirectory,
-        ...queryParams,
-      })
-
-      // 检查是否是最新的请求
-      if (requestId !== requestIdRef.current) return
+  const fetchSessions = useCallback(
+    async (params: SessionListParams & { append?: boolean } = {}) => {
+      const { append = false, ...queryParams } = params
+      const requestId = ++requestIdRef.current
 
       if (append) {
-        setSessions(prev => [...prev, ...data])
+        setIsLoadingMore(true)
       } else {
-        setSessions(data)
+        setIsLoading(true)
+        setError(null)
       }
 
-      // 如果返回的数量小于 pageSize，说明没有更多了
-      setHasMore(data.length >= pageSize)
-    } catch (e) {
-      if (requestId !== requestIdRef.current) return
-      setError(e instanceof Error ? e : new Error('Failed to fetch sessions'))
-    } finally {
-      if (requestId === requestIdRef.current) {
-        setIsLoading(false)
-        setIsLoadingMore(false)
+      try {
+        const data = await getSessions({
+          roots: rootsOnly,
+          limit: pageSize,
+          directory: normalizedDirectory,
+          ...queryParams,
+        })
+
+        // 检查是否是最新的请求
+        if (requestId !== requestIdRef.current) return
+
+        if (append) {
+          setSessions(prev => [...prev, ...data])
+        } else {
+          setSessions(data)
+        }
+
+        // 如果返回的数量小于 pageSize，说明没有更多了
+        setHasMore(data.length >= pageSize)
+      } catch (e) {
+        if (requestId !== requestIdRef.current) return
+        setError(e instanceof Error ? e : new Error('Failed to fetch sessions'))
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setIsLoading(false)
+          setIsLoadingMore(false)
+        }
       }
-    }
-  }, [pageSize, rootsOnly, normalizedDirectory])
+    },
+    [pageSize, rootsOnly, normalizedDirectory],
+  )
 
   // 初始加载和搜索变化时重新加载
   useEffect(() => {
@@ -98,9 +101,12 @@ export function useSessions(options: UseSessionsOptions = {}): UseSessionsResult
       clearTimeout(searchTimerRef.current)
     }
 
-    searchTimerRef.current = window.setTimeout(() => {
-      fetchSessions({ search: search || undefined })
-    }, search ? 300 : 0) // 有搜索词时延迟 300ms，无搜索词时立即执行
+    searchTimerRef.current = window.setTimeout(
+      () => {
+        fetchSessions({ search: search || undefined })
+      },
+      search ? 300 : 0,
+    ) // 有搜索词时延迟 300ms，无搜索词时立即执行
 
     return () => {
       if (searchTimerRef.current) {
@@ -130,16 +136,19 @@ export function useSessions(options: UseSessionsOptions = {}): UseSessionsResult
   }, [search, fetchSessions])
 
   // 创建新会话
-  const create = useCallback(async (title?: string) => {
-    // 创建时也要传 directory
-    const newSession = await createSession({ 
-      title,
-      directory: normalizedDirectory 
-    })
-    // 添加到列表开头
-    setSessions(prev => [newSession, ...prev])
-    return newSession
-  }, [normalizedDirectory])
+  const create = useCallback(
+    async (title?: string) => {
+      // 创建时也要传 directory
+      const newSession = await createSession({
+        title,
+        directory: normalizedDirectory,
+      })
+      // 添加到列表开头
+      setSessions(prev => [newSession, ...prev])
+      return newSession
+    },
+    [normalizedDirectory],
+  )
 
   // 删除会话
   const remove = useCallback(async (sessionId: string) => {

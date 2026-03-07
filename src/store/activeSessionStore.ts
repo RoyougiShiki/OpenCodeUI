@@ -141,7 +141,10 @@ class ActiveSessionStore {
     for (const p of permissions) {
       const desc = p.patterns?.length ? `${p.permission}: ${p.patterns[0]}` : p.permission
       this.pendingRequests.set(p.id, {
-        requestId: p.id, sessionId: p.sessionID, type: 'permission', description: desc,
+        requestId: p.id,
+        sessionId: p.sessionID,
+        type: 'permission',
+        description: desc,
       })
       if (!newMap[p.sessionID] || newMap[p.sessionID].type === 'idle') {
         newMap[p.sessionID] = { type: 'busy' }
@@ -153,7 +156,10 @@ class ActiveSessionStore {
     for (const q of questions) {
       const desc = q.questions?.[0]?.header || 'Waiting for input'
       this.pendingRequests.set(q.id, {
-        requestId: q.id, sessionId: q.sessionID, type: 'question', description: desc,
+        requestId: q.id,
+        sessionId: q.sessionID,
+        type: 'question',
+        description: desc,
       })
       if (!newMap[q.sessionID] || newMap[q.sessionID].type === 'idle') {
         newMap[q.sessionID] = { type: 'busy' }

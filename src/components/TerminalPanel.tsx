@@ -5,12 +5,7 @@
 
 import { memo, useCallback, useRef, useState, useEffect } from 'react'
 import { Terminal } from './Terminal'
-import { 
-  PlusIcon, 
-  CloseIcon, 
-  TerminalIcon,
-  ChevronDownIcon,
-} from './Icons'
+import { PlusIcon, CloseIcon, TerminalIcon, ChevronDownIcon } from './Icons'
 import { layoutStore, useLayoutStore, type TerminalTab } from '../store/layoutStore'
 import { createPtySession, removePtySession, listPtySessions } from '../api/pty'
 
@@ -23,18 +18,13 @@ interface TerminalPanelProps {
 }
 
 export const TerminalPanel = memo(function TerminalPanel({ directory }: TerminalPanelProps) {
-  const { 
-    bottomPanelOpen, 
-    bottomPanelHeight, 
-    terminalTabs, 
-    activeTerminalId 
-  } = useLayoutStore()
-  
+  const { bottomPanelOpen, bottomPanelHeight, terminalTabs, activeTerminalId } = useLayoutStore()
+
   const [isResizing, setIsResizing] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const restoredRef = useRef(false)
-  
+
   // 拖拽排序状态
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
@@ -49,7 +39,7 @@ export const TerminalPanel = memo(function TerminalPanel({ directory }: Terminal
         setIsRestoring(true)
         const sessions = await listPtySessions(directory)
         console.log('[TerminalPanel] Found existing PTY sessions:', sessions)
-        
+
         if (sessions.length > 0) {
           // 恢复所有已有的 sessions，但不自动打开面板
           for (const pty of sessions) {
@@ -92,15 +82,18 @@ export const TerminalPanel = memo(function TerminalPanel({ directory }: Terminal
   }, [directory])
 
   // 关闭终端
-  const handleCloseTerminal = useCallback(async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    try {
-      await removePtySession(id, directory)
-    } catch {
-      // ignore - may already be closed
-    }
-    layoutStore.removeTerminalTab(id)
-  }, [directory])
+  const handleCloseTerminal = useCallback(
+    async (id: string, e: React.MouseEvent) => {
+      e.stopPropagation()
+      try {
+        await removePtySession(id, directory)
+      } catch {
+        // ignore - may already be closed
+      }
+      layoutStore.removeTerminalTab(id)
+    },
+    [directory],
+  )
 
   // 切换终端
   const handleSelectTerminal = useCallback((id: string) => {
@@ -113,43 +106,49 @@ export const TerminalPanel = memo(function TerminalPanel({ directory }: Terminal
   }, [])
 
   // 拖拽调整高度 - 与侧边栏一致的交互
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsResizing(true)
-    document.body.style.cursor = 'row-resize'
-    document.body.style.userSelect = 'none'
-    
-    const startY = e.clientY
-    const startHeight = bottomPanelHeight
-    
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaY = startY - moveEvent.clientY
-      const newHeight = Math.min(Math.max(startHeight + deltaY, MIN_HEIGHT), MAX_HEIGHT)
-      layoutStore.setBottomPanelHeight(newHeight)
-    }
-    
-    const handleMouseUp = () => {
-      setIsResizing(false)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-    
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [bottomPanelHeight])
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      setIsResizing(true)
+      document.body.style.cursor = 'row-resize'
+      document.body.style.userSelect = 'none'
+
+      const startY = e.clientY
+      const startHeight = bottomPanelHeight
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const deltaY = startY - moveEvent.clientY
+        const newHeight = Math.min(Math.max(startHeight + deltaY, MIN_HEIGHT), MAX_HEIGHT)
+        layoutStore.setBottomPanelHeight(newHeight)
+      }
+
+      const handleMouseUp = () => {
+        setIsResizing(false)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    },
+    [bottomPanelHeight],
+  )
 
   // 标签拖拽处理
   const handleDragStart = useCallback((id: string) => {
     setDraggedId(id)
   }, [])
 
-  const handleDragOver = useCallback((id: string) => {
-    if (draggedId && draggedId !== id) {
-      setDragOverId(id)
-    }
-  }, [draggedId])
+  const handleDragOver = useCallback(
+    (id: string) => {
+      if (draggedId && draggedId !== id) {
+        setDragOverId(id)
+      }
+    },
+    [draggedId],
+  )
 
   const handleDragEnd = useCallback(() => {
     if (draggedId && dragOverId) {
@@ -165,11 +164,7 @@ export const TerminalPanel = memo(function TerminalPanel({ directory }: Terminal
   }
 
   return (
-    <div 
-      ref={panelRef}
-      className="flex flex-col bg-bg-100 relative"
-      style={{ height: bottomPanelHeight }}
-    >
+    <div ref={panelRef} className="flex flex-col bg-bg-100 relative" style={{ height: bottomPanelHeight }}>
       {/* Resize Handle - 与侧边栏一致的设计 */}
       <div
         className={`
@@ -179,7 +174,7 @@ export const TerminalPanel = memo(function TerminalPanel({ directory }: Terminal
         `}
         onMouseDown={handleResizeStart}
       />
-      
+
       {/* 顶部分界线 - 与侧边栏 border 一致 */}
       <div className="h-px bg-border-200/50 shrink-0" />
 
@@ -187,7 +182,7 @@ export const TerminalPanel = memo(function TerminalPanel({ directory }: Terminal
       <div className="flex items-center justify-between px-2 py-1 shrink-0 border-b border-border-200/30">
         {/* Tabs */}
         <div className="flex items-center gap-0.5 overflow-x-auto no-scrollbar flex-1 min-w-0">
-          {terminalTabs.map((tab) => (
+          {terminalTabs.map(tab => (
             <TerminalTabButton
               key={tab.id}
               tab={tab}
@@ -195,13 +190,13 @@ export const TerminalPanel = memo(function TerminalPanel({ directory }: Terminal
               isDragging={draggedId === tab.id}
               isDragOver={dragOverId === tab.id}
               onClick={() => handleSelectTerminal(tab.id)}
-              onClose={(e) => handleCloseTerminal(tab.id, e)}
+              onClose={e => handleCloseTerminal(tab.id, e)}
               onDragStart={() => handleDragStart(tab.id)}
               onDragOver={() => handleDragOver(tab.id)}
               onDragEnd={handleDragEnd}
             />
           ))}
-          
+
           {/* New Terminal Button */}
           <button
             onClick={handleNewTerminal}
@@ -243,13 +238,8 @@ export const TerminalPanel = memo(function TerminalPanel({ directory }: Terminal
             </button>
           </div>
         ) : (
-          terminalTabs.map((tab) => (
-            <Terminal
-              key={tab.id}
-              ptyId={tab.id}
-              directory={directory}
-              isActive={tab.id === activeTerminalId}
-            />
+          terminalTabs.map(tab => (
+            <Terminal key={tab.id} ptyId={tab.id} directory={directory} isActive={tab.id === activeTerminalId} />
           ))
         )}
       </div>
@@ -303,7 +293,7 @@ const TerminalTabButton = memo(function TerminalTabButton({
     <div
       draggable
       onDragStart={handleDragStart}
-      onDragOver={(e) => {
+      onDragOver={e => {
         e.preventDefault()
         onDragOver()
       }}
@@ -312,9 +302,10 @@ const TerminalTabButton = memo(function TerminalTabButton({
       className={`
         group flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all shrink-0
         border border-transparent cursor-pointer select-none
-        ${isActive 
-          ? 'bg-bg-000 text-text-100 shadow-sm border-border-200/50' 
-          : 'text-text-300 hover:text-text-200 hover:bg-bg-200/50'
+        ${
+          isActive
+            ? 'bg-bg-000 text-text-100 shadow-sm border-border-200/50'
+            : 'text-text-300 hover:text-text-200 hover:bg-bg-200/50'
         }
         ${isDragging ? 'opacity-40 scale-95' : ''}
         ${isDragOver ? 'border-accent-main-100 bg-accent-main-100/10' : ''}
@@ -325,19 +316,19 @@ const TerminalTabButton = memo(function TerminalTabButton({
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusColor}`} />
         <TerminalIcon size={12} className="shrink-0 opacity-60" />
       </div>
-      
+
       {/* Title */}
       <span className="truncate max-w-[100px]">{tab.title}</span>
-      
+
       {/* Close Button - 独立处理点击，阻止拖拽 */}
       <button
         type="button"
-        onClick={(e) => {
+        onClick={e => {
           e.stopPropagation()
           onClose(e)
         }}
-        onMouseDown={(e) => e.stopPropagation()}
-        onDragStart={(e) => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
+        onDragStart={e => e.stopPropagation()}
         draggable={false}
         className={`
           p-1 -mr-0.5 rounded transition-all shrink-0

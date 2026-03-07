@@ -9,33 +9,37 @@
 // 点击：跳转到对应 session + 标记通知已读
 
 import { useState, useEffect, useCallback } from 'react'
-import { useNotificationStore, notificationStore, type ToastItem, type NotificationType } from '../store/notificationStore'
+import {
+  useNotificationStore,
+  notificationStore,
+  type ToastItem,
+  type NotificationType,
+} from '../store/notificationStore'
 import { CloseIcon, HandIcon, QuestionIcon, CheckIcon, AlertCircleIcon } from './Icons'
 
 // ============================================
 // 类型图标映射
 // ============================================
 
-const typeConfig: Record<NotificationType, {
-  icon: typeof HandIcon
-  color: string
-  bgAccent: string
-}> = {
+const typeConfig: Record<
+  NotificationType,
+  {
+    icon: typeof HandIcon
+    color: string
+    bgAccent: string
+  }
+> = {
   permission: { icon: HandIcon, color: 'text-warning-100', bgAccent: 'bg-warning-bg' },
-  question:   { icon: QuestionIcon, color: 'text-info-100', bgAccent: 'bg-info-bg' },
-  completed:  { icon: CheckIcon, color: 'text-success-100', bgAccent: 'bg-success-bg' },
-  error:      { icon: AlertCircleIcon, color: 'text-danger-100', bgAccent: 'bg-danger-bg' },
+  question: { icon: QuestionIcon, color: 'text-info-100', bgAccent: 'bg-info-bg' },
+  completed: { icon: CheckIcon, color: 'text-success-100', bgAccent: 'bg-success-bg' },
+  error: { icon: AlertCircleIcon, color: 'text-danger-100', bgAccent: 'bg-danger-bg' },
 }
 
 // ============================================
 // 单个 Toast
 // ============================================
 
-function Toast({ item, onDismiss, onClick }: {
-  item: ToastItem
-  onDismiss: () => void
-  onClick: () => void
-}) {
+function Toast({ item, onDismiss, onClick }: { item: ToastItem; onDismiss: () => void; onClick: () => void }) {
   const { notification, exiting } = item
   const config = typeConfig[notification.type]
   const Icon = config.icon
@@ -80,20 +84,19 @@ function Toast({ item, onDismiss, onClick }: {
 
       {/* Content */}
       <div className="min-w-0 flex-1">
-        <div className="text-xs font-medium text-text-100 truncate leading-tight">
-          {notification.title}
-        </div>
+        <div className="text-xs font-medium text-text-100 truncate leading-tight">{notification.title}</div>
         {notification.body && (
-          <div className="text-[11px] text-text-300 truncate mt-0.5 leading-tight">
-            {notification.body}
-          </div>
+          <div className="text-[11px] text-text-300 truncate mt-0.5 leading-tight">{notification.body}</div>
         )}
       </div>
 
       {/* Close — vertically centered, mobile: always visible; PC: visible on hover */}
       <button
         className="shrink-0 flex items-center justify-center w-6 h-6 rounded-md text-text-400 md:opacity-0 md:group-hover:opacity-100 hover:text-text-200 hover:bg-bg-200 transition-all duration-150 active:scale-90"
-        onClick={(e) => { e.stopPropagation(); onDismiss() }}
+        onClick={e => {
+          e.stopPropagation()
+          onDismiss()
+        }}
         aria-label="Dismiss"
       >
         <CloseIcon size={12} />

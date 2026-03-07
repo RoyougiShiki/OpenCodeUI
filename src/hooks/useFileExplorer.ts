@@ -24,27 +24,27 @@ export interface UseFileExplorerResult {
   tree: FileTreeNode[]
   isLoading: boolean
   error: string | null
-  
+
   // 展开状态
   expandedPaths: Set<string>
   toggleExpand: (path: string) => void
   expandPath: (path: string) => void
   collapsePath: (path: string) => void
-  
+
   // 选中状态
   selectedPath: string | null
   selectFile: (path: string) => void
-  
+
   // 文件预览
   previewContent: FileContent | null
   previewLoading: boolean
   previewError: string | null
   loadPreview: (path: string) => Promise<void>
   clearPreview: () => void
-  
+
   // 文件状态
   fileStatus: Map<string, FileStatusItem>
-  
+
   // 操作
   refresh: () => Promise<void>
   loadChildren: (parentPath: string) => Promise<void>
@@ -52,50 +52,50 @@ export interface UseFileExplorerResult {
 
 export function useFileExplorer(options: UseFileExplorerOptions = {}): UseFileExplorerResult {
   const { directory, autoLoad = true, sessionId } = options
-  
+
   // 文件树状态
   const [tree, setTree] = useState<FileTreeNode[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   // 展开状态
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set())
-  
+
   // 选中状态
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
-  
+
   // 预览状态
   const [previewContent, setPreviewContent] = useState<FileContent | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
-  
+
   // 文件状态（git）
   const [fileStatus, setFileStatus] = useState<Map<string, FileStatusItem>>(new Map())
-  
+
   // 用于防止过时请求
   const loadIdRef = useRef(0)
 
   // 加载根目录
   const loadRoot = useCallback(async () => {
     if (!directory) return
-    
+
     const loadId = ++loadIdRef.current
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const nodes = await listDirectory('', directory)
-      
+
       // 检查请求是否过时
       if (loadId !== loadIdRef.current) return
-      
+
       // 排序：目录在前，文件在后，按名称排序
       const sorted = sortNodes(nodes)
       setTree(sorted.map(n => ({ ...n, children: n.type === 'directory' ? undefined : undefined })))
-      
+
       // 同时加载文件状态（session diffs 为主，git status 为辅）
       const statusMap = new Map<string, FileStatusItem>()
-      
+
       // 1. 先加载 git status（路径可能包含 ../ 等前缀，需要规范化）
       try {
         const status = await getFileStatus(directory)
@@ -112,7 +112,7 @@ export function useFileExplorer(options: UseFileExplorerOptions = {}): UseFileEx
       } catch {
         // 忽略文件状态加载失败
       }
-      
+
       // 2. 再加载 session diffs（优先级更高，会覆盖 git status）
       if (sessionId) {
         try {
@@ -133,7 +133,7 @@ export function useFileExplorer(options: UseFileExplorerOptions = {}): UseFileEx
           // 忽略 session diff 加载失败
         }
       }
-      
+
       if (loadId === loadIdRef.current) {
         // 从文件状态推算所有父目录的累积状态
         computeDirectoryStatus(statusMap)
@@ -151,64 +151,79 @@ export function useFileExplorer(options: UseFileExplorerOptions = {}): UseFileEx
   }, [directory, sessionId])
 
   // 加载子目录
-  const loadChildren = useCallback(async (parentPath: string) => {
-    if (!directory) return
-    
-    // 更新树，标记为加载中
-    setTree(prev => updateTreeNode(prev, parentPath, node => ({
-      ...node,
-      isLoading: true,
-    })))
-    
-    try {
-      const nodes = await listDirectory(parentPath, directory)
-      const sorted = sortNodes(nodes)
-      
-      setTree(prev => updateTreeNode(prev, parentPath, node => ({
-        ...node,
-        children: sorted.map(n => ({ ...n })),
-        isLoading: false,
-        isLoaded: true,
-      })))
-    } catch (e) {
-      setTree(prev => updateTreeNode(prev, parentPath, node => ({
-        ...node,
-        isLoading: false,
-        isLoaded: true,
-        children: [],
-      })))
-    }
-  }, [directory])
+  const loadChildren = useCallback(
+    async (parentPath: string) => {
+      if (!directory) return
+
+      // 更新树，标记为加载中
+      setTree(prev =>
+        updateTreeNode(prev, parentPath, node => ({
+          ...node,
+          isLoading: true,
+        })),
+      )
+
+      try {
+        const nodes = await listDirectory(parentPath, directory)
+        const sorted = sortNodes(nodes)
+
+        setTree(prev =>
+          updateTreeNode(prev, parentPath, node => ({
+            ...node,
+            children: sorted.map(n => ({ ...n })),
+            isLoading: false,
+            isLoaded: true,
+          })),
+        )
+      } catch (e) {
+        setTree(prev =>
+          updateTreeNode(prev, parentPath, node => ({
+            ...node,
+            isLoading: false,
+            isLoaded: true,
+            children: [],
+          })),
+        )
+      }
+    },
+    [directory],
+  )
 
   // 切换展开/折叠
-  const toggleExpand = useCallback((path: string) => {
-    setExpandedPaths(prev => {
-      const next = new Set(prev)
-      if (next.has(path)) {
-        next.delete(path)
-      } else {
-        next.add(path)
-        // 如果该目录尚未加载，触发加载
-        const node = findTreeNode(tree, path)
-        if (node && node.type === 'directory' && !node.isLoaded && !node.isLoading) {
-          loadChildren(path)
+  const toggleExpand = useCallback(
+    (path: string) => {
+      setExpandedPaths(prev => {
+        const next = new Set(prev)
+        if (next.has(path)) {
+          next.delete(path)
+        } else {
+          next.add(path)
+          // 如果该目录尚未加载，触发加载
+          const node = findTreeNode(tree, path)
+          if (node && node.type === 'directory' && !node.isLoaded && !node.isLoading) {
+            loadChildren(path)
+          }
         }
-      }
-      return next
-    })
-  }, [tree, loadChildren])
+        return next
+      })
+    },
+    [tree, loadChildren],
+  )
 
-  const expandPath = useCallback((path: string) => {
-    setExpandedPaths(prev => {
-      const next = new Set(prev)
-      next.add(path)
-      return next
-    })
-    const node = findTreeNode(tree, path)
-    if (node && node.type === 'directory' && !node.isLoaded && !node.isLoading) {
-      loadChildren(path)
-    }
-  }, [tree, loadChildren])
+  const expandPath = useCallback(
+    (path: string) => {
+      setExpandedPaths(prev => {
+        const next = new Set(prev)
+        next.add(path)
+        return next
+      })
+      const node = findTreeNode(tree, path)
+      if (node && node.type === 'directory' && !node.isLoaded && !node.isLoading) {
+        loadChildren(path)
+      }
+    },
+    [tree, loadChildren],
+  )
 
   const collapsePath = useCallback((path: string) => {
     setExpandedPaths(prev => {
@@ -224,22 +239,25 @@ export function useFileExplorer(options: UseFileExplorerOptions = {}): UseFileEx
   }, [])
 
   // 加载文件预览
-  const loadPreview = useCallback(async (path: string) => {
-    if (!directory) return
-    
-    setPreviewLoading(true)
-    setPreviewError(null)
-    
-    try {
-      const content = await getFileContent(path, directory)
-      setPreviewContent(content)
-    } catch (e) {
-      setPreviewError(e instanceof Error ? e.message : 'Failed to load file')
-      setPreviewContent(null)
-    } finally {
-      setPreviewLoading(false)
-    }
-  }, [directory])
+  const loadPreview = useCallback(
+    async (path: string) => {
+      if (!directory) return
+
+      setPreviewLoading(true)
+      setPreviewError(null)
+
+      try {
+        const content = await getFileContent(path, directory)
+        setPreviewContent(content)
+      } catch (e) {
+        setPreviewError(e instanceof Error ? e.message : 'Failed to load file')
+        setPreviewContent(null)
+      } finally {
+        setPreviewLoading(false)
+      }
+    },
+    [directory],
+  )
 
   const clearPreview = useCallback(() => {
     setPreviewContent(null)
@@ -311,7 +329,7 @@ function findTreeNode(tree: FileTreeNode[], path: string): FileTreeNode | null {
 function updateTreeNode(
   tree: FileTreeNode[],
   path: string,
-  updater: (node: FileTreeNode) => FileTreeNode
+  updater: (node: FileTreeNode) => FileTreeNode,
 ): FileTreeNode[] {
   return tree.map(node => {
     if (node.path === path) {
@@ -345,7 +363,7 @@ function getFileStatusFromDiff(diff: FileDiff): 'added' | 'modified' | 'deleted'
 function computeDirectoryStatus(statusMap: Map<string, FileStatusItem>): void {
   // 收集所有需要设置状态的目录路径
   const dirStatuses = new Map<string, 'added' | 'modified' | 'deleted'>()
-  
+
   for (const [filePath, item] of statusMap) {
     const parts = filePath.split('/')
     // 构建所有父目录路径
@@ -353,16 +371,14 @@ function computeDirectoryStatus(statusMap: Map<string, FileStatusItem>): void {
       const dirPath = parts.slice(0, i).join('/')
       const existingStatus = dirStatuses.get(dirPath)
       const newStatus = item.status as 'added' | 'modified' | 'deleted'
-      
+
       // 优先级: added > modified > deleted
-      if (!existingStatus || 
-          (newStatus === 'added') ||
-          (newStatus === 'modified' && existingStatus === 'deleted')) {
+      if (!existingStatus || newStatus === 'added' || (newStatus === 'modified' && existingStatus === 'deleted')) {
         dirStatuses.set(dirPath, newStatus)
       }
     }
   }
-  
+
   // 将目录状态添加到 statusMap
   for (const [dirPath, status] of dirStatuses) {
     if (!statusMap.has(dirPath)) {

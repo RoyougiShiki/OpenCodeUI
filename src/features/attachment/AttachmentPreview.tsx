@@ -16,8 +16,8 @@ interface AttachmentPreviewProps {
  * 附件预览组件
  * 用于输入框上方预览区和消息气泡中
  */
-export function AttachmentPreview({ 
-  attachments, 
+export function AttachmentPreview({
+  attachments,
   onRemove,
   className = '',
   size = 'md',
@@ -30,16 +30,14 @@ export function AttachmentPreview({
   // Backward compatibility
   const mode = variant || (direction === 'column' ? 'list' : 'wrap')
 
-  const sizeClasses = size === 'sm' 
-    ? 'text-xs gap-1.5' 
-    : 'text-sm gap-2'
+  const sizeClasses = size === 'sm' ? 'text-xs gap-1.5' : 'text-sm gap-2'
 
   const containerClasses = {
     wrap: 'flex flex-wrap',
     list: 'flex flex-col items-end', // List aligns to end (user message)
     grid: 'grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2 w-full',
   }[mode]
-  
+
   const itemClasses = {
     wrap: 'w-[140px]',
     list: 'w-full max-w-[280px]', // Slightly wider in list
@@ -49,8 +47,8 @@ export function AttachmentPreview({
   return (
     <div className={`${containerClasses} ${sizeClasses} ${className}`}>
       {attachments.map(attachment => (
-        <AttachmentItem 
-          key={attachment.id} 
+        <AttachmentItem
+          key={attachment.id}
           attachment={attachment}
           onRemove={onRemove}
           size={size}

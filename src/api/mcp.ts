@@ -4,10 +4,7 @@
 
 import { get, post, del } from './http'
 import { formatPathForApi } from '../utils/directoryUtils'
-import type { 
-  MCPStatusResponse, 
-  McpServerConfig,
-} from '../types/api/mcp'
+import type { MCPStatusResponse, McpServerConfig } from '../types/api/mcp'
 
 /**
  * 获取所有 MCP 服务器状态
@@ -19,11 +16,7 @@ export async function getMcpStatus(directory?: string): Promise<MCPStatusRespons
 /**
  * 添加 MCP 服务器
  */
-export async function addMcpServer(
-  name: string,
-  config: McpServerConfig,
-  directory?: string
-): Promise<void> {
+export async function addMcpServer(name: string, config: McpServerConfig, directory?: string): Promise<void> {
   return post<void>('/mcp', { directory: formatPathForApi(directory) }, { name, config })
 }
 
@@ -60,9 +53,9 @@ export async function removeMcpAuth(name: string, directory?: string): Promise<v
  */
 export async function completeMcpAuth(name: string, code: string, directory?: string): Promise<void> {
   return post<void>(
-    `/mcp/${encodeURIComponent(name)}/auth/callback`, 
+    `/mcp/${encodeURIComponent(name)}/auth/callback`,
     { directory: formatPathForApi(directory) },
-    { code }
+    { code },
   )
 }
 

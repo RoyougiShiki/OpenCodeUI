@@ -44,7 +44,7 @@ export async function searchFiles(
     directory?: string
     type?: 'file' | 'directory'
     limit?: number
-  } = {}
+  } = {},
 ): Promise<string[]> {
   return get<string[]>('/find/file', {
     query,
@@ -130,11 +130,7 @@ export async function searchSymbols(query: string, directory?: string): Promise<
  * @param baseDirectory 基础目录（从哪里开始搜索）
  * @param limit 返回结果数量限制
  */
-export async function searchDirectories(
-  query: string,
-  baseDirectory?: string,
-  limit: number = 50
-): Promise<string[]> {
+export async function searchDirectories(query: string, baseDirectory?: string, limit: number = 50): Promise<string[]> {
   return searchFiles(query, {
     directory: baseDirectory,
     type: 'directory',

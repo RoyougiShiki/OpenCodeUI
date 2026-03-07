@@ -24,13 +24,13 @@ import type {
  * GET /session/{sessionID}/message - 获取 session 的消息列表
  */
 export async function getSessionMessages(
-  sessionId: string, 
+  sessionId: string,
   limit?: number,
-  directory?: string
+  directory?: string,
 ): Promise<ApiMessageWithParts[]> {
-  return get<ApiMessageWithParts[]>(`/session/${sessionId}/message`, { 
-    directory: formatPathForApi(directory), 
-    limit 
+  return get<ApiMessageWithParts[]>(`/session/${sessionId}/message`, {
+    directory: formatPathForApi(directory),
+    limit,
   })
 }
 
@@ -51,12 +51,12 @@ export async function getSessionMessageCount(sessionId: string): Promise<number>
  */
 export function extractUserMessageContent(apiMessage: ApiMessageWithParts): RevertedMessage {
   const { parts } = apiMessage
-  
+
   const textParts = parts.filter((p): p is ApiTextPart => p.type === 'text' && !p.synthetic)
   const text = textParts.map(p => p.text).join('\n')
-  
+
   const attachments: Attachment[] = []
-  
+
   for (const part of parts) {
     if (part.type === 'file') {
       const fp = part as ApiFilePart
@@ -68,11 +68,13 @@ export function extractUserMessageContent(apiMessage: ApiMessageWithParts): Reve
         url: fp.url,
         mime: fp.mime,
         relativePath: fp.source?.path,
-        textRange: fp.source?.text ? {
-          value: fp.source.text.value,
-          start: fp.source.text.start,
-          end: fp.source.text.end,
-        } : undefined,
+        textRange: fp.source?.text
+          ? {
+              value: fp.source.text.value,
+              start: fp.source.text.start,
+              end: fp.source.text.end,
+            }
+          : undefined,
       })
     } else if (part.type === 'agent') {
       const ap = part as ApiAgentPart
@@ -81,15 +83,17 @@ export function extractUserMessageContent(apiMessage: ApiMessageWithParts): Reve
         type: 'agent',
         displayName: ap.name,
         agentName: ap.name,
-        textRange: ap.source ? {
-          value: ap.source.value,
-          start: ap.source.start,
-          end: ap.source.end,
-        } : undefined,
+        textRange: ap.source
+          ? {
+              value: ap.source.value,
+              start: ap.source.start,
+              end: ap.source.end,
+            }
+          : undefined,
       })
     }
   }
-  
+
   return { text, attachments }
 }
 
@@ -102,15 +106,15 @@ export function extractUserMessageContent(apiMessage: ApiMessageWithParts): Reve
  */
 function toFileUrl(path: string): string {
   if (!path) return ''
-  
+
   if (path.startsWith('file://')) {
     return path
   }
-  
+
   if (path.startsWith('data:')) {
     return path
   }
-  
+
   const normalized = path.replace(/\\/g, '/')
   if (/^[a-zA-Z]:/.test(normalized)) {
     return `file:///${normalized}`
@@ -132,24 +136,26 @@ function buildSendMessageBody(params: SendMessageParams): {
   const { sessionId, text, attachments, model, agent, variant, directory } = params
 
   const parts: Array<{ type: string; [key: string]: unknown }> = []
-  
+
   // 文本 part
   parts.push({
     type: 'text',
     text,
   })
-  
+
   // 附件 parts
   for (const attachment of attachments) {
     if (attachment.type === 'agent') {
       parts.push({
         type: 'agent',
         name: attachment.agentName,
-        source: attachment.textRange ? {
-          value: attachment.textRange.value,
-          start: attachment.textRange.start,
-          end: attachment.textRange.end,
-        } : undefined,
+        source: attachment.textRange
+          ? {
+              value: attachment.textRange.value,
+              start: attachment.textRange.start,
+              end: attachment.textRange.end,
+            }
+          : undefined,
       })
     } else {
       const fileUrl = toFileUrl(attachment.url || '')
@@ -157,21 +163,23 @@ function buildSendMessageBody(params: SendMessageParams): {
         console.warn('Skipping attachment with empty URL:', attachment)
         continue
       }
-      
+
       parts.push({
         type: 'file',
         mime: attachment.mime || (attachment.type === 'folder' ? 'application/x-directory' : 'text/plain'),
         url: fileUrl,
         filename: attachment.displayName,
-        source: attachment.textRange ? {
-          text: {
-            value: attachment.textRange.value,
-            start: attachment.textRange.start,
-            end: attachment.textRange.end,
-          },
-          type: 'file',
-          path: attachment.relativePath || attachment.displayName,
-        } : undefined,
+        source: attachment.textRange
+          ? {
+              text: {
+                value: attachment.textRange.value,
+                start: attachment.textRange.start,
+                end: attachment.textRange.end,
+              },
+              type: 'file',
+              path: attachment.relativePath || attachment.displayName,
+            }
+          : undefined,
       })
     }
   }
@@ -180,11 +188,11 @@ function buildSendMessageBody(params: SendMessageParams): {
     parts,
     model,
   }
-  
+
   if (agent) {
     requestBody.agent = agent
   }
-  
+
   if (variant) {
     requestBody.variant = variant
   }

@@ -19,28 +19,30 @@ import { layoutStore } from '../store/layoutStore'
 function getHSLColor(varName: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
   if (!value) return ''
-  
+
   // CSS 变量格式是 "h s% l%" 或 "h s l"
   const parts = value.split(/\s+/)
   if (parts.length < 3) return ''
-  
+
   const h = parseFloat(parts[0])
   const s = parseFloat(parts[1]) / 100
   const l = parseFloat(parts[2]) / 100
-  
+
   // HSL to RGB
   const a = s * Math.min(l, 1 - l)
   const f = (n: number) => {
     const k = (n + h / 30) % 12
     const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
-    return Math.round(255 * color).toString(16).padStart(2, '0')
+    return Math.round(255 * color)
+      .toString(16)
+      .padStart(2, '0')
   }
   return `#${f(0)}${f(8)}${f(4)}`
 }
 
 function getTerminalTheme(isDark: boolean) {
   const fgColor = getHSLColor('--text-100') || (isDark ? '#e8e0d5' : '#2d2a26')
-  
+
   // 背景色设置为透明，实际上由 CSS 强制覆盖，
   // 但这里设置 transparent 可以让 xterm 内部逻辑知道它是透明的
   if (isDark) {
@@ -123,11 +125,7 @@ interface TerminalProps {
   isActive: boolean
 }
 
-export const Terminal = memo(function Terminal({
-  ptyId,
-  directory,
-  isActive,
-}: TerminalProps) {
+export const Terminal = memo(function Terminal({ ptyId, directory, isActive }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isTouchScrolling, setIsTouchScrolling] = useState(false)
   const terminalRef = useRef<XTerm | null>(null)
@@ -149,7 +147,7 @@ export const Terminal = memo(function Terminal({
   useEffect(() => {
     if (!containerRef.current) return
     if (!hasBeenActive) return
-    
+
     mountedRef.current = true
     let ws: WebSocket | null = null
     let wsConnectTimeout: number | null = null
@@ -158,10 +156,12 @@ export const Terminal = memo(function Terminal({
 
     const isMobile = isMobileDevice()
     const theme = getTerminalTheme(isDarkMode())
-    
+
     const terminal = new XTerm({
       theme,
-      fontFamily: getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim() || "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
+      fontFamily:
+        getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim() ||
+        "ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace",
       fontSize: isMobile ? 14 : 13,
       lineHeight: isMobile ? 1.3 : 1.2,
       cursorBlink: true,
@@ -171,11 +171,13 @@ export const Terminal = memo(function Terminal({
       scrollback: 10000,
       convertEol: true,
       allowTransparency: true, // 开启透明背景
-      ...(isMobile ? {
-        scrollSensitivity: 2,
-        macOptionIsMeta: true,
-        disableStdin: false,
-      } : {})
+      ...(isMobile
+        ? {
+            scrollSensitivity: 2,
+            macOptionIsMeta: true,
+            disableStdin: false,
+          }
+        : {}),
     })
 
     const fitAddon = new FitAddon()
@@ -185,7 +187,7 @@ export const Terminal = memo(function Terminal({
     terminal.loadAddon(webLinksAddon)
 
     terminal.open(containerRef.current)
-    
+
     requestAnimationFrame(() => {
       if (mountedRef.current) {
         fitAddon.fit()
@@ -204,9 +206,9 @@ export const Terminal = memo(function Terminal({
 
     const connectWs = () => {
       if (!mountedRef.current) return
-      
+
       fitAddon.fit()
-      
+
       const wsUrl = getPtyConnectUrl(ptyId, directory)
       console.log('[Terminal] Connecting to:', wsUrl, reconnectAttempt > 0 ? `(reconnect #${reconnectAttempt})` : '')
       ws = new WebSocket(wsUrl)
@@ -222,12 +224,12 @@ export const Terminal = memo(function Terminal({
         updatePtySession(ptyId, { size: { cols, rows } }, directory).catch(() => {})
       }
 
-      ws.onmessage = (event) => {
+      ws.onmessage = event => {
         if (!mountedRef.current) return
         terminal.write(event.data)
       }
 
-      ws.onclose = (e) => {
+      ws.onclose = e => {
         console.log('[Terminal] WebSocket closed:', ptyId, e.code, e.reason)
         if (!mountedRef.current) return
         layoutStore.updateTerminalTab(ptyId, { status: 'disconnected' })
@@ -250,22 +252,22 @@ export const Terminal = memo(function Terminal({
         }, delay)
       }
 
-      ws.onerror = (e) => {
+      ws.onerror = e => {
         console.log('[Terminal] WebSocket error:', ptyId, e)
         // onclose 会在 onerror 之后触发，重连逻辑交给 onclose
       }
 
       disposeData?.dispose()
-      disposeData = terminal.onData((data) => {
+      disposeData = terminal.onData(data => {
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(data)
         }
       })
     }
-    
+
     wsConnectTimeout = requestAnimationFrame(connectWs) as unknown as number
 
-    disposeTitle = terminal.onTitleChange((title) => {
+    disposeTitle = terminal.onTitleChange(title => {
       if (!mountedRef.current) return
       layoutStore.updateTerminalTab(ptyId, { title })
     })
@@ -371,7 +373,7 @@ export const Terminal = memo(function Terminal({
       const now = Date.now()
       const dt = now - lastTouchTime
       if (dt > 0) {
-        velocity = (lastTouchY - y) / dt * 16 // 归一化到每帧 px
+        velocity = ((lastTouchY - y) / dt) * 16 // 归一化到每帧 px
       }
       lastTouchY = y
       lastTouchTime = now
@@ -404,7 +406,7 @@ export const Terminal = memo(function Terminal({
 
     const handleResize = () => {
       if (isPanelResizingRef.current) return
-      
+
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current)
       }
@@ -422,7 +424,7 @@ export const Terminal = memo(function Terminal({
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current)
     }
-    
+
     const handlePanelResizeStart = () => {
       isPanelResizingRef.current = true
     }
@@ -443,7 +445,7 @@ export const Terminal = memo(function Terminal({
 
   // 主题变化时更新
   useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(mutations => {
       for (const mutation of mutations) {
         if (mutation.attributeName === 'data-mode') {
           if (terminalRef.current) {
@@ -456,7 +458,7 @@ export const Terminal = memo(function Terminal({
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-mode']
+      attributeFilter: ['data-mode'],
     })
 
     return () => observer.disconnect()
@@ -477,7 +479,7 @@ export const Terminal = memo(function Terminal({
   // 监听面板 resize 结束事件
   useEffect(() => {
     if (!isActive) return
-    
+
     const handlePanelResizeEnd = () => {
       isPanelResizingRef.current = false
       if (fitAddonRef.current && terminalRef.current) {
@@ -489,7 +491,7 @@ export const Terminal = memo(function Terminal({
         })
       }
     }
-    
+
     window.addEventListener('panel-resize-end', handlePanelResizeEnd)
     return () => window.removeEventListener('panel-resize-end', handlePanelResizeEnd)
   }, [isActive, ptyId, directory])
@@ -552,7 +554,7 @@ export const Terminal = memo(function Terminal({
             terminalRef.current.focus()
           }
         }}
-        onTouchEnd={(e) => {
+        onTouchEnd={e => {
           if (terminalRef.current && e.target === containerRef.current) {
             terminalRef.current.focus()
           }

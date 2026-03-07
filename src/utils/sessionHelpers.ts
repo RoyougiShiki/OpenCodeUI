@@ -10,7 +10,7 @@ import { getModelKey } from './modelUtils'
 // ============================================
 
 export interface ModelSelectionResult {
-  modelKey: string  // providerId:modelId 格式
+  modelKey: string // providerId:modelId 格式
   model: ModelInfo
   variant: string | undefined
 }
@@ -21,34 +21,32 @@ export interface ModelSelectionResult {
 export function restoreModelSelection(
   lastModel: { providerID: string; modelID: string } | null,
   lastVariant: string | null,
-  models: ModelInfo[]
+  models: ModelInfo[],
 ): ModelSelectionResult | null {
   if (!lastModel || models.length === 0) {
     return null
   }
-  
+
   // 优先精确匹配 providerId + modelId
-  let model = models.find(m => 
-    m.providerId === lastModel.providerID && m.id === lastModel.modelID
-  )
-  
+  let model = models.find(m => m.providerId === lastModel.providerID && m.id === lastModel.modelID)
+
   // 如果精确匹配失败，尝试只匹配 modelID（向后兼容）
   if (!model) {
     model = models.find(m => m.id === lastModel.modelID)
   }
-  
+
   if (!model) {
     return null
   }
-  
+
   let variant: string | undefined = undefined
   if (lastVariant && model.variants.includes(lastVariant)) {
     variant = lastVariant
   }
-  
+
   return {
     modelKey: getModelKey(model),
     model,
-    variant
+    variant,
   }
 }

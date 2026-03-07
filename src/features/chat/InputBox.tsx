@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
 import { AttachmentPreview, type Attachment } from '../attachment'
-import { MentionMenu, detectMentionTrigger, normalizePath, toFileUrl, type MentionMenuHandle, type MentionItem } from '../mention'
+import {
+  MentionMenu,
+  detectMentionTrigger,
+  normalizePath,
+  toFileUrl,
+  type MentionMenuHandle,
+  type MentionItem,
+} from '../mention'
 import { SlashCommandMenu, type SlashCommandMenuHandle } from '../slash-command'
 import { InputToolbar } from './input/InputToolbar'
 import { InputFooter } from './input/InputFooter'
@@ -32,8 +39,8 @@ export interface CollapsedDialogInfo {
 export interface InputBoxProps {
   onSend: (text: string, attachments: Attachment[], options?: { agent?: string; variant?: string }) => void
   onAbort?: () => void
-  onCommand?: (command: string) => void  // 斜杠命令回调，接收完整命令字符串如 "/help"
-  onNewChat?: () => void  // 新建对话回调
+  onCommand?: (command: string) => void // 斜杠命令回调，接收完整命令字符串如 "/help"
+  onNewChat?: () => void // 新建对话回调
   disabled?: boolean
   isStreaming?: boolean
   agents?: ApiAgent[]
@@ -42,7 +49,7 @@ export interface InputBoxProps {
   variants?: string[]
   selectedVariant?: string
   onVariantChange?: (variant: string | undefined) => void
-  supportsImages?: boolean       // 保留向后兼容（deprecated，优先用 fileCapabilities）
+  supportsImages?: boolean // 保留向后兼容（deprecated，优先用 fileCapabilities）
   fileCapabilities?: FileCapabilities
   // Model（移动端 InputToolbar 用）
   models?: ModelInfo[]
@@ -73,12 +80,12 @@ export interface InputBoxProps {
 // InputBox Component
 // ============================================
 
-function InputBoxComponent({ 
-  onSend, 
+function InputBoxComponent({
+  onSend,
   onAbort,
   onCommand,
   onNewChat,
-  disabled, 
+  disabled,
   isStreaming,
   agents = [],
   selectedAgent,
@@ -109,12 +116,16 @@ function InputBoxComponent({
   collapsedQuestion,
 }: InputBoxProps) {
   // 合并文件能力：优先用 fileCapabilities，回退到 supportsImages
-  const fileCaps: FileCapabilities = useMemo(() => fileCapabilitiesProp ?? {
-    image: supportsImages,
-    pdf: false,
-    audio: false,
-    video: false,
-  }, [fileCapabilitiesProp, supportsImages])
+  const fileCaps: FileCapabilities = useMemo(
+    () =>
+      fileCapabilitiesProp ?? {
+        image: supportsImages,
+        pdf: false,
+        audio: false,
+        video: false,
+      },
+    [fileCapabilitiesProp, supportsImages],
+  )
 
   // 是否有任何文件附件能力
   const supportsAnyFile = fileCaps.image || fileCaps.pdf || fileCaps.audio || fileCaps.video
@@ -123,12 +134,12 @@ function InputBoxComponent({
   const [text, setText] = useState('')
   // 附件状态（图片、文件、文件夹、agent）
   const [attachments, setAttachments] = useState<Attachment[]>([])
-  
+
   // @ Mention 状态
   const [mentionOpen, setMentionOpen] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
   const [mentionStartIndex, setMentionStartIndex] = useState(-1)
-  
+
   // / Slash Command 状态
   const [slashOpen, setSlashOpen] = useState(false)
   const [slashQuery, setSlashQuery] = useState('')
@@ -137,10 +148,10 @@ function InputBoxComponent({
   // 拖拽状态
   const [isDragging, setIsDragging] = useState(false)
   const dragCounterRef = useRef(0)
-  
+
   // 响应式 placeholder
   const isMobile = useIsMobile()
-  
+
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const inputContainerRef = useRef<HTMLDivElement>(null)
@@ -169,8 +180,12 @@ function InputBoxComponent({
         if (part.type === 'file') {
           const fp = part as FilePart
           const isFolder = fp.mime === 'application/x-directory'
-          const sourcePath = fp.source && 'path' in fp.source ? fp.source.path :
-                            fp.source && 'uri' in fp.source ? (fp.source as any).uri : undefined
+          const sourcePath =
+            fp.source && 'path' in fp.source
+              ? fp.source.path
+              : fp.source && 'uri' in fp.source
+                ? (fp.source as any).uri
+                : undefined
           atts.push({
             id: fp.id || crypto.randomUUID(),
             type: isFolder ? 'folder' : 'file',
@@ -178,11 +193,13 @@ function InputBoxComponent({
             url: fp.url,
             mime: fp.mime,
             relativePath: sourcePath,
-            textRange: fp.source?.text ? {
-              value: fp.source.text.value,
-              start: fp.source.text.start,
-              end: fp.source.text.end,
-            } : undefined,
+            textRange: fp.source?.text
+              ? {
+                  value: fp.source.text.value,
+                  start: fp.source.text.start,
+                  end: fp.source.text.end,
+                }
+              : undefined,
           })
         } else if (part.type === 'agent') {
           const ap = part as AgentPart
@@ -191,11 +208,13 @@ function InputBoxComponent({
             type: 'agent',
             displayName: ap.name,
             agentName: ap.name,
-            textRange: ap.source ? {
-              value: ap.source.value,
-              start: ap.source.start,
-              end: ap.source.end,
-            } : undefined,
+            textRange: ap.source
+              ? {
+                  value: ap.source.value,
+                  start: ap.source.start,
+                  end: ap.source.end,
+                }
+              : undefined,
           })
         }
       }
@@ -218,11 +237,7 @@ function InputBoxComponent({
   // 直接计算是否收起（纯派生值）
   const hasContent = text.trim().length > 0 || attachments.length > 0
   const hasPendingDialogs = !!collapsedPermission || !!collapsedQuestion
-  const isCollapsed = isMobile
-    && !isAtBottom
-    && !hasContent
-    && !isFocused
-    && !hasPendingDialogs
+  const isCollapsed = isMobile && !isAtBottom && !hasContent && !isFocused && !hasPendingDialogs
 
   // 点击胶囊展开：先标记聚焦（阻止收起），等输入框渲染后 focus textarea
   const handleExpandInput = useCallback(() => {
@@ -252,7 +267,7 @@ function InputBoxComponent({
   useEffect(() => {
     const el = contentWrapRef.current
     if (!el) return
-    const ro = new ResizeObserver((entries) => {
+    const ro = new ResizeObserver(entries => {
       for (const entry of entries) {
         // 只在展开态时采样，收起态的高度不更新（此时有 minHeight 撑着）
         if (!isCollapsed) {
@@ -293,13 +308,13 @@ function InputBoxComponent({
   useEffect(() => {
     const textarea = textareaRef.current
     if (!textarea) return
-    
+
     // 文本为空时重置为最小高度
     if (!text.trim()) {
       textarea.style.height = '24px'
       return
     }
-    
+
     textarea.style.height = 'auto'
     const scrollHeight = textarea.scrollHeight
     // 原生层已处理键盘 resize，window.innerHeight 即可用高度
@@ -318,7 +333,7 @@ function InputBoxComponent({
 
   const handleSend = useCallback(() => {
     if (!canSend) return
-    
+
     // 检测 command attachment
     const commandAttachment = attachments.find(a => a.type === 'command')
     if (commandAttachment && commandAttachment.commandName) {
@@ -326,23 +341,23 @@ function InputBoxComponent({
       const textRange = commandAttachment.textRange
       const afterCommand = textRange ? text.slice(textRange.end).trim() : ''
       const commandStr = `/${commandAttachment.commandName}${afterCommand ? ' ' + afterCommand : ''}`
-      
+
       onCommand?.(commandStr)
       setText('')
       setAttachments([])
       onClearRevert?.()
       return
     }
-    
+
     // 从 attachments 中找 agent mention
     const agentAttachment = attachments.find(a => a.type === 'agent')
     const mentionedAgent = agentAttachment?.agentName
-    
+
     onSend(text, attachments, {
       agent: mentionedAgent || selectedAgent,
       variant: selectedVariant,
     })
-    
+
     // 清空
     setText('')
     setAttachments([])
@@ -350,177 +365,183 @@ function InputBoxComponent({
     onClearRevert?.()
   }, [canSend, text, attachments, selectedAgent, selectedVariant, onSend, onCommand, onClearRevert])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Slash Command 菜单打开时，拦截导航键
-    if (slashOpen && slashMenuRef.current) {
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault()
-          slashMenuRef.current.moveUp()
-          return
-        case 'ArrowDown':
-          e.preventDefault()
-          slashMenuRef.current.moveDown()
-          return
-        case 'Enter':
-        case 'Tab':
-          e.preventDefault()
-          slashMenuRef.current.selectCurrent()
-          return
-        case 'Escape':
-          e.preventDefault()
-          setSlashOpen(false)
-          return
-      }
-    }
-    
-    // Mention 菜单打开时，拦截导航键
-    if (mentionOpen && mentionMenuRef.current) {
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault()
-          mentionMenuRef.current.moveUp()
-          return
-        case 'ArrowDown':
-          e.preventDefault()
-          mentionMenuRef.current.moveDown()
-          return
-        case 'ArrowRight': {
-          // 进入文件夹
-          const selected = mentionMenuRef.current.getSelectedItem()
-          if (selected?.type === 'folder') {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Slash Command 菜单打开时，拦截导航键
+      if (slashOpen && slashMenuRef.current) {
+        switch (e.key) {
+          case 'ArrowUp':
             e.preventDefault()
-            const basePath = (selected.relativePath || selected.displayName).replace(/\/+$/, '')
-            const folderPath = basePath + '/'
-            updateMentionQuery(folderPath)
-          }
-          return
+            slashMenuRef.current.moveUp()
+            return
+          case 'ArrowDown':
+            e.preventDefault()
+            slashMenuRef.current.moveDown()
+            return
+          case 'Enter':
+          case 'Tab':
+            e.preventDefault()
+            slashMenuRef.current.selectCurrent()
+            return
+          case 'Escape':
+            e.preventDefault()
+            setSlashOpen(false)
+            return
         }
-        case 'ArrowLeft': {
-          // 返回上一级
-          if (mentionQuery.includes('/')) {
+      }
+
+      // Mention 菜单打开时，拦截导航键
+      if (mentionOpen && mentionMenuRef.current) {
+        switch (e.key) {
+          case 'ArrowUp':
             e.preventDefault()
-            const parts = mentionQuery.replace(/\/$/, '').split('/')
-            // 记住当前目录名，返回后定位到它
-            const folderName = parts[parts.length - 1]
-            if (folderName) {
-              mentionMenuRef.current.setRestoreFolder(folderName)
+            mentionMenuRef.current.moveUp()
+            return
+          case 'ArrowDown':
+            e.preventDefault()
+            mentionMenuRef.current.moveDown()
+            return
+          case 'ArrowRight': {
+            // 进入文件夹
+            const selected = mentionMenuRef.current.getSelectedItem()
+            if (selected?.type === 'folder') {
+              e.preventDefault()
+              const basePath = (selected.relativePath || selected.displayName).replace(/\/+$/, '')
+              const folderPath = basePath + '/'
+              updateMentionQuery(folderPath)
             }
-            parts.pop()
-            const parentPath = parts.length > 0 ? parts.join('/') + '/' : ''
-            updateMentionQuery(parentPath)
+            return
           }
-          return
+          case 'ArrowLeft': {
+            // 返回上一级
+            if (mentionQuery.includes('/')) {
+              e.preventDefault()
+              const parts = mentionQuery.replace(/\/$/, '').split('/')
+              // 记住当前目录名，返回后定位到它
+              const folderName = parts[parts.length - 1]
+              if (folderName) {
+                mentionMenuRef.current.setRestoreFolder(folderName)
+              }
+              parts.pop()
+              const parentPath = parts.length > 0 ? parts.join('/') + '/' : ''
+              updateMentionQuery(parentPath)
+            }
+            return
+          }
+          case 'Enter':
+          case 'Tab':
+            e.preventDefault()
+            mentionMenuRef.current.selectCurrent()
+            return
+          case 'Escape':
+            e.preventDefault()
+            setMentionOpen(false)
+            return
         }
-        case 'Enter':
-        case 'Tab':
-          e.preventDefault()
-          mentionMenuRef.current.selectCurrent()
-          return
-        case 'Escape':
-          e.preventDefault()
-          setMentionOpen(false)
-          return
       }
-    }
-    
-    // Tab 键：mention 菜单关闭时，不做任何事（阻止跳到工具栏）
-    if (e.key === 'Tab') {
-      e.preventDefault()
-      return
-    }
-    
-    // 历史消息导航（类终端体验）
-    // 进入条件：光标在首行 + (内容为空 或 正在浏览历史且内容未被修改)
-    const isHistoryUnmodified = () => {
-      if (historyIndexRef.current < 0) return false
-      const entry = userHistory[userHistory.length - 1 - historyIndexRef.current]
-      if (!entry || text !== entry.text) return false
-      // 附件比较：数量一致 且 id 序列一致
-      if (attachments.length !== entry.attachments.length) return false
-      return attachments.every((a, i) => a.id === entry.attachments[i].id)
-    }
 
-    if (e.key === 'ArrowUp' && userHistory.length > 0) {
-      const ta = textareaRef.current
-      if (ta) {
-        const cursorAtFirstLine = ta.selectionStart === ta.selectionEnd
-          && ta.value.lastIndexOf('\n', ta.selectionStart - 1) === -1
+      // Tab 键：mention 菜单关闭时，不做任何事（阻止跳到工具栏）
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        return
+      }
 
-        const inHistory = historyIndexRef.current >= 0
-        const isEmpty = text.trim() === '' && attachments.length === 0
+      // 历史消息导航（类终端体验）
+      // 进入条件：光标在首行 + (内容为空 或 正在浏览历史且内容未被修改)
+      const isHistoryUnmodified = () => {
+        if (historyIndexRef.current < 0) return false
+        const entry = userHistory[userHistory.length - 1 - historyIndexRef.current]
+        if (!entry || text !== entry.text) return false
+        // 附件比较：数量一致 且 id 序列一致
+        if (attachments.length !== entry.attachments.length) return false
+        return attachments.every((a, i) => a.id === entry.attachments[i].id)
+      }
 
-        if (cursorAtFirstLine && (isEmpty || isHistoryUnmodified())) {
-          e.preventDefault()
-          if (!inHistory) {
-            savedInputRef.current = { text, attachments: [...attachments] }
+      if (e.key === 'ArrowUp' && userHistory.length > 0) {
+        const ta = textareaRef.current
+        if (ta) {
+          const cursorAtFirstLine =
+            ta.selectionStart === ta.selectionEnd && ta.value.lastIndexOf('\n', ta.selectionStart - 1) === -1
+
+          const inHistory = historyIndexRef.current >= 0
+          const isEmpty = text.trim() === '' && attachments.length === 0
+
+          if (cursorAtFirstLine && (isEmpty || isHistoryUnmodified())) {
+            e.preventDefault()
+            if (!inHistory) {
+              savedInputRef.current = { text, attachments: [...attachments] }
+            }
+            const nextIndex = Math.min(historyIndexRef.current + 1, userHistory.length - 1)
+            if (nextIndex !== historyIndexRef.current) {
+              historyIndexRef.current = nextIndex
+              const entry = userHistory[userHistory.length - 1 - nextIndex]
+              setText(entry.text)
+              setAttachments(entry.attachments)
+            }
+            return
           }
-          const nextIndex = Math.min(historyIndexRef.current + 1, userHistory.length - 1)
-          if (nextIndex !== historyIndexRef.current) {
+        }
+      }
+      if (e.key === 'ArrowDown' && historyIndexRef.current >= 0) {
+        const ta = textareaRef.current
+        if (ta) {
+          const cursorAtLastLine =
+            ta.selectionStart === ta.selectionEnd && ta.value.indexOf('\n', ta.selectionStart) === -1
+
+          if (cursorAtLastLine && isHistoryUnmodified()) {
+            e.preventDefault()
+            const nextIndex = historyIndexRef.current - 1
             historyIndexRef.current = nextIndex
-            const entry = userHistory[userHistory.length - 1 - nextIndex]
-            setText(entry.text)
-            setAttachments(entry.attachments)
+            if (nextIndex < 0) {
+              setText(savedInputRef.current.text)
+              setAttachments(savedInputRef.current.attachments)
+            } else {
+              const entry = userHistory[userHistory.length - 1 - nextIndex]
+              setText(entry.text)
+              setAttachments(entry.attachments)
+            }
+            return
           }
-          return
         }
       }
-    }
-    if (e.key === 'ArrowDown' && historyIndexRef.current >= 0) {
-      const ta = textareaRef.current
-      if (ta) {
-        const cursorAtLastLine = ta.selectionStart === ta.selectionEnd
-          && ta.value.indexOf('\n', ta.selectionStart) === -1
 
-        if (cursorAtLastLine && isHistoryUnmodified()) {
-          e.preventDefault()
-          const nextIndex = historyIndexRef.current - 1
-          historyIndexRef.current = nextIndex
-          if (nextIndex < 0) {
-            setText(savedInputRef.current.text)
-            setAttachments(savedInputRef.current.attachments)
-          } else {
-            const entry = userHistory[userHistory.length - 1 - nextIndex]
-            setText(entry.text)
-            setAttachments(entry.attachments)
-          }
-          return
-        }
+      // 发送消息（读取 keybinding 配置）
+      const sendKey = keybindingStore.getKey('sendMessage')
+      if (sendKey && matchesKeybinding(e.nativeEvent, sendKey)) {
+        e.preventDefault()
+        handleSend()
       }
-    }
-    
-    // 发送消息（读取 keybinding 配置）
-    const sendKey = keybindingStore.getKey('sendMessage')
-    if (sendKey && matchesKeybinding(e.nativeEvent, sendKey)) {
-      e.preventDefault()
-      handleSend()
-    }
-  }, [mentionOpen, slashOpen, mentionQuery, handleSend, text, attachments, userHistory])
-  
+    },
+    [mentionOpen, slashOpen, mentionQuery, handleSend, text, attachments, userHistory],
+  )
+
   // 更新 @ 查询文本（用于进入/退出文件夹）
-  const updateMentionQuery = useCallback((newQuery: string) => {
-    if (!textareaRef.current) return
-    
-    const beforeAt = text.slice(0, mentionStartIndex)
-    const afterQuery = text.slice(mentionStartIndex + 1 + mentionQuery.length)
-    const newText = beforeAt + '@' + newQuery + afterQuery
-    
-    setText(newText)
-    setMentionQuery(newQuery)
-    
-    // 移动光标到 @ 查询末尾
-    requestAnimationFrame(() => {
+  const updateMentionQuery = useCallback(
+    (newQuery: string) => {
       if (!textareaRef.current) return
-      const pos = mentionStartIndex + 1 + newQuery.length
-      textareaRef.current.setSelectionRange(pos, pos)
-      textareaRef.current.focus()
-    })
-  }, [text, mentionStartIndex, mentionQuery])
+
+      const beforeAt = text.slice(0, mentionStartIndex)
+      const afterQuery = text.slice(mentionStartIndex + 1 + mentionQuery.length)
+      const newText = beforeAt + '@' + newQuery + afterQuery
+
+      setText(newText)
+      setMentionQuery(newQuery)
+
+      // 移动光标到 @ 查询末尾
+      requestAnimationFrame(() => {
+        if (!textareaRef.current) return
+        const pos = mentionStartIndex + 1 + newQuery.length
+        textareaRef.current.setSelectionRange(pos, pos)
+        textareaRef.current.focus()
+      })
+    },
+    [text, mentionStartIndex, mentionQuery],
+  )
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value
     setText(newText)
-    
+
     // 用户修改了内容，检查是否应退出历史模式
     if (historyIndexRef.current >= 0) {
       const currentEntry = userHistory[userHistory.length - 1 - historyIndexRef.current]
@@ -528,7 +549,7 @@ function InputBoxComponent({
         historyIndexRef.current = -1
       }
     }
-    
+
     // 同步检测 mention 是否被破坏/删除
     // 比对 attachments 的 textRange：如果文本中对应位置不再匹配，删除该 attachment
     setAttachments(prev => {
@@ -541,19 +562,19 @@ function InputBoxComponent({
       // 只在数量变化时更新（避免不必要的 re-render）
       return surviving.length === prev.length ? prev : surviving
     })
-    
+
     // 检测 @ 触发
     const cursorPos = e.target.selectionStart || 0
     const trigger = detectMentionTrigger(newText, cursorPos, '@')
-    
+
     if (trigger) {
       setMentionQuery(trigger.query)
       setMentionStartIndex(trigger.startIndex)
       setMentionOpen(true)
-      setSlashOpen(false)  // 关闭斜杠菜单
+      setSlashOpen(false) // 关闭斜杠菜单
     } else {
       setMentionOpen(false)
-      
+
       // 检测 / 触发（只在行首或空白后）
       const slashTrigger = detectSlashTrigger(newText, cursorPos)
       if (slashTrigger) {
@@ -567,55 +588,56 @@ function InputBoxComponent({
   }, [])
 
   // @ Mention 选择处理
-  const handleMentionSelect = useCallback((item: MentionItem & { _enterFolder?: boolean }) => {
-    if (!textareaRef.current) return
-    
-    // 如果是进入文件夹
-    if (item._enterFolder && item.type === 'folder') {
-      const basePath = (item.relativePath || item.displayName).replace(/\/+$/, '')
-      const folderPath = basePath + '/'
-      updateMentionQuery(folderPath)
-      return
-    }
-    
-    // 构建 @ 文本
-    const mentionText = item.type === 'agent' 
-      ? `@${item.displayName}`
-      : `@${item.relativePath || item.displayName}`
-    
-    // 计算新文本
-    const beforeAt = text.slice(0, mentionStartIndex)
-    const afterQuery = text.slice(mentionStartIndex + 1 + mentionQuery.length)
-    const newText = beforeAt + mentionText + ' ' + afterQuery
-    
-    // 创建附件
-    const attachment: Attachment = {
-      id: crypto.randomUUID(),
-      type: item.type,
-      displayName: item.displayName,
-      relativePath: item.relativePath,
-      url: item.type !== 'agent' ? item.value : undefined,
-      mime: item.type !== 'agent' ? 'text/plain' : undefined,
-      agentName: item.type === 'agent' ? item.displayName : undefined,
-      textRange: {
-        value: mentionText,
-        start: mentionStartIndex,
-        end: mentionStartIndex + mentionText.length,
-      },
-    }
-    
-    setText(newText)
-    setAttachments(prev => [...prev, attachment])
-    setMentionOpen(false)
-    
-    // 移动光标到 mention 后
-    requestAnimationFrame(() => {
+  const handleMentionSelect = useCallback(
+    (item: MentionItem & { _enterFolder?: boolean }) => {
       if (!textareaRef.current) return
-      const newCursorPos = mentionStartIndex + mentionText.length + 1
-      textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
-      textareaRef.current.focus()
-    })
-  }, [text, mentionStartIndex, mentionQuery, updateMentionQuery])
+
+      // 如果是进入文件夹
+      if (item._enterFolder && item.type === 'folder') {
+        const basePath = (item.relativePath || item.displayName).replace(/\/+$/, '')
+        const folderPath = basePath + '/'
+        updateMentionQuery(folderPath)
+        return
+      }
+
+      // 构建 @ 文本
+      const mentionText = item.type === 'agent' ? `@${item.displayName}` : `@${item.relativePath || item.displayName}`
+
+      // 计算新文本
+      const beforeAt = text.slice(0, mentionStartIndex)
+      const afterQuery = text.slice(mentionStartIndex + 1 + mentionQuery.length)
+      const newText = beforeAt + mentionText + ' ' + afterQuery
+
+      // 创建附件
+      const attachment: Attachment = {
+        id: crypto.randomUUID(),
+        type: item.type,
+        displayName: item.displayName,
+        relativePath: item.relativePath,
+        url: item.type !== 'agent' ? item.value : undefined,
+        mime: item.type !== 'agent' ? 'text/plain' : undefined,
+        agentName: item.type === 'agent' ? item.displayName : undefined,
+        textRange: {
+          value: mentionText,
+          start: mentionStartIndex,
+          end: mentionStartIndex + mentionText.length,
+        },
+      }
+
+      setText(newText)
+      setAttachments(prev => [...prev, attachment])
+      setMentionOpen(false)
+
+      // 移动光标到 mention 后
+      requestAnimationFrame(() => {
+        if (!textareaRef.current) return
+        const newCursorPos = mentionStartIndex + mentionText.length + 1
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
+        textareaRef.current.focus()
+      })
+    },
+    [text, mentionStartIndex, mentionQuery, updateMentionQuery],
+  )
 
   const handleMentionClose = useCallback(() => {
     setMentionOpen(false)
@@ -623,42 +645,45 @@ function InputBoxComponent({
   }, [])
 
   // / Slash Command 选择处理 - 类似 @ mention
-  const handleSlashSelect = useCallback((command: Command) => {
-    if (!textareaRef.current) return
-    
-    // 构建 /command 文本
-    const commandText = `/${command.name}`
-    
-    // 计算新文本：替换 /query 为 /command
-    const beforeSlash = text.slice(0, slashStartIndex)
-    const afterQuery = text.slice(slashStartIndex + 1 + slashQuery.length)
-    const newText = beforeSlash + commandText + ' ' + afterQuery
-    
-    // 创建 command attachment
-    const attachment: Attachment = {
-      id: crypto.randomUUID(),
-      type: 'command',
-      displayName: command.name,
-      commandName: command.name,
-      textRange: {
-        value: commandText,
-        start: slashStartIndex,
-        end: slashStartIndex + commandText.length,
-      },
-    }
-    
-    setText(newText)
-    setAttachments(prev => [...prev, attachment])
-    setSlashOpen(false)
-    
-    // 移动光标到命令后
-    requestAnimationFrame(() => {
+  const handleSlashSelect = useCallback(
+    (command: Command) => {
       if (!textareaRef.current) return
-      const newCursorPos = slashStartIndex + commandText.length + 1
-      textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
-      textareaRef.current.focus()
-    })
-  }, [text, slashStartIndex, slashQuery])
+
+      // 构建 /command 文本
+      const commandText = `/${command.name}`
+
+      // 计算新文本：替换 /query 为 /command
+      const beforeSlash = text.slice(0, slashStartIndex)
+      const afterQuery = text.slice(slashStartIndex + 1 + slashQuery.length)
+      const newText = beforeSlash + commandText + ' ' + afterQuery
+
+      // 创建 command attachment
+      const attachment: Attachment = {
+        id: crypto.randomUUID(),
+        type: 'command',
+        displayName: command.name,
+        commandName: command.name,
+        textRange: {
+          value: commandText,
+          start: slashStartIndex,
+          end: slashStartIndex + commandText.length,
+        },
+      }
+
+      setText(newText)
+      setAttachments(prev => [...prev, attachment])
+      setSlashOpen(false)
+
+      // 移动光标到命令后
+      requestAnimationFrame(() => {
+        if (!textareaRef.current) return
+        const newCursorPos = slashStartIndex + commandText.length + 1
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
+        textareaRef.current.focus()
+      })
+    },
+    [text, slashStartIndex, slashQuery],
+  )
 
   const handleSlashClose = useCallback(() => {
     setSlashOpen(false)
@@ -666,84 +691,98 @@ function InputBoxComponent({
   }, [])
 
   // 通用文件上传 — 根据模型能力判断是否接受
-  const handleFileUpload = useCallback(async (files: FileList | null) => {
-    if (!files || !supportsAnyFile) return
-    
-    for (const file of Array.from(files)) {
-      // 按 MIME 类型检查模型能力
-      if (!isFileSupported(file.type, fileCaps)) continue
-      
-      try {
-        const dataUrl = await readFileAsDataUrl(file)
-        
-        const attachment: Attachment = {
-          id: crypto.randomUUID(),
-          type: 'file',
-          displayName: file.name,
-          url: dataUrl,
-          mime: file.type,
+  const handleFileUpload = useCallback(
+    async (files: FileList | null) => {
+      if (!files || !supportsAnyFile) return
+
+      for (const file of Array.from(files)) {
+        // 按 MIME 类型检查模型能力
+        if (!isFileSupported(file.type, fileCaps)) continue
+
+        try {
+          const dataUrl = await readFileAsDataUrl(file)
+
+          const attachment: Attachment = {
+            id: crypto.randomUUID(),
+            type: 'file',
+            displayName: file.name,
+            url: dataUrl,
+            mime: file.type,
+          }
+          setAttachments(prev => [...prev, attachment])
+        } catch (err) {
+          console.warn('[InputBox] Failed to process file:', err)
         }
-        setAttachments(prev => [...prev, attachment])
-      } catch (err) {
-        console.warn('[InputBox] Failed to process file:', err)
       }
-    }
-  }, [supportsAnyFile, fileCaps])
+    },
+    [supportsAnyFile, fileCaps],
+  )
 
   // 删除附件
-  const handleRemoveAttachment = useCallback((id: string) => {
-    const attachment = attachments.find(a => a.id === id)
-    if (!attachment) return
-    
-    // 如果有 textRange，从文本中删除 @mention
-    if (attachment.textRange) {
-      const { value } = attachment.textRange
-      // 删除 @mention 和后面的空格
-      const newText = text.replace(value + ' ', '').replace(value, '')
-      setText(newText)
-    }
-    
-    setAttachments(prev => prev.filter(a => a.id !== id))
-  }, [attachments, text])
+  const handleRemoveAttachment = useCallback(
+    (id: string) => {
+      const attachment = attachments.find(a => a.id === id)
+      if (!attachment) return
+
+      // 如果有 textRange，从文本中删除 @mention
+      if (attachment.textRange) {
+        const { value } = attachment.textRange
+        // 删除 @mention 和后面的空格
+        const newText = text.replace(value + ' ', '').replace(value, '')
+        setText(newText)
+      }
+
+      setAttachments(prev => prev.filter(a => a.id !== id))
+    },
+    [attachments, text],
+  )
 
   // 粘贴处理 — 根据模型能力过滤可粘贴的文件类型
-  const handlePaste = useCallback((e: React.ClipboardEvent) => {
-    if (supportsAnyFile) {
-      const items = e.clipboardData?.items
-      const files: File[] = []
-      
-      if (items) {
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].kind === 'file') {
-            const file = items[i].getAsFile()
-            if (file && isFileSupported(file.type, fileCaps)) files.push(file)
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      if (supportsAnyFile) {
+        const items = e.clipboardData?.items
+        const files: File[] = []
+
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file') {
+              const file = items[i].getAsFile()
+              if (file && isFileSupported(file.type, fileCaps)) files.push(file)
+            }
           }
         }
+
+        if (files.length > 0) {
+          e.preventDefault()
+          const dt = new DataTransfer()
+          files.forEach(f => dt.items.add(f))
+          handleFileUpload(dt.files)
+          return
+        }
       }
-      
-      if (files.length > 0) {
-        e.preventDefault()
-        const dt = new DataTransfer()
-        files.forEach(f => dt.items.add(f))
-        handleFileUpload(dt.files)
-        return
-      }
-    }
-    
-    // 文本粘贴：让 textarea 默认处理（天然支持换行和 undo）
-  }, [supportsAnyFile, fileCaps, handleFileUpload])
+
+      // 文本粘贴：让 textarea 默认处理（天然支持换行和 undo）
+    },
+    [supportsAnyFile, fileCaps, handleFileUpload],
+  )
 
   // 拖拽文件到输入框
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    dragCounterRef.current++
-    // 内部拖拽（FileExplorer）或原生文件拖拽都高亮
-    if (e.dataTransfer.types.includes('application/opencode-file') ||
-        (supportsAnyFile && e.dataTransfer.types.includes('Files'))) {
-      setIsDragging(true)
-    }
-  }, [supportsAnyFile])
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      dragCounterRef.current++
+      // 内部拖拽（FileExplorer）或原生文件拖拽都高亮
+      if (
+        e.dataTransfer.types.includes('application/opencode-file') ||
+        (supportsAnyFile && e.dataTransfer.types.includes('Files'))
+      ) {
+        setIsDragging(true)
+      }
+    },
+    [supportsAnyFile],
+  )
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -760,74 +799,75 @@ function InputBoxComponent({
   }, [])
 
   // 将拖入的文件信息插入为 @mention 附件
-  const insertDraggedFile = useCallback((fileInfo: {
-    type: 'file' | 'folder'
-    path: string
-    absolute: string
-    name: string
-  }) => {
-    const relativePath = normalizePath(fileInfo.path)
-    const mentionText = `@${relativePath}`
-    const cursorPos = textareaRef.current?.selectionStart ?? text.length
+  const insertDraggedFile = useCallback(
+    (fileInfo: { type: 'file' | 'folder'; path: string; absolute: string; name: string }) => {
+      const relativePath = normalizePath(fileInfo.path)
+      const mentionText = `@${relativePath}`
+      const cursorPos = textareaRef.current?.selectionStart ?? text.length
 
-    // 在光标位置插入 @mention 文本
-    const beforeCursor = text.slice(0, cursorPos)
-    const afterCursor = text.slice(cursorPos)
-    // 如果光标前不是空格或空文本，插入空格分隔
-    const needSpaceBefore = beforeCursor.length > 0 && !beforeCursor.endsWith(' ') && !beforeCursor.endsWith('\n')
-    const prefix = needSpaceBefore ? ' ' : ''
-    const newText = beforeCursor + prefix + mentionText + ' ' + afterCursor
-    const mentionStart = cursorPos + prefix.length
+      // 在光标位置插入 @mention 文本
+      const beforeCursor = text.slice(0, cursorPos)
+      const afterCursor = text.slice(cursorPos)
+      // 如果光标前不是空格或空文本，插入空格分隔
+      const needSpaceBefore = beforeCursor.length > 0 && !beforeCursor.endsWith(' ') && !beforeCursor.endsWith('\n')
+      const prefix = needSpaceBefore ? ' ' : ''
+      const newText = beforeCursor + prefix + mentionText + ' ' + afterCursor
+      const mentionStart = cursorPos + prefix.length
 
-    // 创建附件
-    const attachment: Attachment = {
-      id: crypto.randomUUID(),
-      type: fileInfo.type,
-      displayName: fileInfo.name,
-      relativePath,
-      url: toFileUrl(fileInfo.absolute),
-      mime: fileInfo.type === 'file' ? 'text/plain' : undefined,
-      textRange: {
-        value: mentionText,
-        start: mentionStart,
-        end: mentionStart + mentionText.length,
-      },
-    }
-
-    setText(newText)
-    setAttachments(prev => [...prev, attachment])
-
-    // 聚焦并移动光标到 @mention 之后
-    requestAnimationFrame(() => {
-      if (!textareaRef.current) return
-      const newCursorPos = mentionStart + mentionText.length + 1
-      textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
-      textareaRef.current.focus()
-    })
-  }, [text])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    dragCounterRef.current = 0
-    setIsDragging(false)
-
-    // 来自 FileExplorer 的内部拖拽（自定义 data type）
-    const opencodeData = e.dataTransfer.getData('application/opencode-file')
-    if (opencodeData) {
-      try {
-        insertDraggedFile(JSON.parse(opencodeData))
-      } catch (err) {
-        console.warn('[InputBox] Failed to parse opencode-file drag data:', err)
+      // 创建附件
+      const attachment: Attachment = {
+        id: crypto.randomUUID(),
+        type: fileInfo.type,
+        displayName: fileInfo.name,
+        relativePath,
+        url: toFileUrl(fileInfo.absolute),
+        mime: fileInfo.type === 'file' ? 'text/plain' : undefined,
+        textRange: {
+          value: mentionText,
+          start: mentionStart,
+          end: mentionStart + mentionText.length,
+        },
       }
-      return
-    }
 
-    // 原生文件拖拽（从操作系统拖入）
-    if (supportsAnyFile && e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files)
-    }
-  }, [supportsAnyFile, handleFileUpload, insertDraggedFile])
+      setText(newText)
+      setAttachments(prev => [...prev, attachment])
+
+      // 聚焦并移动光标到 @mention 之后
+      requestAnimationFrame(() => {
+        if (!textareaRef.current) return
+        const newCursorPos = mentionStart + mentionText.length + 1
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
+        textareaRef.current.focus()
+      })
+    },
+    [text],
+  )
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      dragCounterRef.current = 0
+      setIsDragging(false)
+
+      // 来自 FileExplorer 的内部拖拽（自定义 data type）
+      const opencodeData = e.dataTransfer.getData('application/opencode-file')
+      if (opencodeData) {
+        try {
+          insertDraggedFile(JSON.parse(opencodeData))
+        } catch (err) {
+          console.warn('[InputBox] Failed to parse opencode-file drag data:', err)
+        }
+        return
+      }
+
+      // 原生文件拖拽（从操作系统拖入）
+      if (supportsAnyFile && e.dataTransfer.files.length > 0) {
+        handleFileUpload(e.dataTransfer.files)
+      }
+    },
+    [supportsAnyFile, handleFileUpload, insertDraggedFile],
+  )
 
   // 滚动同步（备用，overlay 内部也监听了 scroll）
   const handleScroll = useCallback(() => {
@@ -851,14 +891,14 @@ function InputBoxComponent({
 
   return (
     <div className="w-full">
-      <div className="mx-auto max-w-3xl px-4 pointer-events-auto transition-[max-width] duration-300 ease-in-out" style={{ paddingBottom: bottomDockPadding }}>
+      <div
+        className="mx-auto max-w-3xl px-4 pointer-events-auto transition-[max-width] duration-300 ease-in-out"
+        style={{ paddingBottom: bottomDockPadding }}
+      >
         <div
           ref={contentWrapRef}
           className={`flex flex-col gap-2 ${isCollapsed ? 'justify-end' : ''}`}
-          style={isCollapsed && expandedHeightRef.current > 0
-            ? { minHeight: expandedHeightRef.current }
-            : undefined
-          }
+          style={isCollapsed && expandedHeightRef.current > 0 ? { minHeight: expandedHeightRef.current } : undefined}
         >
           {(showScrollToBottom || canRedo || collapsedPermission || collapsedQuestion) && (
             <div className={`flex items-center justify-center gap-2`}>
@@ -893,12 +933,7 @@ function InputBoxComponent({
               )}
 
               {canRedo && (
-                <UndoStatus 
-                  canRedo={canRedo} 
-                  revertSteps={revertSteps} 
-                  onRedo={onRedo} 
-                  onRedoAll={onRedoAll} 
-                />
+                <UndoStatus canRedo={canRedo} revertSteps={revertSteps} onRedo={onRedo} onRedoAll={onRedoAll} />
               )}
               {showScrollToBottom && !isCollapsed && (
                 <button
@@ -938,7 +973,7 @@ function InputBoxComponent({
           ) : (
             <>
               {/* Input Container */}
-              <div 
+              <div
                 ref={inputContainerRef}
                 data-input-box
                 onDragEnter={handleDragEnter}
@@ -948,8 +983,8 @@ function InputBoxComponent({
                 className={`bg-bg-000 rounded-2xl relative z-30 transition-all focus-within:outline-none shadow-lg shadow-black/5 ${
                   isDragging
                     ? 'border border-accent-main-100 ring-2 ring-accent-main-100/30'
-                    : isStreaming 
-                      ? 'border border-accent-main-100/50 animate-border-pulse' 
+                    : isStreaming
+                      ? 'border border-accent-main-100/50 animate-border-pulse'
                       : 'border border-border-200/50'
                 }`}
               >
@@ -971,7 +1006,7 @@ function InputBoxComponent({
                   onNavigate={updateMentionQuery}
                   onClose={handleMentionClose}
                 />
-                
+
                 {/* / Slash Command Menu */}
                 <SlashCommandMenu
                   ref={slashMenuRef}
@@ -981,18 +1016,17 @@ function InputBoxComponent({
                   onSelect={handleSlashSelect}
                   onClose={handleSlashClose}
                 />
-                
+
                 <div className="relative">
                   <div className="overflow-hidden">
                     {/* Attachments Preview - 显示在输入框上方 */}
-                    <div className={`overflow-hidden transition-all duration-300 ease-out ${
-                      attachments.length > 0 ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
-                    }`}>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-out ${
+                        attachments.length > 0 ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
+                      }`}
+                    >
                       <div className="px-4 pt-3">
-                        <AttachmentPreview 
-                          attachments={attachments}
-                          onRemove={handleRemoveAttachment}
-                        />
+                        <AttachmentPreview attachments={attachments} onRemove={handleRemoveAttachment} />
                       </div>
                     </div>
 
@@ -1007,21 +1041,21 @@ function InputBoxComponent({
                         onScroll={handleScroll}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
-                        placeholder={isMobile ? "Reply to Agent..." : "Reply to Agent (type @ to mention, / for commands)"}
+                        placeholder={
+                          isMobile ? 'Reply to Agent...' : 'Reply to Agent (type @ to mention, / for commands)'
+                        }
                         className="w-full resize-none focus:outline-none focus:ring-0 bg-transparent text-text-100 placeholder:text-text-400 custom-scrollbar"
-                        style={{ 
+                        style={{
                           ...TEXT_STYLE,
-                          minHeight: '24px', 
-                          maxHeight: isMobile
-                            ? 'calc(var(--app-height, 100vh) - 220px)'
-                            : '35vh',
+                          minHeight: '24px',
+                          maxHeight: isMobile ? 'calc(var(--app-height, 100vh) - 220px)' : '35vh',
                         }}
                         rows={1}
                       />
                     </div>
 
                     {/* Bottom Bar -> InputToolbar */}
-                    <InputToolbar 
+                    <InputToolbar
                       agents={agents}
                       selectedAgent={selectedAgent}
                       onAgentChange={onAgentChange}
@@ -1032,7 +1066,7 @@ function InputBoxComponent({
                       onFileUpload={handleFileUpload}
                       isStreaming={isStreaming}
                       onAbort={onAbort}
-                      canSend={canSend || false} 
+                      canSend={canSend || false}
                       onSend={handleSend}
                       models={models}
                       selectedModelKey={selectedModelKey}
@@ -1081,15 +1115,15 @@ const TEXT_STYLE: React.CSSProperties = {
 function detectSlashTrigger(text: string, cursorPos: number): { query: string; startIndex: number } | null {
   // 斜杠命令只能在文本最开头
   if (!text.startsWith('/')) return null
-  
+
   // 提取 / 之后到光标的文本作为 query
   const query = text.slice(1, cursorPos)
-  
+
   // 如果 query 中包含空格或换行，说明命令已经输入完毕
   if (query.includes(' ') || query.includes('\n')) {
     return null
   }
-  
+
   return { query, startIndex: 0 }
 }
 
@@ -1110,7 +1144,7 @@ function isFileSupported(mime: string, caps: FileCapabilities): boolean {
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = (e) => resolve(e.target?.result as string)
+    reader.onload = e => resolve(e.target?.result as string)
     reader.onerror = reject
     reader.readAsDataURL(file)
   })

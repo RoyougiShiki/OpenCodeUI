@@ -53,13 +53,13 @@ async function ensureServiceWorker(): Promise<ServiceWorkerRegistration | null> 
 async function sendTauriNotification(title: string, body: string): Promise<void> {
   try {
     const { isPermissionGranted, requestPermission, sendNotification } = await import('@tauri-apps/plugin-notification')
-    
+
     let permitted = await isPermissionGranted()
     if (!permitted) {
       const result = await requestPermission()
       permitted = result === 'granted'
     }
-    
+
     if (permitted) {
       sendNotification({ title, body })
     }
@@ -111,7 +111,9 @@ export function useNotification() {
 
   // 跟踪最新的 enabled 值，供 sendNotification 闭包使用
   const enabledRef = useRef(enabled)
-  useEffect(() => { enabledRef.current = enabled }, [enabled])
+  useEffect(() => {
+    enabledRef.current = enabled
+  }, [enabled])
 
   // Tauri: 异步获取初始权限状态
   useEffect(() => {
@@ -168,7 +170,9 @@ export function useNotification() {
       } else {
         localStorage.removeItem(STORAGE_KEY_NOTIFICATIONS_ENABLED)
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     // 启用时注册 SW（浏览器环境）
     if (value && !isTauri()) {

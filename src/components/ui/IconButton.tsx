@@ -42,7 +42,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         {children}
       </button>
     )
-  }
+  },
 )
 
 IconButton.displayName = 'IconButton'

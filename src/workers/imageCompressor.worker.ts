@@ -49,7 +49,7 @@ self.onmessage = async (e: MessageEvent<CompressRequest>) => {
     // 使用 OffscreenCanvas 处理（Worker 中可用）
     const canvas = new OffscreenCanvas(width, height)
     const ctx = canvas.getContext('2d')
-    
+
     if (!ctx) {
       throw new Error('Failed to get canvas context')
     }
@@ -60,7 +60,7 @@ self.onmessage = async (e: MessageEvent<CompressRequest>) => {
     // 转换为 Blob
     const outputType = mimeType === 'image/png' ? 'image/png' : 'image/jpeg'
     const resultBlob = await canvas.convertToBlob({ type: outputType, quality })
-    
+
     // 如果还是太大，降低质量重试
     let finalBlob = resultBlob
     if (resultBlob.size > 5 * 1024 * 1024 && outputType === 'image/jpeg') {

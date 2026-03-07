@@ -16,10 +16,10 @@ services:
     container_name: opencodeui
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
-    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile.standalone"]
+      - '${PORT:-3000}:3000'
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.standalone']
     environment:
       - BACKEND_URL=${BACKEND_URL:-host.docker.internal:4096}
     # Linux 需要 host.docker.internal 支持
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'

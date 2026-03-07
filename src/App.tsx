@@ -1,5 +1,13 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
-import { Header, InputBox, PermissionDialog, QuestionDialog, Sidebar, ChatArea, type ChatAreaHandle } from './features/chat'
+import {
+  Header,
+  InputBox,
+  PermissionDialog,
+  QuestionDialog,
+  Sidebar,
+  ChatArea,
+  type ChatAreaHandle,
+} from './features/chat'
 import { type ModelSelectorHandle } from './features/chat/ModelSelector'
 import { SettingsDialog } from './features/settings/SettingsDialog'
 import { CommandPalette, type CommandItem } from './components/CommandPalette'
@@ -44,10 +52,14 @@ function App() {
   // ============================================
   // Theme
   // ============================================
-  const { 
-    mode: themeMode, setThemeWithAnimation,
-    presetId, setPresetWithAnimation, availablePresets,
-    customCSS, setCustomCSS,
+  const {
+    mode: themeMode,
+    setThemeWithAnimation,
+    presetId,
+    setPresetWithAnimation,
+    availablePresets,
+    customCSS,
+    setCustomCSS,
   } = useTheme()
 
   // ============================================
@@ -96,7 +108,7 @@ function App() {
   useEffect(() => {
     const el = inputBoxWrapperRef.current
     if (!el) return
-    const ro = new ResizeObserver((entries) => {
+    const ro = new ResizeObserver(entries => {
       for (const entry of entries) {
         setInputBoxHeight(entry.contentRect.height)
       }
@@ -107,7 +119,7 @@ function App() {
 
   // Full Auto hint: 订阅 toggle 变更，在输入框上方弹提示
   useEffect(() => {
-    return autoApproveStore.onFullAutoChange((enabled) => {
+    return autoApproveStore.onFullAutoChange(enabled => {
       if (fullAutoHintTimerRef.current) clearTimeout(fullAutoHintTimerRef.current)
       setFullAutoHint(enabled ? 'Act without asking · on' : 'Act without asking · off')
       fullAutoHintTimerRef.current = setTimeout(() => setFullAutoHint(null), 2000)
@@ -170,8 +182,13 @@ function App() {
   // Settings Dialog
   // ============================================
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
-  const [settingsInitialTab, setSettingsInitialTab] = useState<'appearance' | 'chat' | 'notifications' | 'service' | 'servers' | 'keybindings'>('servers')
-  const openSettings = useCallback(() => { setSettingsInitialTab('servers'); setSettingsDialogOpen(true) }, [])
+  const [settingsInitialTab, setSettingsInitialTab] = useState<
+    'appearance' | 'chat' | 'notifications' | 'service' | 'servers' | 'keybindings'
+  >('servers')
+  const openSettings = useCallback(() => {
+    setSettingsInitialTab('servers')
+    setSettingsDialogOpen(true)
+  }, [])
   const closeSettings = useCallback(() => setSettingsDialogOpen(false), [])
 
   // ============================================
@@ -208,7 +225,7 @@ function App() {
     sidebarExpanded,
     setSidebarExpanded,
     effectiveDirectory,
-    
+
     // Permissions
     pendingPermissionRequests,
     pendingQuestionRequests,
@@ -216,16 +233,16 @@ function App() {
     handleQuestionReply,
     handleQuestionReject,
     isReplying,
-    
+
     // Session management
     loadMoreHistory,
     handleRedoAll,
     clearRevert,
-    
+
     // Animation
     registerMessage,
     registerInputBox,
-    
+
     // Handlers
     handleSend,
     handleAbort,
@@ -244,30 +261,39 @@ function App() {
 
   // 赋值 ref（需在 useChatSession 之后，因为 handleVisibleMessageIdsChange 来自该 hook）
   handleVisibleMessageIdsChangeRef.current = handleVisibleMessageIdsChange
-  const handleVisibleIdsChange = useCallback((ids: string[]) => {
-    handleVisibleMessageIdsChangeRef.current?.(ids)
-    setVisibleMessageIdsStable(ids)
-  }, [setVisibleMessageIdsStable])
+  const handleVisibleIdsChange = useCallback(
+    (ids: string[]) => {
+      handleVisibleMessageIdsChangeRef.current?.(ids)
+      setVisibleMessageIdsStable(ids)
+    },
+    [setVisibleMessageIdsStable],
+  )
 
   // ============================================
   // Agent Change with Model Sync
   // ============================================
   // 切换 agent 时，如果 agent 绑定了模型，同步切换左上角模型选择
-  const syncModelForAgent = useCallback((agentName: string) => {
-    const agent = agents.find(a => a.name === agentName)
-    if (agent?.model) {
-      const modelKey = `${agent.model.providerID}:${agent.model.modelID}`
-      const model = findModelByKey(models, modelKey)
-      if (model) {
-        handleModelChange(modelKey, model)
+  const syncModelForAgent = useCallback(
+    (agentName: string) => {
+      const agent = agents.find(a => a.name === agentName)
+      if (agent?.model) {
+        const modelKey = `${agent.model.providerID}:${agent.model.modelID}`
+        const model = findModelByKey(models, modelKey)
+        if (model) {
+          handleModelChange(modelKey, model)
+        }
       }
-    }
-  }, [agents, models, handleModelChange])
+    },
+    [agents, models, handleModelChange],
+  )
 
-  const handleAgentChange = useCallback((agentName: string) => {
-    setSelectedAgent(agentName)
-    syncModelForAgent(agentName)
-  }, [setSelectedAgent, syncModelForAgent])
+  const handleAgentChange = useCallback(
+    (agentName: string) => {
+      setSelectedAgent(agentName)
+      syncModelForAgent(agentName)
+    },
+    [setSelectedAgent, syncModelForAgent],
+  )
 
   // 包装 handleToggleAgent，切换后同步模型
   const handleToggleAgentWithSync = useCallback(() => {
@@ -285,11 +311,7 @@ function App() {
   useEffect(() => {
     // 1. 优先从 revertedContent 恢复（Undo/Redo 场景）
     if (revertedContent?.model) {
-      const modelSelection = restoreModelSelection(
-        revertedContent.model, 
-        revertedContent.variant ?? null,
-        models
-      )
+      const modelSelection = restoreModelSelection(revertedContent.model, revertedContent.variant ?? null, models)
       if (modelSelection) {
         restoreFromMessage(revertedContent.model, revertedContent.variant)
         return
@@ -298,7 +320,7 @@ function App() {
 
     // 2. 其次从历史消息恢复
     if (messages.length === 0) return
-    
+
     const lastUserMsg = [...messages].reverse().find(m => m.info.role === 'user')
     if (lastUserMsg && 'model' in lastUserMsg.info) {
       const userInfo = lastUserMsg.info as { model?: { providerID: string; modelID: string }; variant?: string }
@@ -328,7 +350,7 @@ function App() {
   // ============================================
   // Global Keybindings
   // ============================================
-  
+
   // Create new terminal handler
   const handleNewTerminal = useCallback(async () => {
     try {
@@ -343,76 +365,79 @@ function App() {
       console.error('[App] Failed to create terminal:', error)
     }
   }, [effectiveDirectory])
-  
-  const keybindingHandlers = useMemo<KeybindingHandlers>(() => ({
-    // General
-    openSettings,
-    openProject,
-    commandPalette: () => setCommandPaletteOpen(true),
-    toggleSidebar: () => setSidebarExpanded(!sidebarExpanded),
-    toggleRightPanel: () => layoutStore.toggleRightPanel(),
-    focusInput: () => {
-      const input = document.querySelector<HTMLTextAreaElement>('[data-input-box] textarea')
-      input?.focus()
-    },
-    
-    // Session
-    newSession: handleNewSession,
-    archiveSession: handleArchiveSession,
-    previousSession: handlePreviousSession,
-    nextSession: handleNextSession,
-    
-    // Terminal
-    toggleTerminal: () => layoutStore.toggleBottomPanel(),
-    newTerminal: handleNewTerminal,
-    
-    // Model
-    selectModel: () => modelSelectorRef.current?.openMenu(),
-    toggleAgent: handleToggleAgentWithSync,
-    
-    // Message
-    cancelMessage: () => {
-      if (!isStreaming) return
-      
-      const now = Date.now()
-      const elapsed = now - lastEscTimeRef.current
-      
-      if (elapsed < 600) {
-        // 双击确认 → 真正取消
-        lastEscTimeRef.current = 0
-        setShowCancelHint(false)
-        if (escHintTimerRef.current) clearTimeout(escHintTimerRef.current)
-        handleAbort()
-      } else {
-        // 第一次按 → 显示提示
-        lastEscTimeRef.current = now
-        setShowCancelHint(true)
-        if (escHintTimerRef.current) clearTimeout(escHintTimerRef.current)
-        escHintTimerRef.current = setTimeout(() => {
-          setShowCancelHint(false)
+
+  const keybindingHandlers = useMemo<KeybindingHandlers>(
+    () => ({
+      // General
+      openSettings,
+      openProject,
+      commandPalette: () => setCommandPaletteOpen(true),
+      toggleSidebar: () => setSidebarExpanded(!sidebarExpanded),
+      toggleRightPanel: () => layoutStore.toggleRightPanel(),
+      focusInput: () => {
+        const input = document.querySelector<HTMLTextAreaElement>('[data-input-box] textarea')
+        input?.focus()
+      },
+
+      // Session
+      newSession: handleNewSession,
+      archiveSession: handleArchiveSession,
+      previousSession: handlePreviousSession,
+      nextSession: handleNextSession,
+
+      // Terminal
+      toggleTerminal: () => layoutStore.toggleBottomPanel(),
+      newTerminal: handleNewTerminal,
+
+      // Model
+      selectModel: () => modelSelectorRef.current?.openMenu(),
+      toggleAgent: handleToggleAgentWithSync,
+
+      // Message
+      cancelMessage: () => {
+        if (!isStreaming) return
+
+        const now = Date.now()
+        const elapsed = now - lastEscTimeRef.current
+
+        if (elapsed < 600) {
+          // 双击确认 → 真正取消
           lastEscTimeRef.current = 0
-        }, 1500)
-      }
-    },
-    copyLastResponse: handleCopyLastResponse,
-    toggleFullAuto: () => {
-      autoApproveStore.setFullAuto(!autoApproveStore.fullAuto)
-    },
-  }), [
-    openSettings,
-    openProject,
-    sidebarExpanded, 
-    setSidebarExpanded, 
-    handleNewSession,
-    handleArchiveSession,
-    handlePreviousSession,
-    handleNextSession,
-    handleNewTerminal,
-    handleToggleAgentWithSync,
-    isStreaming, 
-    handleAbort,
-    handleCopyLastResponse,
-  ])
+          setShowCancelHint(false)
+          if (escHintTimerRef.current) clearTimeout(escHintTimerRef.current)
+          handleAbort()
+        } else {
+          // 第一次按 → 显示提示
+          lastEscTimeRef.current = now
+          setShowCancelHint(true)
+          if (escHintTimerRef.current) clearTimeout(escHintTimerRef.current)
+          escHintTimerRef.current = setTimeout(() => {
+            setShowCancelHint(false)
+            lastEscTimeRef.current = 0
+          }, 1500)
+        }
+      },
+      copyLastResponse: handleCopyLastResponse,
+      toggleFullAuto: () => {
+        autoApproveStore.setFullAuto(!autoApproveStore.fullAuto)
+      },
+    }),
+    [
+      openSettings,
+      openProject,
+      sidebarExpanded,
+      setSidebarExpanded,
+      handleNewSession,
+      handleArchiveSession,
+      handlePreviousSession,
+      handleNextSession,
+      handleNewTerminal,
+      handleToggleAgentWithSync,
+      isStreaming,
+      handleAbort,
+      handleCopyLastResponse,
+    ],
+  )
 
   useGlobalKeybindings(keybindingHandlers)
 
@@ -420,40 +445,170 @@ function App() {
   // Command Palette - Commands List
   // ============================================
   const commands = useMemo<CommandItem[]>(() => {
-    const getShortcut = (action: string) => keybindingStore.getKey(action as import('./store/keybindingStore').KeybindingAction)
+    const getShortcut = (action: string) =>
+      keybindingStore.getKey(action as import('./store/keybindingStore').KeybindingAction)
 
     return [
       // General
-      { id: 'openSettings', label: 'Open Settings', description: 'Open settings dialog', category: 'General', shortcut: getShortcut('openSettings'), action: openSettings },
-      { id: 'openProject', label: 'Open Project', description: 'Open project selector', category: 'General', shortcut: getShortcut('openProject'), action: openProject },
-      { id: 'openSettingsShortcuts', label: 'Open Shortcuts Settings', description: 'Open settings to shortcuts tab', category: 'General', action: () => { setSettingsInitialTab('keybindings'); setSettingsDialogOpen(true) } },
-      { id: 'toggleSidebar', label: 'Toggle Sidebar', description: 'Show or hide sidebar', category: 'General', shortcut: getShortcut('toggleSidebar'), action: () => setSidebarExpanded(!sidebarExpanded) },
-      { id: 'toggleRightPanel', label: 'Toggle Right Panel', description: 'Show or hide right panel', category: 'General', shortcut: getShortcut('toggleRightPanel'), action: () => layoutStore.toggleRightPanel() },
-      { id: 'focusInput', label: 'Focus Input', description: 'Focus message input', category: 'General', shortcut: getShortcut('focusInput'), action: () => { const input = document.querySelector<HTMLTextAreaElement>('[data-input-box] textarea'); input?.focus() } },
+      {
+        id: 'openSettings',
+        label: 'Open Settings',
+        description: 'Open settings dialog',
+        category: 'General',
+        shortcut: getShortcut('openSettings'),
+        action: openSettings,
+      },
+      {
+        id: 'openProject',
+        label: 'Open Project',
+        description: 'Open project selector',
+        category: 'General',
+        shortcut: getShortcut('openProject'),
+        action: openProject,
+      },
+      {
+        id: 'openSettingsShortcuts',
+        label: 'Open Shortcuts Settings',
+        description: 'Open settings to shortcuts tab',
+        category: 'General',
+        action: () => {
+          setSettingsInitialTab('keybindings')
+          setSettingsDialogOpen(true)
+        },
+      },
+      {
+        id: 'toggleSidebar',
+        label: 'Toggle Sidebar',
+        description: 'Show or hide sidebar',
+        category: 'General',
+        shortcut: getShortcut('toggleSidebar'),
+        action: () => setSidebarExpanded(!sidebarExpanded),
+      },
+      {
+        id: 'toggleRightPanel',
+        label: 'Toggle Right Panel',
+        description: 'Show or hide right panel',
+        category: 'General',
+        shortcut: getShortcut('toggleRightPanel'),
+        action: () => layoutStore.toggleRightPanel(),
+      },
+      {
+        id: 'focusInput',
+        label: 'Focus Input',
+        description: 'Focus message input',
+        category: 'General',
+        shortcut: getShortcut('focusInput'),
+        action: () => {
+          const input = document.querySelector<HTMLTextAreaElement>('[data-input-box] textarea')
+          input?.focus()
+        },
+      },
 
       // Session
-      { id: 'newSession', label: 'New Session', description: 'Create new chat session', category: 'Session', shortcut: getShortcut('newSession'), action: handleNewSession },
-      { id: 'archiveSession', label: 'Archive Session', description: 'Archive current session', category: 'Session', shortcut: getShortcut('archiveSession'), action: handleArchiveSession },
-      { id: 'previousSession', label: 'Previous Session', description: 'Switch to previous session', category: 'Session', shortcut: getShortcut('previousSession'), action: handlePreviousSession },
-      { id: 'nextSession', label: 'Next Session', description: 'Switch to next session', category: 'Session', shortcut: getShortcut('nextSession'), action: handleNextSession },
+      {
+        id: 'newSession',
+        label: 'New Session',
+        description: 'Create new chat session',
+        category: 'Session',
+        shortcut: getShortcut('newSession'),
+        action: handleNewSession,
+      },
+      {
+        id: 'archiveSession',
+        label: 'Archive Session',
+        description: 'Archive current session',
+        category: 'Session',
+        shortcut: getShortcut('archiveSession'),
+        action: handleArchiveSession,
+      },
+      {
+        id: 'previousSession',
+        label: 'Previous Session',
+        description: 'Switch to previous session',
+        category: 'Session',
+        shortcut: getShortcut('previousSession'),
+        action: handlePreviousSession,
+      },
+      {
+        id: 'nextSession',
+        label: 'Next Session',
+        description: 'Switch to next session',
+        category: 'Session',
+        shortcut: getShortcut('nextSession'),
+        action: handleNextSession,
+      },
 
       // Terminal
-      { id: 'toggleTerminal', label: 'Toggle Terminal', description: 'Show or hide terminal panel', category: 'Terminal', shortcut: getShortcut('toggleTerminal'), action: () => layoutStore.toggleBottomPanel() },
-      { id: 'newTerminal', label: 'New Terminal', description: 'Open new terminal tab', category: 'Terminal', shortcut: getShortcut('newTerminal'), action: handleNewTerminal },
+      {
+        id: 'toggleTerminal',
+        label: 'Toggle Terminal',
+        description: 'Show or hide terminal panel',
+        category: 'Terminal',
+        shortcut: getShortcut('toggleTerminal'),
+        action: () => layoutStore.toggleBottomPanel(),
+      },
+      {
+        id: 'newTerminal',
+        label: 'New Terminal',
+        description: 'Open new terminal tab',
+        category: 'Terminal',
+        shortcut: getShortcut('newTerminal'),
+        action: handleNewTerminal,
+      },
 
       // Model
-      { id: 'selectModel', label: 'Select Model', description: 'Open model selector', category: 'Model', shortcut: getShortcut('selectModel'), action: () => modelSelectorRef.current?.openMenu() },
-      { id: 'toggleAgent', label: 'Toggle Agent', description: 'Switch agent mode', category: 'Model', shortcut: getShortcut('toggleAgent'), action: handleToggleAgentWithSync },
+      {
+        id: 'selectModel',
+        label: 'Select Model',
+        description: 'Open model selector',
+        category: 'Model',
+        shortcut: getShortcut('selectModel'),
+        action: () => modelSelectorRef.current?.openMenu(),
+      },
+      {
+        id: 'toggleAgent',
+        label: 'Toggle Agent',
+        description: 'Switch agent mode',
+        category: 'Model',
+        shortcut: getShortcut('toggleAgent'),
+        action: handleToggleAgentWithSync,
+      },
 
       // Message
-      { id: 'copyLastResponse', label: 'Copy Last Response', description: 'Copy last AI response to clipboard', category: 'Message', shortcut: getShortcut('copyLastResponse'), action: handleCopyLastResponse },
-      { id: 'cancelMessage', label: 'Cancel Message', description: 'Cancel current response', category: 'Message', shortcut: getShortcut('cancelMessage'), action: () => { if (isStreaming) handleAbort() }, when: () => isStreaming },
+      {
+        id: 'copyLastResponse',
+        label: 'Copy Last Response',
+        description: 'Copy last AI response to clipboard',
+        category: 'Message',
+        shortcut: getShortcut('copyLastResponse'),
+        action: handleCopyLastResponse,
+      },
+      {
+        id: 'cancelMessage',
+        label: 'Cancel Message',
+        description: 'Cancel current response',
+        category: 'Message',
+        shortcut: getShortcut('cancelMessage'),
+        action: () => {
+          if (isStreaming) handleAbort()
+        },
+        when: () => isStreaming,
+      },
     ]
   }, [
-    openSettings, openProject, sidebarExpanded, setSidebarExpanded,
-    handleNewSession, handleArchiveSession, handlePreviousSession, handleNextSession,
-    handleNewTerminal, handleToggleAgentWithSync, handleCopyLastResponse,
-    isStreaming, handleAbort,
+    openSettings,
+    openProject,
+    sidebarExpanded,
+    setSidebarExpanded,
+    handleNewSession,
+    handleArchiveSession,
+    handlePreviousSession,
+    handleNextSession,
+    handleNewTerminal,
+    handleToggleAgentWithSync,
+    handleCopyLastResponse,
+    isStreaming,
+    handleAbort,
   ])
 
   // ============================================
@@ -475,10 +630,14 @@ function App() {
     import('@tauri-apps/api/event').then(({ listen }) => {
       listen('close-requested', () => {
         setShowCloseDialog(true)
-      }).then(fn => { unlisten = fn })
+      }).then(fn => {
+        unlisten = fn
+      })
     })
 
-    return () => { unlisten?.() }
+    return () => {
+      unlisten?.()
+    }
   }, [])
 
   const handleCloseDialogConfirm = useCallback(async (stopService: boolean) => {
@@ -519,13 +678,18 @@ function App() {
     }
   }, [isStreaming])
 
-  const revertedMessage = revertedContent ? {
-    text: revertedContent.text,
-    attachments: revertedContent.attachments as Attachment[],
-  } : undefined
+  const revertedMessage = revertedContent
+    ? {
+        text: revertedContent.text,
+        attachments: revertedContent.attachments as Attachment[],
+      }
+    : undefined
 
   return (
-    <div className="relative h-[var(--app-height)] flex bg-bg-100 overflow-hidden" style={{ paddingTop: 'var(--safe-area-inset-top)' }}>
+    <div
+      className="relative h-[var(--app-height)] flex bg-bg-100 overflow-hidden"
+      style={{ paddingTop: 'var(--safe-area-inset-top)' }}
+    >
       {/* Sidebar */}
       <Sidebar
         isOpen={sidebarExpanded}
@@ -566,8 +730,8 @@ function App() {
 
             {/* Scrollable Area */}
             <div className="absolute inset-0">
-              <ChatArea 
-                ref={chatAreaRef} 
+              <ChatArea
+                ref={chatAreaRef}
                 messages={messages}
                 sessionId={routeSessionId}
                 isStreaming={isStreaming}
@@ -594,16 +758,19 @@ function App() {
             />
 
             {/* Floating Input Box */}
-            <div
-              ref={inputBoxWrapperRef}
-              className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none"
-            >
+            <div ref={inputBoxWrapperRef} className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none">
               {/* Hints — absolute 浮层，不占文档流，不推消息 */}
               {(showCancelHint || (fullAutoHint && !showCancelHint)) && (
                 <div className="absolute bottom-full inset-x-0 flex justify-center pb-2 pointer-events-none z-20">
                   <div className="px-3 py-1.5 bg-bg-000/95 border border-border-200 rounded-lg shadow-lg text-xs text-text-300 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-150">
                     {showCancelHint ? (
-                      <>Press <kbd className="mx-0.5 px-1.5 py-0.5 bg-bg-200 border border-border-200 rounded text-[11px] font-mono font-medium text-text-200">Esc</kbd> again to stop</>
+                      <>
+                        Press{' '}
+                        <kbd className="mx-0.5 px-1.5 py-0.5 bg-bg-200 border border-border-200 rounded text-[11px] font-mono font-medium text-text-200">
+                          Esc
+                        </kbd>{' '}
+                        again to stop
+                      </>
                     ) : (
                       fullAutoHint
                     )}
@@ -611,7 +778,7 @@ function App() {
                 </div>
               )}
               <InputBox
-                onSend={handleSend} 
+                onSend={handleSend}
                 onAbort={handleAbort}
                 onCommand={handleCommand}
                 onNewChat={handleNewSession}
@@ -623,12 +790,16 @@ function App() {
                 variants={currentModel?.variants ?? []}
                 selectedVariant={selectedVariant}
                 onVariantChange={handleVariantChange}
-                fileCapabilities={currentModel ? {
-                  image: currentModel.supportsImages,
-                  pdf: currentModel.supportsPdf,
-                  audio: currentModel.supportsAudio,
-                  video: currentModel.supportsVideo,
-                } : undefined}
+                fileCapabilities={
+                  currentModel
+                    ? {
+                        image: currentModel.supportsImages,
+                        pdf: currentModel.supportsPdf,
+                        audio: currentModel.supportsAudio,
+                        video: currentModel.supportsVideo,
+                      }
+                    : undefined
+                }
                 models={models}
                 selectedModelKey={selectedModelKey}
                 onModelChange={handleModelChange}
@@ -648,12 +819,20 @@ function App() {
                 onScrollToBottom={() => chatAreaRef.current?.scrollToBottom()}
                 collapsedPermission={
                   pendingPermissionRequests.length > 0 && permissionCollapsed
-                    ? { label: `Permission: ${pendingPermissionRequests[0].permission}`, queueLength: pendingPermissionRequests.length, onExpand: () => setPermissionCollapsed(false) }
+                    ? {
+                        label: `Permission: ${pendingPermissionRequests[0].permission}`,
+                        queueLength: pendingPermissionRequests.length,
+                        onExpand: () => setPermissionCollapsed(false),
+                      }
                     : undefined
                 }
                 collapsedQuestion={
                   pendingPermissionRequests.length === 0 && pendingQuestionRequests.length > 0 && questionCollapsed
-                    ? { label: 'Question', queueLength: pendingQuestionRequests.length, onExpand: () => setQuestionCollapsed(false) }
+                    ? {
+                        label: 'Question',
+                        queueLength: pendingQuestionRequests.length,
+                        onExpand: () => setQuestionCollapsed(false),
+                      }
                     : undefined
                 }
               />
@@ -663,7 +842,7 @@ function App() {
             {pendingPermissionRequests.length > 0 && (
               <PermissionDialog
                 request={pendingPermissionRequests[0]}
-                onReply={(reply) => handlePermissionReply(pendingPermissionRequests[0].id, reply, effectiveDirectory)}
+                onReply={reply => handlePermissionReply(pendingPermissionRequests[0].id, reply, effectiveDirectory)}
                 queueLength={pendingPermissionRequests.length}
                 isReplying={isReplying}
                 currentSessionId={routeSessionId}
@@ -676,7 +855,7 @@ function App() {
             {pendingPermissionRequests.length === 0 && pendingQuestionRequests.length > 0 && (
               <QuestionDialog
                 request={pendingQuestionRequests[0]}
-                onReply={(answers) => handleQuestionReply(pendingQuestionRequests[0].id, answers, effectiveDirectory)}
+                onReply={answers => handleQuestionReply(pendingQuestionRequests[0].id, answers, effectiveDirectory)}
                 onReject={() => handleQuestionReject(pendingQuestionRequests[0].id, effectiveDirectory)}
                 queueLength={pendingQuestionRequests.length}
                 isReplying={isReplying}
@@ -711,11 +890,7 @@ function App() {
       />
 
       {/* Command Palette */}
-      <CommandPalette
-        isOpen={commandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
-        commands={commands}
-      />
+      <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} commands={commands} />
 
       {/* Toast Notifications */}
       <ToastContainer />

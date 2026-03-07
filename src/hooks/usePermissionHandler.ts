@@ -39,26 +39,22 @@ export interface UsePermissionHandlerResult {
 const MAX_RETRIES = 3
 const RETRY_DELAY = 500
 
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  retries = MAX_RETRIES,
-  delay = RETRY_DELAY
-): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES, delay = RETRY_DELAY): Promise<T> {
   let lastError: Error | undefined
-  
+
   for (let i = 0; i < retries; i++) {
     try {
       return await fn()
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
       console.warn(`[Permission] Attempt ${i + 1} failed:`, lastError.message)
-      
+
       if (i < retries - 1) {
         await new Promise(resolve => setTimeout(resolve, delay * (i + 1)))
       }
     }
   }
-  
+
   throw lastError
 }
 
@@ -66,85 +62,80 @@ export function usePermissionHandler(): UsePermissionHandlerResult {
   const [pendingPermissionRequests, setPendingPermissionRequests] = useState<ApiPermissionRequest[]>([])
   const [pendingQuestionRequests, setPendingQuestionRequests] = useState<ApiQuestionRequest[]>([])
   const [isReplying, setIsReplying] = useState(false)
-  
+
   // 防止重复回复
   const replyingIdsRef = useRef<Set<string>>(new Set())
 
-  const handlePermissionReply = useCallback(async (
-    requestId: string, 
-    reply: PermissionReply,
-    directory?: string
-  ): Promise<boolean> => {
-    // 防止重复回复
-    if (replyingIdsRef.current.has(requestId)) {
-      console.warn(`[Permission] Already replying to ${requestId}`)
-      return false
-    }
-    
-    replyingIdsRef.current.add(requestId)
-    setIsReplying(true)
-    
-    try {
-      await withRetry(() => replyPermission(requestId, reply, undefined, directory))
-      
-      // 成功后从列表移除
-      setPendingPermissionRequests(prev => prev.filter(r => r.id !== requestId))
-      activeSessionStore.resolvePendingRequest(requestId)
-      return true
-    } catch (error) {
-      permissionErrorHandler('reply after retries', error)
-      
-      // 即使失败也从列表移除，避免卡住 UI
-      // 用户可以通过刷新重新获取
-      setPendingPermissionRequests(prev => prev.filter(r => r.id !== requestId))
-      activeSessionStore.resolvePendingRequest(requestId)
-      return false
-    } finally {
-      replyingIdsRef.current.delete(requestId)
-      setIsReplying(false)
-    }
-  }, [])
+  const handlePermissionReply = useCallback(
+    async (requestId: string, reply: PermissionReply, directory?: string): Promise<boolean> => {
+      // 防止重复回复
+      if (replyingIdsRef.current.has(requestId)) {
+        console.warn(`[Permission] Already replying to ${requestId}`)
+        return false
+      }
 
-  const handleQuestionReply = useCallback(async (
-    requestId: string, 
-    answers: QuestionAnswer[],
-    directory?: string
-  ): Promise<boolean> => {
-    if (replyingIdsRef.current.has(requestId)) {
-      console.warn(`[Question] Already replying to ${requestId}`)
-      return false
-    }
-    
-    replyingIdsRef.current.add(requestId)
-    setIsReplying(true)
-    
-    try {
-      await withRetry(() => replyQuestion(requestId, answers, directory))
-      setPendingQuestionRequests(prev => prev.filter(r => r.id !== requestId))
-      activeSessionStore.resolvePendingRequest(requestId)
-      return true
-    } catch (error) {
-      permissionErrorHandler('question reply after retries', error)
-      setPendingQuestionRequests(prev => prev.filter(r => r.id !== requestId))
-      activeSessionStore.resolvePendingRequest(requestId)
-      return false
-    } finally {
-      replyingIdsRef.current.delete(requestId)
-      setIsReplying(false)
-    }
-  }, [])
+      replyingIdsRef.current.add(requestId)
+      setIsReplying(true)
 
-  const handleQuestionReject = useCallback(async (
-    requestId: string,
-    directory?: string
-  ): Promise<boolean> => {
+      try {
+        await withRetry(() => replyPermission(requestId, reply, undefined, directory))
+
+        // 成功后从列表移除
+        setPendingPermissionRequests(prev => prev.filter(r => r.id !== requestId))
+        activeSessionStore.resolvePendingRequest(requestId)
+        return true
+      } catch (error) {
+        permissionErrorHandler('reply after retries', error)
+
+        // 即使失败也从列表移除，避免卡住 UI
+        // 用户可以通过刷新重新获取
+        setPendingPermissionRequests(prev => prev.filter(r => r.id !== requestId))
+        activeSessionStore.resolvePendingRequest(requestId)
+        return false
+      } finally {
+        replyingIdsRef.current.delete(requestId)
+        setIsReplying(false)
+      }
+    },
+    [],
+  )
+
+  const handleQuestionReply = useCallback(
+    async (requestId: string, answers: QuestionAnswer[], directory?: string): Promise<boolean> => {
+      if (replyingIdsRef.current.has(requestId)) {
+        console.warn(`[Question] Already replying to ${requestId}`)
+        return false
+      }
+
+      replyingIdsRef.current.add(requestId)
+      setIsReplying(true)
+
+      try {
+        await withRetry(() => replyQuestion(requestId, answers, directory))
+        setPendingQuestionRequests(prev => prev.filter(r => r.id !== requestId))
+        activeSessionStore.resolvePendingRequest(requestId)
+        return true
+      } catch (error) {
+        permissionErrorHandler('question reply after retries', error)
+        setPendingQuestionRequests(prev => prev.filter(r => r.id !== requestId))
+        activeSessionStore.resolvePendingRequest(requestId)
+        return false
+      } finally {
+        replyingIdsRef.current.delete(requestId)
+        setIsReplying(false)
+      }
+    },
+    [],
+  )
+
+  const handleQuestionReject = useCallback(async (requestId: string, directory?: string): Promise<boolean> => {
     if (replyingIdsRef.current.has(requestId)) {
       return false
     }
-    
+
     replyingIdsRef.current.add(requestId)
     setIsReplying(true)
-    
+
     try {
       await withRetry(() => rejectQuestion(requestId, directory))
       setPendingQuestionRequests(prev => prev.filter(r => r.id !== requestId))
@@ -163,17 +154,10 @@ export function usePermissionHandler(): UsePermissionHandlerResult {
 
   // 主动轮询获取 pending 请求（用于 SSE 可能丢失事件的情况）
   // 一次拉取全量数据，用 sessionFamily 过滤后直接替换本地状态
-  const refreshPendingRequests = useCallback(async (
-    sessionIds?: string | string[], 
-    directory?: string
-  ) => {
+  const refreshPendingRequests = useCallback(async (sessionIds?: string | string[], directory?: string) => {
     try {
       // 规范化为 Set 用于过滤
-      const familySet = new Set(
-        sessionIds
-          ? (Array.isArray(sessionIds) ? sessionIds : [sessionIds])
-          : []
-      )
+      const familySet = new Set(sessionIds ? (Array.isArray(sessionIds) ? sessionIds : [sessionIds]) : [])
 
       // 只请求一次全量数据（不按 sessionId 分别请求）
       const [allPermissions, allQuestions] = await Promise.all([
@@ -185,12 +169,12 @@ export function usePermissionHandler(): UsePermissionHandlerResult {
       setPendingPermissionRequests(
         familySet.size > 0
           ? allPermissions.filter(p => familySet.has(p.sessionID) && !replyingIdsRef.current.has(p.id))
-          : allPermissions.filter(p => !replyingIdsRef.current.has(p.id))
+          : allPermissions.filter(p => !replyingIdsRef.current.has(p.id)),
       )
       setPendingQuestionRequests(
         familySet.size > 0
           ? allQuestions.filter(q => familySet.has(q.sessionID) && !replyingIdsRef.current.has(q.id))
-          : allQuestions.filter(q => !replyingIdsRef.current.has(q.id))
+          : allQuestions.filter(q => !replyingIdsRef.current.has(q.id)),
       )
     } catch (error) {
       permissionErrorHandler('refresh pending requests', error)

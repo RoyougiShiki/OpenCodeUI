@@ -16,11 +16,11 @@ export interface CommandItem {
   id: string
   label: string
   description?: string
-  shortcut?: string        // 快捷键显示文本
+  shortcut?: string // 快捷键显示文本
   category?: string
   icon?: React.ReactNode
   action: () => void
-  when?: () => boolean     // 条件可见
+  when?: () => boolean // 条件可见
 }
 
 interface CommandPaletteProps {
@@ -35,10 +35,12 @@ interface CommandPaletteProps {
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 
+    <kbd
+      className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 
                     text-[11px] font-mono font-medium leading-none
                     bg-bg-100 text-text-300 border border-border-200 rounded
-                    shadow-[0_1px_0_0_var(--border-200)]">
+                    shadow-[0_1px_0_0_var(--border-200)]"
+    >
       {children}
     </kbd>
   )
@@ -48,7 +50,7 @@ function ShortcutDisplay({ shortcut }: { shortcut: string }) {
   const parsed = parseKeybinding(shortcut)
   const formatted = formatKeybinding(parsed)
   const parts = formatted.split(' + ')
-  
+
   return (
     <div className="flex items-center gap-0.5">
       {parts.map((part, i) => (
@@ -96,21 +98,24 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
   // Filter commands
   const filteredCommands = useMemo(() => {
     const visible = commands.filter(cmd => !cmd.when || cmd.when())
-    
+
     if (!query.trim()) return visible
-    
+
     const q = query.toLowerCase()
-    return visible.filter(cmd =>
-      cmd.label.toLowerCase().includes(q) ||
-      (cmd.description?.toLowerCase().includes(q)) ||
-      (cmd.category?.toLowerCase().includes(q)) ||
-      cmd.id.toLowerCase().includes(q)
-    ).sort((a, b) => {
-      // 精确前缀匹配优先
-      const aStart = a.label.toLowerCase().startsWith(q) ? 0 : 1
-      const bStart = b.label.toLowerCase().startsWith(q) ? 0 : 1
-      return aStart - bStart
-    })
+    return visible
+      .filter(
+        cmd =>
+          cmd.label.toLowerCase().includes(q) ||
+          cmd.description?.toLowerCase().includes(q) ||
+          cmd.category?.toLowerCase().includes(q) ||
+          cmd.id.toLowerCase().includes(q),
+      )
+      .sort((a, b) => {
+        // 精确前缀匹配优先
+        const aStart = a.label.toLowerCase().startsWith(q) ? 0 : 1
+        const bStart = b.label.toLowerCase().startsWith(q) ? 0 : 1
+        return aStart - bStart
+      })
   }, [commands, query])
 
   // Reset selection when filter changes
@@ -119,11 +124,14 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
   }, [query])
 
   // Execute command
-  const executeCommand = useCallback((cmd: CommandItem) => {
-    onClose()
-    // 延迟执行，让面板关闭动画先完成
-    requestAnimationFrame(() => cmd.action())
-  }, [onClose])
+  const executeCommand = useCallback(
+    (cmd: CommandItem) => {
+      onClose()
+      // 延迟执行，让面板关闭动画先完成
+      requestAnimationFrame(() => cmd.action())
+    },
+    [onClose],
+  )
 
   // Keyboard navigation
   useEffect(() => {
@@ -133,15 +141,11 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault()
-          setSelectedIndex(prev => 
-            prev < filteredCommands.length - 1 ? prev + 1 : 0
-          )
+          setSelectedIndex(prev => (prev < filteredCommands.length - 1 ? prev + 1 : 0))
           break
         case 'ArrowUp':
           e.preventDefault()
-          setSelectedIndex(prev => 
-            prev > 0 ? prev - 1 : filteredCommands.length - 1
-          )
+          setSelectedIndex(prev => (prev > 0 ? prev - 1 : filteredCommands.length - 1))
           break
         case 'Enter':
           e.preventDefault()
@@ -171,27 +175,27 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
   if (!shouldRender) return null
 
   return createPortal(
-      <div 
-        className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh]"
-        style={{
-          backgroundColor: isVisible ? 'hsl(var(--always-black) / 0.5)' : 'hsl(var(--always-black) / 0)',
-          transition: 'background-color 150ms ease-out',
-        }}
+    <div
+      className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh]"
+      style={{
+        backgroundColor: isVisible ? 'hsl(var(--always-black) / 0.5)' : 'hsl(var(--always-black) / 0)',
+        transition: 'background-color 150ms ease-out',
+      }}
       onPointerDown={(e: React.PointerEvent) => {
         // 触摸设备不走背景关闭
         if (e.pointerType === 'touch') return
         if (e.target === e.currentTarget) {
-          (e.currentTarget as HTMLElement).dataset.backdropDown = '1'
+          ;(e.currentTarget as HTMLElement).dataset.backdropDown = '1'
         }
       }}
-      onClick={(e) => {
+      onClick={e => {
         if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.backdropDown === '1') {
           onClose()
         }
         delete (e.currentTarget as HTMLElement).dataset.backdropDown
       }}
     >
-      <div 
+      <div
         className="w-full max-w-[560px] bg-bg-000 border border-border-200 rounded-xl shadow-2xl overflow-hidden flex flex-col"
         style={{
           maxHeight: '60vh',
@@ -199,7 +203,7 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
           transform: isVisible ? 'scale(1) translateY(0)' : 'scale(0.98) translateY(-8px)',
           transition: 'all 150ms ease-out',
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 border-b border-border-200/50">
@@ -208,7 +212,7 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Type a command..."
             className="flex-1 py-3.5 text-sm bg-transparent text-text-100 placeholder:text-text-400 
                        outline-none border-none"
@@ -216,10 +220,7 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
             spellCheck={false}
           />
           {query && (
-            <button 
-              onClick={() => setQuery('')}
-              className="text-text-400 hover:text-text-200 text-xs"
-            >
+            <button onClick={() => setQuery('')} className="text-text-400 hover:text-text-200 text-xs">
               Clear
             </button>
           )}
@@ -228,9 +229,7 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
         {/* Command List */}
         <div ref={listRef} className="overflow-y-auto custom-scrollbar flex-1 py-1">
           {filteredCommands.length === 0 ? (
-            <div className="px-4 py-8 text-center text-text-400 text-sm">
-              No commands found
-            </div>
+            <div className="px-4 py-8 text-center text-text-400 text-sm">No commands found</div>
           ) : (
             filteredCommands.map((cmd, index) => (
               <button
@@ -241,21 +240,16 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
                 className={`
                   w-full flex items-center justify-between px-4 py-2.5 text-left
                   transition-colors duration-75
-                  ${index === selectedIndex 
-                    ? 'bg-accent-main-100/10 text-text-100' 
-                    : 'text-text-200 hover:bg-bg-100/50'
+                  ${
+                    index === selectedIndex ? 'bg-accent-main-100/10 text-text-100' : 'text-text-200 hover:bg-bg-100/50'
                   }
                 `}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  {cmd.icon && (
-                    <span className="text-text-400 shrink-0">{cmd.icon}</span>
-                  )}
+                  {cmd.icon && <span className="text-text-400 shrink-0">{cmd.icon}</span>}
                   <div className="min-w-0">
                     <div className="text-sm truncate">{cmd.label}</div>
-                    {cmd.description && (
-                      <div className="text-xs text-text-400 truncate">{cmd.description}</div>
-                    )}
+                    {cmd.description && <div className="text-xs text-text-400 truncate">{cmd.description}</div>}
                   </div>
                 </div>
                 {cmd.shortcut && (
@@ -271,7 +265,8 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
         {/* Footer */}
         <div className="px-4 py-2 border-t border-border-200/30 flex items-center gap-4 text-[11px] text-text-400">
           <span className="flex items-center gap-1">
-            <Kbd>↑</Kbd><Kbd>↓</Kbd> navigate
+            <Kbd>↑</Kbd>
+            <Kbd>↓</Kbd> navigate
           </span>
           <span className="flex items-center gap-1">
             <Kbd>↵</Kbd> run
@@ -282,6 +277,6 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   )
 }

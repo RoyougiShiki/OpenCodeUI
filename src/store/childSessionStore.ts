@@ -1,7 +1,7 @@
 // ============================================
 // ChildSessionStore - 追踪子 session 关系
 // ============================================
-// 
+//
 // 核心功能：
 // 1. 追踪哪些 session 是当前 session 的子 session
 // 2. 支持权限请求冒泡（子 session 的权限请求显示在父界面）
@@ -17,7 +17,7 @@ export interface ChildSessionInfo {
   id: string
   parentID: string
   title: string
-  agent?: string  // 子 agent 名称
+  agent?: string // 子 agent 名称
   status: 'running' | 'idle' | 'error'
   createdAt: number
 }
@@ -120,9 +120,7 @@ class ChildSessionStore {
    */
   getChildSessions(parentId: string): ChildSessionInfo[] {
     const childIds = this.getChildSessionIds(parentId)
-    return childIds
-      .map(id => this.sessionInfo.get(id))
-      .filter((info): info is ChildSessionInfo => !!info)
+    return childIds.map(id => this.sessionInfo.get(id)).filter((info): info is ChildSessionInfo => !!info)
   }
 
   /**
@@ -155,11 +153,11 @@ class ChildSessionStore {
   getSessionAndDescendants(sessionId: string): string[] {
     const result = [sessionId]
     const children = this.getChildSessionIds(sessionId)
-    
+
     for (const childId of children) {
       result.push(...this.getSessionAndDescendants(childId))
     }
-    
+
     return result
   }
 
@@ -230,7 +228,7 @@ function getChildSessionsSnapshot(parentId: string | null): ChildSessionInfo[] {
     }
     return childSessionsCache.get(null)!
   }
-  
+
   if (!childSessionsCache.has(parentId)) {
     childSessionsCache.set(parentId, childSessionStore.getChildSessions(parentId))
   }
@@ -244,7 +242,7 @@ function getSessionFamilySnapshot(sessionId: string | null): string[] {
     }
     return sessionFamilyCache.get(null)!
   }
-  
+
   if (!sessionFamilyCache.has(sessionId)) {
     sessionFamilyCache.set(sessionId, childSessionStore.getSessionAndDescendants(sessionId))
   }
@@ -262,9 +260,9 @@ import { useSyncExternalStore } from 'react'
  */
 export function useChildSessions(parentId: string | null): ChildSessionInfo[] {
   return useSyncExternalStore(
-    (onStoreChange) => childSessionStore.subscribe(onStoreChange),
+    onStoreChange => childSessionStore.subscribe(onStoreChange),
     () => getChildSessionsSnapshot(parentId),
-    () => getChildSessionsSnapshot(parentId)
+    () => getChildSessionsSnapshot(parentId),
   )
 }
 
@@ -273,8 +271,8 @@ export function useChildSessions(parentId: string | null): ChildSessionInfo[] {
  */
 export function useSessionFamily(sessionId: string | null): string[] {
   return useSyncExternalStore(
-    (onStoreChange) => childSessionStore.subscribe(onStoreChange),
+    onStoreChange => childSessionStore.subscribe(onStoreChange),
     () => getSessionFamilySnapshot(sessionId),
-    () => getSessionFamilySnapshot(sessionId)
+    () => getSessionFamilySnapshot(sessionId),
   )
 }

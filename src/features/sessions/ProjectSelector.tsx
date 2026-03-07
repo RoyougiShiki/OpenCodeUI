@@ -31,7 +31,7 @@ export function ProjectSelector({
   const [isOpen, setIsOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; projectId: string | null }>({
     isOpen: false,
-    projectId: null
+    projectId: null,
   })
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -41,13 +41,13 @@ export function ProjectSelector({
 
   useEffect(() => {
     if (!isOpen) return
-    
+
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false)
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
@@ -56,15 +56,18 @@ export function ProjectSelector({
   // Helpers
   // ==========================================
 
-  const getDisplayName = useCallback((project: ApiProject | null): string => {
-    if (!project) return isLoading ? 'Loading...' : 'No project'
-    if (project.name) return project.name
-    if (project.id === 'global') return 'Global'
-    
-    const worktree = project.worktree || ''
-    const parts = worktree.replace(/\\/g, '/').split('/').filter(Boolean)
-    return parts[parts.length - 1] || worktree
-  }, [isLoading])
+  const getDisplayName = useCallback(
+    (project: ApiProject | null): string => {
+      if (!project) return isLoading ? 'Loading...' : 'No project'
+      if (project.name) return project.name
+      if (project.id === 'global') return 'Global'
+
+      const worktree = project.worktree || ''
+      const parts = worktree.replace(/\\/g, '/').split('/').filter(Boolean)
+      return parts[parts.length - 1] || worktree
+    },
+    [isLoading],
+  )
 
   const getPath = useCallback((project: ApiProject | null): string => {
     if (!project) return ''
@@ -92,29 +95,22 @@ export function ProjectSelector({
         title={getPath(currentProject)}
       >
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-text-100 truncate">
-            {getDisplayName(currentProject)}
-          </div>
-          <div className="text-[10px] text-text-400/70 truncate font-mono">
-            {getPath(currentProject)}
-          </div>
+          <div className="text-sm font-semibold text-text-100 truncate">{getDisplayName(currentProject)}</div>
+          <div className="text-[10px] text-text-400/70 truncate font-mono">{getPath(currentProject)}</div>
         </div>
-        <ChevronDownIcon 
+        <ChevronDownIcon
           className={`w-3 h-3 text-text-400 transition-all duration-200 shrink-0 ${
             isOpen ? 'rotate-180' : 'opacity-0 group-hover:opacity-100'
-          }`} 
+          }`}
         />
       </button>
 
       {/* Dropdown */}
-      <div 
+      <div
         className={`
           absolute top-full left-0 right-0 mt-1 z-50
           transition-all duration-200 origin-top
-          ${isOpen 
-            ? 'opacity-100 scale-100 pointer-events-auto' 
-            : 'opacity-0 scale-95 pointer-events-none'
-          }
+          ${isOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}
         `}
       >
         <div className="bg-bg-000 border border-border-200 rounded-xl shadow-xl overflow-hidden">
@@ -122,11 +118,9 @@ export function ProjectSelector({
             <div className="px-2 py-1.5 text-[10px] font-semibold text-text-400/70 uppercase tracking-wider">
               Switch Project
             </div>
-            
+
             {otherProjects.length === 0 ? (
-              <div className="px-3 py-4 text-center text-xs text-text-400/60">
-                No other projects
-              </div>
+              <div className="px-3 py-4 text-center text-xs text-text-400/60">No other projects</div>
             ) : (
               otherProjects.map(project => (
                 <ProjectItem
@@ -138,14 +132,18 @@ export function ProjectSelector({
                     onSelectProject(project.id)
                     setIsOpen(false)
                   }}
-                  onRemove={project.id !== 'global' ? () => {
-                    setDeleteConfirm({ isOpen: true, projectId: project.id })
-                  } : undefined}
+                  onRemove={
+                    project.id !== 'global'
+                      ? () => {
+                          setDeleteConfirm({ isOpen: true, projectId: project.id })
+                        }
+                      : undefined
+                  }
                 />
               ))
             )}
           </div>
-          
+
           {/* Add Button */}
           <div className="p-1 border-t border-border-200/50">
             <button
@@ -194,31 +192,33 @@ interface ProjectItemProps {
 
 function ProjectItem({ project, displayName, path, onSelect, onRemove }: ProjectItemProps) {
   const isGlobal = project.id === 'global'
-  
+
   return (
     <button
       onClick={onSelect}
       className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-bg-100 transition-colors"
       title={path}
     >
-      <div className={`
+      <div
+        className={`
         w-7 h-7 rounded-lg flex items-center justify-center shrink-0
-        ${isGlobal 
-          ? 'bg-accent-main-100/15 text-accent-main-100' 
-          : 'bg-bg-200 text-text-400'
-        }
-      `}>
+        ${isGlobal ? 'bg-accent-main-100/15 text-accent-main-100' : 'bg-bg-200 text-text-400'}
+      `}
+      >
         {isGlobal ? <GlobeIcon className="w-3.5 h-3.5" /> : <FolderIcon className="w-3.5 h-3.5" />}
       </div>
-      
+
       <div className="flex-1 min-w-0 text-left">
         <div className="text-sm text-text-200 truncate">{displayName}</div>
         <div className="text-[10px] text-text-400/60 truncate font-mono">{path}</div>
       </div>
-      
+
       {onRemove && (
-        <div 
-          onClick={(e) => { e.stopPropagation(); onRemove() }}
+        <div
+          onClick={e => {
+            e.stopPropagation()
+            onRemove()
+          }}
           className="p-1 rounded text-text-400 hover:text-danger-100 hover:bg-danger-100/10 md:opacity-0 md:group-hover:opacity-100 transition-all"
           title="Remove"
         >

@@ -1,11 +1,11 @@
 /**
  * 主题系统
- * 
+ *
  * 架构说明：
  * - 每个"主题风格"（ThemePreset）包含 light 和 dark 两套配色
  * - 用户选择 主题风格 + 日夜模式（system/light/dark）
  * - 自定义主题通过用户提供的 CSS 覆盖 CSS 变量实现
- * 
+ *
  * 颜色格式：HSL 不带 hsl() 包装，如 '210 90% 50%'
  */
 
@@ -330,26 +330,26 @@ export const claudeTheme: ThemePreset = {
 
 const breezeLight: ThemeColors = {
   background: {
-    bg000: '210 20% 99%',      // 极淡蓝白
-    bg100: '210 15% 96.5%',    // 浅灰蓝
-    bg200: '210 12% 93.5%',    // 淡灰蓝
-    bg300: '210 10% 90%',      // 中灰蓝
-    bg400: '210 8% 86%',       // 深灰蓝
+    bg000: '210 20% 99%', // 极淡蓝白
+    bg100: '210 15% 96.5%', // 浅灰蓝
+    bg200: '210 12% 93.5%', // 淡灰蓝
+    bg300: '210 10% 90%', // 中灰蓝
+    bg400: '210 8% 86%', // 深灰蓝
   },
   text: {
-    text000: '0 0% 100%',      // 纯白（on-dark surface）
-    text100: '215 15% 14%',    // 主文本 - 深蓝灰
-    text200: '215 10% 34%',    // 次要文本
-    text300: '215 7% 48%',     // 辅助文本
-    text400: '215 5% 58%',     // 占位符
-    text500: '215 4% 68%',     // 禁用
-    text600: '215 3% 80%',     // 分隔线
+    text000: '0 0% 100%', // 纯白（on-dark surface）
+    text100: '215 15% 14%', // 主文本 - 深蓝灰
+    text200: '215 10% 34%', // 次要文本
+    text300: '215 7% 48%', // 辅助文本
+    text400: '215 5% 58%', // 占位符
+    text500: '215 4% 68%', // 禁用
+    text600: '215 3% 80%', // 分隔线
   },
   accent: {
-    brand: '187 72% 42%',       // 青绿色品牌色 - 清新感
-    main000: '187 68% 36%',     // 深青绿
-    main100: '187 72% 42%',     // 主青绿
-    main200: '187 75% 48%',     // 浅青绿
+    brand: '187 72% 42%', // 青绿色品牌色 - 清新感
+    main000: '187 68% 36%', // 深青绿
+    main100: '187 72% 42%', // 主青绿
+    main200: '187 75% 48%', // 浅青绿
     secondary100: '230 65% 55%', // 靛蓝辅助色
   },
   semantic: {
@@ -382,20 +382,20 @@ const breezeLight: ThemeColors = {
 
 const breezeDark: ThemeColors = {
   background: {
-    bg000: '215 8% 20%',       // 深蓝灰（最亮表面）
-    bg100: '215 8% 14%',       // 主背景
-    bg200: '215 8% 11%',       // 下沉面板
-    bg300: '215 8% 8%',        // 更深
-    bg400: '215 10% 5%',       // 最深
+    bg000: '215 8% 20%', // 深蓝灰（最亮表面）
+    bg100: '215 8% 14%', // 主背景
+    bg200: '215 8% 11%', // 下沉面板
+    bg300: '215 8% 8%', // 更深
+    bg400: '215 10% 5%', // 最深
   },
   text: {
     text000: '0 0% 100%',
-    text100: '210 15% 93%',    // 主文本 - 淡蓝白
-    text200: '210 8% 72%',     // 次要文本
-    text300: '210 5% 58%',     // 辅助文本
-    text400: '210 3% 48%',     // 占位符
-    text500: '210 2% 38%',     // 禁用
-    text600: '210 2% 28%',     // 分隔线
+    text100: '210 15% 93%', // 主文本 - 淡蓝白
+    text200: '210 8% 72%', // 次要文本
+    text300: '210 5% 58%', // 辅助文本
+    text400: '210 3% 48%', // 占位符
+    text500: '210 2% 38%', // 禁用
+    text600: '210 2% 28%', // 分隔线
   },
   accent: {
     brand: '187 65% 52%',
@@ -444,11 +444,7 @@ export const breezeTheme: ThemePreset = {
 // Theme Registry
 // ============================================
 
-export const builtinThemes: ThemePreset[] = [
-  eucalyptusTheme,
-  claudeTheme,
-  breezeTheme,
-]
+export const builtinThemes: ThemePreset[] = [eucalyptusTheme, claudeTheme, breezeTheme]
 
 export function getThemePreset(id: string): ThemePreset | undefined {
   return builtinThemes.find(t => t.id === id)
@@ -459,14 +455,14 @@ export function getThemePreset(id: string): ThemePreset | undefined {
  */
 export function themeColorsToCSSVars(theme: ThemeColors): string {
   const lines: string[] = []
-  
+
   // Background
   lines.push(`--bg-000: ${theme.background.bg000};`)
   lines.push(`--bg-100: ${theme.background.bg100};`)
   lines.push(`--bg-200: ${theme.background.bg200};`)
   lines.push(`--bg-300: ${theme.background.bg300};`)
   lines.push(`--bg-400: ${theme.background.bg400};`)
-  
+
   // Text
   lines.push(`--text-000: ${theme.text.text000};`)
   lines.push(`--text-100: ${theme.text.text100};`)
@@ -475,14 +471,14 @@ export function themeColorsToCSSVars(theme: ThemeColors): string {
   lines.push(`--text-400: ${theme.text.text400};`)
   lines.push(`--text-500: ${theme.text.text500};`)
   lines.push(`--text-600: ${theme.text.text600};`)
-  
+
   // Accent
   lines.push(`--accent-brand: ${theme.accent.brand};`)
   lines.push(`--accent-main-000: ${theme.accent.main000};`)
   lines.push(`--accent-main-100: ${theme.accent.main100};`)
   lines.push(`--accent-main-200: ${theme.accent.main200};`)
   lines.push(`--accent-secondary-100: ${theme.accent.secondary100};`)
-  
+
   // Semantic
   lines.push(`--success-100: ${theme.semantic.success100};`)
   lines.push(`--success-200: ${theme.semantic.success200};`)
@@ -498,18 +494,18 @@ export function themeColorsToCSSVars(theme: ThemeColors): string {
   lines.push(`--info-100: ${theme.semantic.info100};`)
   lines.push(`--info-200: ${theme.semantic.info200};`)
   lines.push(`--info-bg: ${theme.semantic.infoBg};`)
-  
+
   // Border
   lines.push(`--border-100: ${theme.border.border100};`)
   lines.push(`--border-200: ${theme.border.border200};`)
   lines.push(`--border-300: ${theme.border.border300};`)
-  
+
   // Special
   if (theme.special) {
     if (theme.special.alwaysBlack) lines.push(`--always-black: ${theme.special.alwaysBlack};`)
     if (theme.special.alwaysWhite) lines.push(`--always-white: ${theme.special.alwaysWhite};`)
     if (theme.special.oncolor100) lines.push(`--oncolor-100: ${theme.special.oncolor100};`)
   }
-  
+
   return lines.join('\n  ')
 }

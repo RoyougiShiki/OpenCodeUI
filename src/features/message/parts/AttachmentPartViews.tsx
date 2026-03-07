@@ -13,14 +13,8 @@ interface FilePartViewProps {
 export const FilePartView = memo(function FilePartView({ part }: FilePartViewProps) {
   // 转换为 Attachment 类型
   const attachment = fromFilePart(part)
-  
-  return (
-    <AttachmentItem 
-      attachment={attachment}
-      expandable
-      size="sm"
-    />
-  )
+
+  return <AttachmentItem attachment={attachment} expandable size="sm" />
 })
 
 // ============================================
@@ -34,14 +28,8 @@ interface AgentPartViewProps {
 export const AgentPartView = memo(function AgentPartView({ part }: AgentPartViewProps) {
   // 转换为 Attachment 类型
   const attachment = fromAgentPart(part)
-  
-  return (
-    <AttachmentItem 
-      attachment={attachment}
-      expandable
-      size="sm"
-    />
-  )
+
+  return <AttachmentItem attachment={attachment} expandable size="sm" />
 })
 
 // ============================================
@@ -54,15 +42,9 @@ interface SyntheticTextPartViewProps {
 
 export const SyntheticTextPartView = memo(function SyntheticTextPartView({ part }: SyntheticTextPartViewProps) {
   if (!part.synthetic) return null
-  
+
   // 转换为 Attachment 类型
   const attachment = fromTextPart(part)
-  
-  return (
-    <AttachmentItem 
-      attachment={attachment}
-      expandable
-      size="sm"
-    />
-  )
+
+  return <AttachmentItem attachment={attachment} expandable size="sm" />
 })

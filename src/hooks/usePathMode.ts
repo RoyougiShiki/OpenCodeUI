@@ -26,7 +26,7 @@ interface UsePathModeReturn {
 
 /**
  * 路径模式管理 Hook
- * 
+ *
  * 提供路径模式的读取、设置和响应式更新
  */
 export function usePathMode(): UsePathModeReturn {

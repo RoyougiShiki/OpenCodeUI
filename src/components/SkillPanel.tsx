@@ -51,9 +51,10 @@ export const SkillPanel = memo(function SkillPanel({ isResizing: _isResizing }: 
   }, [loadSkills])
 
   // Filter skills
-  const filteredSkills = skills.filter(skill => 
-    skill.name.toLowerCase().includes(filter.toLowerCase()) || 
-    skill.description.toLowerCase().includes(filter.toLowerCase())
+  const filteredSkills = skills.filter(
+    skill =>
+      skill.name.toLowerCase().includes(filter.toLowerCase()) ||
+      skill.description.toLowerCase().includes(filter.toLowerCase()),
   )
 
   return (
@@ -64,9 +65,7 @@ export const SkillPanel = memo(function SkillPanel({ isResizing: _isResizing }: 
           <div className="flex items-center gap-2 text-text-100 text-sm font-medium">
             <TeachIcon size={14} />
             <span>Skills</span>
-            {!loading && (
-              <span className="text-text-400 text-xs">({skills.length})</span>
-            )}
+            {!loading && <span className="text-text-400 text-xs">({skills.length})</span>}
           </div>
           <button
             onClick={loadSkills}
@@ -77,14 +76,14 @@ export const SkillPanel = memo(function SkillPanel({ isResizing: _isResizing }: 
             <RetryIcon size={14} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
-        
+
         {/* Search Bar */}
         <div className="px-3 pb-2">
           <div className="relative">
             <input
               type="text"
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              onChange={e => setFilter(e.target.value)}
               placeholder="Filter skills..."
               className="w-full pl-8 pr-2 py-1 text-xs bg-bg-200/50 border border-transparent focus:border-border-200 rounded text-text-100 placeholder-text-400 focus:outline-none transition-colors"
             />
@@ -118,7 +117,7 @@ export const SkillPanel = memo(function SkillPanel({ isResizing: _isResizing }: 
           </div>
         ) : (
           <div className="divide-y divide-border-100">
-            {filteredSkills.map((skill) => (
+            {filteredSkills.map(skill => (
               <SkillItem key={skill.name} skill={skill} />
             ))}
           </div>
@@ -144,7 +143,7 @@ const SkillItem = memo(function SkillItem({ skill }: { skill: Skill }) {
         <span className="text-text-400 shrink-0 mt-0.5">
           {expanded ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
         </span>
-        
+
         <div className="flex-1 min-w-0">
           <div className="text-sm text-text-100 font-medium">{skill.name}</div>
           <div className="text-xs text-text-400 truncate">{skill.description}</div>
@@ -153,13 +152,9 @@ const SkillItem = memo(function SkillItem({ skill }: { skill: Skill }) {
 
       {expanded && (
         <div className="px-3 pb-3 pt-0 ml-5 border-l-2 border-border-200/30 pl-3">
-          <div className="text-xs text-text-500 mb-2 font-mono break-all">
-            {skill.location}
-          </div>
+          <div className="text-xs text-text-500 mb-2 font-mono break-all">{skill.location}</div>
           <div className="bg-bg-200/50 rounded p-2 overflow-x-auto">
-            <pre className="text-xs text-text-200 font-mono whitespace-pre-wrap break-words">
-              {skill.content}
-            </pre>
+            <pre className="text-xs text-text-200 font-mono whitespace-pre-wrap break-words">{skill.content}</pre>
           </div>
         </div>
       )}

@@ -125,8 +125,7 @@ export function DropdownMenu({
       const { pos, size } = calcStyles()
 
       const prev = posRef.current
-      if (prev.top !== pos.top || prev.bottom !== pos.bottom
-        || prev.left !== pos.left || prev.right !== pos.right) {
+      if (prev.top !== pos.top || prev.bottom !== pos.bottom || prev.left !== pos.left || prev.right !== pos.right) {
         posRef.current = pos
         setPosStyle(pos)
         setSizeStyle(size)
@@ -153,6 +152,6 @@ export function DropdownMenu({
     >
       {children}
     </div>,
-    document.body
+    document.body,
   )
 }

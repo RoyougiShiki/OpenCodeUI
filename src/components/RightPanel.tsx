@@ -17,7 +17,7 @@ export const RightPanel = memo(function RightPanel() {
   const { rightPanelOpen, rightPanelWidth, previewFile } = useLayoutStore()
   const { sessionId } = useMessageStore()
   const { currentDirectory } = useDirectory()
-  
+
   // 追踪面板 resize 状态
   const [isPanelResizing, setIsPanelResizing] = useState(false)
   useEffect(() => {
@@ -30,15 +30,18 @@ export const RightPanel = memo(function RightPanel() {
       window.removeEventListener('panel-resize-end', onEnd)
     }
   }, [])
-  
+
   // 关闭终端时清理 PTY 会话
-  const handleCloseTerminal = useCallback(async (ptyId: string) => {
-    try {
-      await removePtySession(ptyId, currentDirectory)
-    } catch {
-      // ignore cleanup errors
-    }
-  }, [currentDirectory])
+  const handleCloseTerminal = useCallback(
+    async (ptyId: string) => {
+      try {
+        await removePtySession(ptyId, currentDirectory)
+      } catch {
+        // ignore cleanup errors
+      }
+    },
+    [currentDirectory],
+  )
 
   // 创建新终端
   const handleNewTerminal = useCallback(async () => {
@@ -58,52 +61,44 @@ export const RightPanel = memo(function RightPanel() {
   }, [currentDirectory])
 
   // 渲染内容
-  const renderContent = useCallback((activeTab: PanelTab | null) => {
-    if (!activeTab) {
-      return (
-        <div className="flex items-center justify-center h-full text-text-400 text-xs">
-          No content
-        </div>
-      )
-    }
+  const renderContent = useCallback(
+    (activeTab: PanelTab | null) => {
+      if (!activeTab) {
+        return <div className="flex items-center justify-center h-full text-text-400 text-xs">No content</div>
+      }
 
-    switch (activeTab.type) {
-      case 'files':
-        return (
-          <FileExplorer 
-            directory={currentDirectory}
-            previewFile={previewFile}
-            position="right"
-            isPanelResizing={isPanelResizing}
-            sessionId={sessionId}
-          />
-        )
-      case 'changes':
-        if (!sessionId) {
+      switch (activeTab.type) {
+        case 'files':
           return (
-            <div className="flex items-center justify-center h-full text-text-400 text-xs">
-              No active session
-            </div>
+            <FileExplorer
+              directory={currentDirectory}
+              previewFile={previewFile}
+              position="right"
+              isPanelResizing={isPanelResizing}
+              sessionId={sessionId}
+            />
           )
-        }
-        return <SessionChangesPanel sessionId={sessionId} isResizing={isPanelResizing} />
-      case 'terminal':
-        return (
-          <TerminalContent
-            activeTab={activeTab}
-            directory={currentDirectory}
-          />
-        )
-      case 'mcp':
-        return <McpPanel isResizing={isPanelResizing} />
-      case 'skill':
-        return <SkillPanel isResizing={isPanelResizing} />
-      case 'worktree':
-        return <WorktreePanel isResizing={isPanelResizing} />
-      default:
-        return null
-    }
-  }, [currentDirectory, previewFile, sessionId, isPanelResizing])
+        case 'changes':
+          if (!sessionId) {
+            return (
+              <div className="flex items-center justify-center h-full text-text-400 text-xs">No active session</div>
+            )
+          }
+          return <SessionChangesPanel sessionId={sessionId} isResizing={isPanelResizing} />
+        case 'terminal':
+          return <TerminalContent activeTab={activeTab} directory={currentDirectory} />
+        case 'mcp':
+          return <McpPanel isResizing={isPanelResizing} />
+        case 'skill':
+          return <SkillPanel isResizing={isPanelResizing} />
+        case 'worktree':
+          return <WorktreePanel isResizing={isPanelResizing} />
+        default:
+          return null
+      }
+    },
+    [currentDirectory, previewFile, sessionId, isPanelResizing],
+  )
 
   return (
     <ResizablePanel
@@ -130,26 +125,16 @@ interface TerminalContentProps {
   directory?: string
 }
 
-const TerminalContent = memo(function TerminalContent({ 
-  activeTab,
-  directory,
-}: TerminalContentProps) {
+const TerminalContent = memo(function TerminalContent({ activeTab, directory }: TerminalContentProps) {
   const { panelTabs } = useLayoutStore()
-  
+
   // 获取所有 right 位置的 terminal tabs
-  const terminalTabs = panelTabs.filter(
-    t => t.position === 'right' && t.type === 'terminal'
-  )
+  const terminalTabs = panelTabs.filter(t => t.position === 'right' && t.type === 'terminal')
 
   return (
     <>
-      {terminalTabs.map((tab) => (
-        <Terminal
-          key={tab.id}
-          ptyId={tab.id}
-          directory={directory}
-          isActive={tab.id === activeTab.id}
-        />
+      {terminalTabs.map(tab => (
+        <Terminal key={tab.id} ptyId={tab.id} directory={directory} isActive={tab.id === activeTab.id} />
       ))}
     </>
   )

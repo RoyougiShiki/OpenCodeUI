@@ -122,38 +122,38 @@ export const EventTypes = {
   SESSION_STATUS: 'session.status',
   SESSION_DIFF: 'session.diff',
   SESSION_COMPACTED: 'session.compacted',
-  
+
   // Message events
   MESSAGE_UPDATED: 'message.updated',
   MESSAGE_REMOVED: 'message.removed',
   MESSAGE_PART_UPDATED: 'message.part.updated',
   MESSAGE_PART_DELTA: 'message.part.delta',
   MESSAGE_PART_REMOVED: 'message.part.removed',
-  
+
   // Permission events
   PERMISSION_ASKED: 'permission.asked',
   PERMISSION_REPLIED: 'permission.replied',
-  
+
   // Question events
   QUESTION_ASKED: 'question.asked',
   QUESTION_REPLIED: 'question.replied',
   QUESTION_REJECTED: 'question.rejected',
-  
+
   // Todo events
   TODO_UPDATED: 'todo.updated',
-  
+
   // Project events
   PROJECT_UPDATED: 'project.updated',
-  
+
   // Server events
   SERVER_CONNECTED: 'server.connected',
   SERVER_INSTANCE_DISPOSED: 'server.instance.disposed',
   GLOBAL_DISPOSED: 'global.disposed',
-  
+
   // File events
   FILE_EDITED: 'file.edited',
   FILE_WATCHER_UPDATED: 'file.watcher.updated',
-  
+
   // Other events
   INSTALLATION_UPDATED: 'installation.updated',
   INSTALLATION_UPDATE_AVAILABLE: 'installation.update-available',
@@ -171,7 +171,7 @@ export const EventTypes = {
   PTY_DELETED: 'pty.deleted',
 } as const
 
-export type EventType = typeof EventTypes[keyof typeof EventTypes]
+export type EventType = (typeof EventTypes)[keyof typeof EventTypes]
 
 // ============================================
 // Event Callbacks Interface

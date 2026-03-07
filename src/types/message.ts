@@ -77,12 +77,7 @@ export interface APIError {
   }
 }
 
-export type MessageError = 
-  | ProviderAuthError 
-  | UnknownError 
-  | MessageOutputLengthError 
-  | MessageAbortedError 
-  | APIError
+export type MessageError = ProviderAuthError | UnknownError | MessageOutputLengthError | MessageAbortedError | APIError
 
 // ============================================
 // Message Info (元信息)
@@ -106,7 +101,7 @@ export interface AssistantMessageInfo {
   sessionID: string
   role: 'assistant'
   time: MessageTime
-  parentID: string  // 指向用户消息
+  parentID: string // 指向用户消息
   modelID: string
   providerID: string
   mode: string
@@ -116,7 +111,7 @@ export interface AssistantMessageInfo {
   tokens: TokenUsage
   finish?: 'stop' | 'tool-calls' | string
   error?: MessageError
-  summary?: boolean  // 是否为摘要消息
+  summary?: boolean // 是否为摘要消息
 }
 
 export type MessageInfo = UserMessageInfo | AssistantMessageInfo
@@ -134,7 +129,7 @@ interface PartBase {
 export interface TextPart extends PartBase {
   type: 'text'
   text: string
-  synthetic?: boolean  // 系统生成的上下文
+  synthetic?: boolean // 系统生成的上下文
   time?: { start: number; end?: number }
 }
 
@@ -342,7 +337,7 @@ export function hasVisibleContent(message: Message): boolean {
       case 'agent':
         return true
       case 'step-finish':
-        return true  // 显示 token 信息
+        return true // 显示 token 信息
       case 'subtask':
         return true
       default:
