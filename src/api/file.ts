@@ -6,6 +6,30 @@
 import { get } from './http'
 import { formatPathForApi } from '../utils/directoryUtils'
 import type { FileNode, FileContent, FileStatusItem, SymbolInfo } from './types'
+import { serverStore } from '../store/serverStore'
+
+const ROOT_DIRECTORY_CACHE_TTL_MS = 10_000
+
+const rootDirectoryCache = new Map<string, { data: FileNode[]; expiresAt: number }>()
+const rootDirectoryInflight = new Map<string, Promise<FileNode[]>>()
+
+function isRootDirectoryPath(path: string): boolean {
+  return path === '' || path === '.' || path === './'
+}
+
+function getRootDirectoryCacheKey(directory?: string): string {
+  return `${serverStore.getActiveServerId()}::${formatPathForApi(directory) ?? ''}`
+}
+
+async function fetchDirectory(path: string, directory?: string): Promise<FileNode[]> {
+  const isAbsolute = /^[a-zA-Z]:/.test(path) || path.startsWith('/')
+
+  if (isAbsolute && !directory) {
+    return get<FileNode[]>('/file', { directory: formatPathForApi(path), path: '' })
+  }
+
+  return get<FileNode[]>('/file', { path, directory: formatPathForApi(directory) })
+}
 
 /**
  * GET /find/file - 搜索文件或目录
@@ -36,16 +60,37 @@ export async function searchFiles(
  * @param directory 工作目录（项目目录）
  */
 export async function listDirectory(path: string, directory?: string): Promise<FileNode[]> {
-  // 智能处理：如果 path 是绝对路径，将其作为 directory 传递，path 设为空
-  // Windows: C: 或 C:/ 开头
-  // Unix: / 开头
-  const isAbsolute = /^[a-zA-Z]:/.test(path) || path.startsWith('/')
-  
-  if (isAbsolute && !directory) {
-    return get<FileNode[]>('/file', { directory: formatPathForApi(path), path: '' })
-  } else {
-    return get<FileNode[]>('/file', { path, directory: formatPathForApi(directory) })
+  if (!isRootDirectoryPath(path)) {
+    return fetchDirectory(path, directory)
   }
+
+  const key = getRootDirectoryCacheKey(directory)
+  const now = Date.now()
+  const cached = rootDirectoryCache.get(key)
+  if (cached && cached.expiresAt > now) {
+    return cached.data
+  }
+
+  const inflight = rootDirectoryInflight.get(key)
+  if (inflight) {
+    return inflight
+  }
+
+  const request = fetchDirectory(path === '' ? '.' : path, directory)
+    .then(data => {
+      rootDirectoryCache.set(key, { data, expiresAt: Date.now() + ROOT_DIRECTORY_CACHE_TTL_MS })
+      return data
+    })
+    .finally(() => {
+      rootDirectoryInflight.delete(key)
+    })
+
+  rootDirectoryInflight.set(key, request)
+  return request
+}
+
+export async function prefetchRootDirectory(directory?: string): Promise<void> {
+  await listDirectory('.', directory)
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   sendMessageAsync, abortSession, 
   getSelectableAgents, 
   getPendingPermissions, getPendingQuestions,
+  prefetchCommands, prefetchRootDirectory,
   getSessionChildren,
   executeCommand,
   summarizeSession,
@@ -254,6 +255,14 @@ export function useChatSession({ chatAreaRef, currentModel, refetchModels }: Use
       .then(setAgents)
       .catch(err => handleError('fetch agents', err))
   }, [currentDirectory])
+
+  // Preload @ root directory and / commands for current session directory
+  useEffect(() => {
+    if (!routeSessionId || !effectiveDirectory) return
+
+    prefetchRootDirectory(effectiveDirectory).catch(() => {})
+    prefetchCommands(effectiveDirectory).catch(() => {})
+  }, [routeSessionId, effectiveDirectory])
 
   // agents 列表加载后，校验当前选中的 agent 是否存在于列表中
   useEffect(() => {
