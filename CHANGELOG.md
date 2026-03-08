@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.1.11] - 2026-03-08
+
+- feat: add an optional folder-style Recent view while preserving the original session row details and per-folder ordering controls
+- feat: aggregate Active sessions across all saved projects instead of limiting the list to the currently selected directory
+
 ## [v0.1.10] - 2026-03-08
 
 - fix: harden session message sync and failed sends (b788dce)
