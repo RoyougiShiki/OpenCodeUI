@@ -272,6 +272,16 @@ npm run type-check
 
 GitHub Actions runs the same checks in the `Build Validation` workflow for every PR and every push to `main`.
 
+### Release Preparation
+
+For a real release, prefer the command below. It runs the full validation suite first, then updates versions and the changelog:
+
+```bash
+npm run release:prepare -- 0.2.0
+```
+
+After it finishes, follow the printed `git commit`, `git tag`, and `git push` steps.
+
 ## Desktop App
 
 Download the installer from [Releases](https://github.com/lehhair/OpenCodeUI/releases), or build locally:

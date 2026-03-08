@@ -272,6 +272,16 @@ npm run type-check
 
 GitHub Actions 的 `Build Validation` workflow 会在 PR 和 `main` 分支 push 时运行同一套校验。
 
+### 发版准备
+
+正式发版时，优先使用下面这条命令，它会先跑完整校验，再执行版本号和 changelog 更新：
+
+```bash
+npm run release:prepare -- 0.2.0
+```
+
+命令完成后，再按提示执行 `git commit`、`git tag` 和 `git push`。
+
 ## 桌面应用
 
 从 [Releases](https://github.com/lehhair/OpenCodeUI/releases) 下载安装包，或本地构建：
