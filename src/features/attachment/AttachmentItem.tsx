@@ -40,18 +40,17 @@ function AttachmentItemComponent({
       )
     : null
 
-  // 宽度模型：
-  // - 输入框预览（传入 className）保持固定胶囊宽度
-  // - 主界面未展开保持旧的 140px 胶囊
-  // - 主界面展开后改为由预览内容主导宽度，但不超过消息列宽
-  const collapsedWidth = className || 'w-[140px]'
-  const expandedWidth = className || 'w-fit min-w-[140px] max-w-[min(100%,28rem)]'
+  // 宽度模型：学习 ReasoningPartView 的做法
+  // 收起时固定宽度，展开时用百分比+max限制（可被 CSS 过渡）
+  // 不用 w-auto（无法过渡），用 w-full（百分比 → 计算像素 → 可过渡）
+  const collapsedWidth = className ? '' : 'w-[140px]'
+  const expandedWidth = 'w-full min-w-[140px] max-w-[440px]'
 
   return (
     <div
       className={`relative group flex min-w-0 max-w-full flex-col overflow-hidden transition-all duration-300 ease-out ${
-        isExpanded ? expandedWidth : collapsedWidth
-      }`}
+        className || ''
+      } ${isExpanded ? expandedWidth : collapsedWidth}`}
     >
       {/* 标签头部 */}
       <div
@@ -172,13 +171,13 @@ function ExpandedContent({ attachment, imageError, onImageError, onOpenDetail }:
 
   if (isImage && url && !imageError) {
     contentNode = (
-      <div className="flex justify-center p-2">
+      <div className="p-2">
         <img
           src={url}
           alt={attachment.displayName}
           onError={onImageError}
           loading="lazy"
-          className="block h-auto max-h-64 w-auto max-w-full rounded bg-bg-300/50 object-contain"
+          className="max-h-64 w-full rounded object-contain bg-bg-300/50"
         />
       </div>
     )
@@ -193,7 +192,7 @@ function ExpandedContent({ attachment, imageError, onImageError, onOpenDetail }:
   }
 
   return (
-    <div className="mt-1 min-w-0 max-w-full rounded-md border border-border-300 bg-bg-200 overflow-hidden">
+    <div className="mt-1 min-w-0 max-w-full rounded-md bg-bg-200 border border-border-300 overflow-hidden w-full">
       {contentNode}
 
       {/* 操作按钮栏 */}
