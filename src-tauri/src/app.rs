@@ -4,10 +4,12 @@
 // ============================================
 
 use futures_util::StreamExt;
+use papaya::HashMap as PaHashMap;
 use serde::{Deserialize, Serialize};
+#[cfg(not(target_os = "android"))]
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::{ipc::Channel, Manager, State};
 
@@ -29,14 +31,14 @@ struct SseState {
     /// 每次连接分配一个递增 ID，用于区分不同连接
     next_id: AtomicU64,
     /// 每个窗口的活跃连接 ID: window label → connection ID
-    active: Mutex<HashMap<String, u64>>,
+    active: PaHashMap<Arc<str>, u64>,
 }
 
 impl Default for SseState {
     fn default() -> Self {
         Self {
             next_id: AtomicU64::new(0),
-            active: Mutex::new(HashMap::new()),
+            active: PaHashMap::new(),
         }
     }
 }
@@ -135,8 +137,8 @@ async fn sse_connect(
 ) -> Result<(), String> {
     // 分配连接 ID（per-window，多窗口互不干扰）
     let conn_id = state.next_id.fetch_add(1, Ordering::SeqCst) + 1;
-    let win_label = window.label().to_string();
-    state.active.lock().unwrap().insert(win_label.clone(), conn_id);
+    let win_label: Arc<str> = Arc::from(window.label());
+    state.active.pin().insert(win_label.clone(), conn_id);
 
     // 构建请求 - 配置超时防止连接静默死亡
     let client = reqwest::Client::builder()
@@ -184,7 +186,7 @@ async fn sse_connect(
 
     loop {
         // 检查该窗口的连接是否被要求断开
-        if state.active.lock().unwrap().get(&win_label) != Some(&conn_id) {
+        if state.active.pin().get(&win_label) != Some(&conn_id) {
             let _ = on_event.send(SseEvent::Disconnected {
                 reason: "Disconnected by client".to_string(),
             });
@@ -220,7 +222,10 @@ async fn sse_connect(
             }
             Err(_) => {
                 // 读取超时 — 连接可能已经静默断开
-                let msg = format!("SSE read timeout ({}s without data)", READ_TIMEOUT.as_secs());
+                let msg = format!(
+                    "SSE read timeout ({}s without data)",
+                    READ_TIMEOUT.as_secs()
+                );
                 let _ = on_event.send(SseEvent::Error {
                     message: msg.clone(),
                 });
@@ -232,8 +237,8 @@ async fn sse_connect(
 
 /// 断开 SSE 连接
 #[tauri::command]
-async fn sse_disconnect(window: tauri::Window, state: State<'_, SseState>) -> Result<(), String> {
-    state.active.lock().unwrap().remove(window.label());
+async fn sse_disconnect(window: tauri::Window, state: State<'_, SseState>) -> Result<(), ()> {
+    state.active.pin().remove(window.label());
     Ok(())
 }
 
@@ -251,7 +256,10 @@ mod tests {
         assert_eq!(event_data, "");
 
         buffer.extend_from_slice(&[0x83, 0xA8, b'\n', b'\n']);
-        assert_eq!(drain_sse_messages(&mut buffer, &mut event_data), vec!["部".to_string()]);
+        assert_eq!(
+            drain_sse_messages(&mut buffer, &mut event_data),
+            vec!["部".to_string()]
+        );
         assert!(buffer.is_empty());
         assert_eq!(event_data, "");
     }
@@ -307,7 +315,10 @@ fn extract_directory_from_args(args: &[String]) -> Option<String> {
 /// 获取启动时传入的目录路径（一次性读取后清空）
 #[cfg(not(target_os = "android"))]
 #[tauri::command]
-fn get_cli_directory(window: tauri::Window, state: State<'_, OpenDirectoryState>) -> Option<String> {
+fn get_cli_directory(
+    window: tauri::Window,
+    state: State<'_, OpenDirectoryState>,
+) -> Option<String> {
     state.pending.lock().ok()?.remove(window.label())
 }
 
@@ -366,9 +377,7 @@ mod service {
         }
 
         let mut cmd = Command::new(binary_path);
-        cmd.arg("serve")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null());
+        cmd.arg("serve").stdout(Stdio::null()).stderr(Stdio::null());
 
         // 注入用户配置的环境变量
         for (key, value) in env_vars {
@@ -502,38 +511,42 @@ fn create_new_window(app: &tauri::AppHandle, directory: Option<String>) {
 
     if let Some(ref dir) = directory {
         if let Some(state) = app.try_state::<OpenDirectoryState>() {
-            state.pending.lock().unwrap().insert(label.clone(), dir.clone());
+            state
+                .pending
+                .lock()
+                .unwrap()
+                .insert(label.clone(), dir.clone());
         }
     }
 
-    match tauri::WebviewWindowBuilder::new(
-        app,
-        &label,
-        tauri::WebviewUrl::App("index.html".into()),
-    )
-    .title("OpenCode")
-    .inner_size(800.0, 600.0)
-    .build()
+    match tauri::WebviewWindowBuilder::new(app, &label, tauri::WebviewUrl::App("index.html".into()))
+        .title("OpenCode")
+        .inner_size(800.0, 600.0)
+        .build()
     {
-        Ok(_) => log::info!("Created new window '{}' for directory: {:?}", label, directory),
+        Ok(_) => log::info!(
+            "Created new window '{}' for directory: {:?}",
+            label,
+            directory
+        ),
         Err(e) => log::error!("Failed to create new window: {}", e),
     }
 }
 
 pub fn run() {
-    let builder = tauri::Builder::default()
-        .manage(SseState::default());
+    let builder = tauri::Builder::default().manage(SseState::default());
 
     // Desktop: 注册 OpenDirectoryState + single-instance 插件（需在 setup 之前）
     #[cfg(not(target_os = "android"))]
-    let builder = builder
-        .manage(OpenDirectoryState::default())
-        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            // 始终新建窗口（类似 VSCode：双击图标 = 新窗口）
-            let dir = extract_directory_from_args(&args);
-            log::info!("Single-instance: opening new window, directory: {:?}", dir);
-            create_new_window(app, dir);
-        }));
+    let builder =
+        builder
+            .manage(OpenDirectoryState::default())
+            .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+                // 始终新建窗口（类似 VSCode：双击图标 = 新窗口）
+                let dir = extract_directory_from_args(&args);
+                log::info!("Single-instance: opening new window, directory: {:?}", dir);
+                create_new_window(app, dir);
+            }));
 
     let builder = builder
         .plugin(tauri_plugin_http::init())
@@ -562,7 +575,11 @@ pub fn run() {
                 if let Some(dir) = extract_directory_from_args(&args) {
                     log::info!("CLI directory argument: {}", dir);
                     if let Some(state) = app.try_state::<OpenDirectoryState>() {
-                        state.pending.lock().unwrap().insert("main".to_string(), dir);
+                        state
+                            .pending
+                            .lock()
+                            .unwrap()
+                            .insert("main".to_string(), dir);
                     }
                 }
             }
@@ -590,7 +607,7 @@ pub fn run() {
                 tauri::WindowEvent::Destroyed => {
                     // 窗口销毁时清理该窗口的 SSE 连接
                     let state = window.state::<SseState>();
-                    state.active.lock().unwrap().remove(window.label());
+                    state.active.pin().remove(window.label());
                 }
                 _ => {}
             }
@@ -608,16 +625,12 @@ pub fn run() {
 
     // Android: 只注册 SSE commands
     #[cfg(target_os = "android")]
-    let builder = builder
-        .invoke_handler(tauri::generate_handler![
-            sse_connect,
-            sse_disconnect,
-        ]);
+    let builder = builder.invoke_handler(tauri::generate_handler![sse_connect, sse_disconnect,]);
 
     // build + run 分开调用，以支持 macOS RunEvent::Opened
     let app = builder
         .build(tauri::generate_context!())
-        .expect("error while building tauri application");
+        .unwrap_or_else(|err| panic!("error while building tauri application: {err}"));
 
     app.run(|_app_handle, _event| {
         // macOS: 处理 Finder "Open with" / 拖文件夹到 Dock 图标
