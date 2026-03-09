@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'node_modules', 'public/material-icons']),
+  globalIgnores(['dist', 'node_modules', 'public/material-icons', 'src-tauri/target/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
