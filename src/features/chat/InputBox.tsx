@@ -12,6 +12,7 @@ import { SlashCommandMenu, type SlashCommandMenuHandle } from '../slash-command'
 import { InputToolbar } from './input/InputToolbar'
 import { InputFooter } from './input/InputFooter'
 import { UndoStatus } from './input/UndoStatus'
+import { useMobileCollapse } from './input/useMobileCollapse'
 import { TEXT_STYLE, detectSlashTrigger, isFileSupported, ensureFileMime, readFileAsDataUrl } from './input/inputUtils'
 import { keybindingStore, matchesKeybinding } from '../../store/keybindingStore'
 import { useMessages } from '../../store/messageStoreHooks'
@@ -167,7 +168,6 @@ function InputBoxComponent({
   const prevRevertedTextRef = useRef<string | undefined>(undefined)
   const latestDraftRef = useRef<HistoryEntry>({ text: '', attachments: [] })
   const contentWrapRef = useRef<HTMLDivElement>(null)
-  const [expandedHeight, setExpandedHeight] = useState(0)
   const [attachmentsOverflowing, setAttachmentsOverflowing] = useState(false)
   const [showAttachmentLeftFade, setShowAttachmentLeftFade] = useState(false)
   const [showAttachmentRightFade, setShowAttachmentRightFade] = useState(false)
@@ -241,104 +241,20 @@ function InputBoxComponent({
   const savedInputRef = useRef<HistoryEntry>({ text: '', attachments: [] })
 
   // ============================================
-  // Mobile Input Dock: 滚动收起/展开
+  // Mobile Input Dock: 滚动收起/展开（逻辑在 useMobileCollapse hook 中）
   // ============================================
-  // isFocused: textarea 是否聚焦中（或用户正在与输入框容器交互中）
-  const [isFocused, setIsFocused] = useState(false)
-
-  // 直接计算是否收起（纯派生值）
   const hasContent = text.trim().length > 0 || attachments.length > 0
-  const hasPendingDialogs = !!collapsedPermission || !!collapsedQuestion
-  const isCollapsed = isMobile && !isAtBottom && !hasContent && !isFocused && !hasPendingDialogs
-
-  // 点击胶囊展开：先标记聚焦（阻止收起），等输入框渲染后 focus textarea
-  const handleExpandInput = useCallback(() => {
-    setIsFocused(true)
-    requestAnimationFrame(() => {
-      textareaRef.current?.focus()
+  const { isCollapsed, expandedHeight, handleExpandInput, handleFocus, handleBlur, handleContainerPointerDown } =
+    useMobileCollapse({
+      hasContent,
+      isAtBottom,
+      textareaRef,
+      inputContainerRef,
+      contentWrapRef,
+      registerInputBox,
+      collapsedPermission,
+      collapsedQuestion,
     })
-  }, [])
-
-  // 容器交互标记：pointerdown 在容器内（但 textarea 之外）按下时置 true，
-  // 用于 blur 延迟回调中判断用户是否正在与容器内按钮交互（如 model/agent 选择器）。
-  // 移动端触摸 button 时 relatedTarget 和 activeElement 都不可靠，需要此标记兜底。
-  // 注意：必须排除 textarea 自身的触摸，否则"在 textarea 上滑动触发滚动"时
-  // 也会被标记为容器交互，导致 blur 后输入框无法收起。
-  const containerInteractingRef = useRef(false)
-  const containerInteractingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const handleContainerPointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      // textarea 本身的触摸不算"容器按钮交互"
-      if (e.target === textareaRef.current) return
-      containerInteractingRef.current = true
-      if (containerInteractingTimerRef.current) clearTimeout(containerInteractingTimerRef.current)
-      // 300ms 后自动清除，确保不会永久阻止收起
-      containerInteractingTimerRef.current = setTimeout(() => {
-        containerInteractingRef.current = false
-      }, 300)
-    },
-    [textareaRef],
-  )
-
-  // textarea focus/blur 追踪
-  const handleFocus = useCallback(() => setIsFocused(true), [])
-  // blur 处理：先检查焦点去向，如果焦点仍在输入框容器内（如点了模型/agent 按钮），
-  // 则保持 isFocused=true 不收起。只有焦点真正离开整个输入区域才延迟收起。
-  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const handleBlur = useCallback(
-    (e: React.FocusEvent) => {
-      // relatedTarget 是焦点即将移入的元素
-      const nextTarget = e.relatedTarget as Node | null
-      if (nextTarget && inputContainerRef.current?.contains(nextTarget)) {
-        // 焦点仍在输入框容器内部（toolbar 按钮、model selector 等），不收起
-        return
-      }
-      // 延迟后综合判断：检查 activeElement 和容器交互标记
-      blurTimerRef.current = setTimeout(() => {
-        // 焦点仍在容器内（如模型选择器的搜索输入框获焦）
-        if (inputContainerRef.current?.contains(document.activeElement)) {
-          return
-        }
-        // 用户刚在容器内按下（移动端触摸 button 不移焦点，靠此标记兜底）
-        if (containerInteractingRef.current) {
-          return
-        }
-        setIsFocused(false)
-      }, 150)
-    },
-    [inputContainerRef],
-  )
-  // focus 时清掉 pending 的 blur timer（比如点了按钮后焦点又回到 textarea）
-  useEffect(() => {
-    if (isFocused && blurTimerRef.current) {
-      clearTimeout(blurTimerRef.current)
-      blurTimerRef.current = null
-    }
-  }, [isFocused])
-
-  // 持续追踪展开态内容区高度（用于收起时占位，防 isAtBottom 反馈循环）
-  useEffect(() => {
-    const el = contentWrapRef.current
-    if (!el) return
-    const ro = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        // 只在展开态时采样，收起态的高度不更新（此时有 minHeight 撑着）
-        if (!isCollapsed) {
-          setExpandedHeight(entry.contentRect.height)
-        }
-      }
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [isCollapsed])
-
-  // 注册输入框容器用于动画
-  useEffect(() => {
-    if (registerInputBox) {
-      registerInputBox(isCollapsed ? null : inputContainerRef.current)
-      return () => registerInputBox(null)
-    }
-  }, [registerInputBox, isCollapsed])
 
   // 处理 revert 恢复
   useEffect(() => {
