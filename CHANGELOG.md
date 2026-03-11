@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.1.16] - 2026-03-11
+
+- fix: scroll jitter after streaming ends caused by content-visibility height mismatch (765052a)
+- fix: stop auto-scroll jitter when user scrolls slightly during streaming (171a62e)
+
 ## [v0.1.15] - 2026-03-10
 
 - fix: default revertSteps to 0 in FloatingActions (400fbb4)
