@@ -101,6 +101,7 @@ export const ChatArea = memo(
       const suppressScrollRef = useRef(false) // 临时禁用（undo/redo）
       const userInteractingRef = useRef(false) // 用户正在触摸/滚轮交互中
       const lastScrollTopRef = useRef(0)
+      const isNearTopRef = useRef(false)
 
       // ---- 加载更多 ----
       const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -190,7 +191,12 @@ export const ChatArea = memo(
           // 必须检查 userInteractingRef 以区分"自动滚动触发的 onScroll"和"用户主动滑动"
           if (!atBottom && userInteractingRef.current) userScrolledAwayRef.current = true
           if (prev !== atBottom) onAtBottomChange?.(atBottom)
-          setIsNearTop(currentTop < 150)
+          // 边沿触发：只在 isNearTop 实际变化时 setState，避免每次 scroll 都 re-render
+          const nearTop = currentTop < 150
+          if (nearTop !== isNearTopRef.current) {
+            isNearTopRef.current = nearTop
+            setIsNearTop(nearTop)
+          }
         }
         el.addEventListener('scroll', onScroll, { passive: true })
         return () => el.removeEventListener('scroll', onScroll)
@@ -291,7 +297,7 @@ export const ChatArea = memo(
       }, [])
 
       // Session 加载完成后定位到底部（只执行一次）
-      // content-visibility: auto 首帧用估算高度（120px），渲染底部消息后 scrollHeight 才准确。
+      // content-visibility: auto 首帧用估算高度（500px），渲染底部消息后 scrollHeight 才准确。
       // 用 rAF 循环持续 snap，直到 scrollHeight 连续 3 帧不变（渲染稳定）或超时 1s，
       // 整个过程在 opacity=0 下完成，到位后淡入显示。
       useEffect(() => {
@@ -425,8 +431,8 @@ export const ChatArea = memo(
       }, [])
 
       // Prepend 后恢复滚动位置
-      // 浏览器 overflow-anchor 在 content-visibility: auto 下不可靠（估算高度 ≠ 实际高度），
-      // 改用手动补偿：检测首条消息 ID 变化 → scrollTop += scrollHeight 增量
+      // 手动补偿 scrollTop：检测首条消息 ID 变化 → scrollTop += scrollHeight 增量
+      // 补偿期间临时禁用 overflow-anchor 防止浏览器锚定与手动补偿冲突
       useLayoutEffect(() => {
         const snap = prePrependRef.current
         if (!snap) return
@@ -440,7 +446,13 @@ export const ChatArea = memo(
 
         const delta = el.scrollHeight - snap.height
         if (delta > 0) {
+          // 临时禁用 overflow-anchor 防止浏览器锚定干扰手动补偿
+          el.style.overflowAnchor = 'none'
           el.scrollTop = snap.top + delta
+          // 下一帧恢复 anchor（让正常滚动受益于锚定）
+          requestAnimationFrame(() => {
+            el.style.overflowAnchor = ''
+          })
         }
       }, [visibleMessages])
 
@@ -650,7 +662,6 @@ export const ChatArea = memo(
             className={`h-full overflow-y-auto custom-scrollbar contain-content${
               containerReady ? ' animate-fade-in' : ' chat-scroll-hidden'
             }`}
-            style={{ overflowAnchor: 'none' }}
           >
             {/* 顶部哨兵：IntersectionObserver 触发加载更多 */}
             <div ref={topSentinelRef} className="h-px" aria-hidden="true" />
