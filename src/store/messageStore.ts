@@ -457,7 +457,21 @@ class MessageStore {
     state.isStreaming = false
     const hasStreamingMessage = state.messages.some(m => m.isStreaming)
     if (hasStreamingMessage) {
-      state.messages = state.messages.map(m => (m.isStreaming ? { ...m, isStreaming: false } : m))
+      const completedAt = Date.now()
+      state.messages = state.messages.map(m => {
+        if (!m.isStreaming) return m
+        return {
+          ...m,
+          isStreaming: false,
+          info: {
+            ...m.info,
+            time: {
+              ...m.info.time,
+              completed: m.info.time.completed ?? completedAt,
+            },
+          },
+        }
+      })
     }
     this.notify()
   }
@@ -469,7 +483,21 @@ class MessageStore {
     state.isStreaming = false
     const hasStreamingMessage = state.messages.some(m => m.isStreaming)
     if (hasStreamingMessage) {
-      state.messages = state.messages.map(m => (m.isStreaming ? { ...m, isStreaming: false } : m))
+      const completedAt = Date.now()
+      state.messages = state.messages.map(m => {
+        if (!m.isStreaming) return m
+        return {
+          ...m,
+          isStreaming: false,
+          info: {
+            ...m.info,
+            time: {
+              ...m.info.time,
+              completed: m.info.time.completed ?? completedAt,
+            },
+          },
+        }
+      })
     }
     this.notify()
   }

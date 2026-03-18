@@ -92,19 +92,54 @@ export const ChatArea = memo(
 
       const turnDurationMap = useMemo(() => {
         const map = new Map<string, number>()
-        for (let i = 0; i < visibleMessages.length; i++) {
-          if (visibleMessages[i].info.role !== 'user') continue
-          const userCreated = visibleMessages[i].info.time.created
-          let lastAssistant: Message | undefined
-          for (let j = i + 1; j < visibleMessages.length && visibleMessages[j].info.role !== 'user'; j++) {
-            lastAssistant = visibleMessages[j]
+
+        type Turn = {
+          userCreated: number
+          lastCompleted?: number
+          assistantIds: Set<string>
+        }
+
+        const turns: Turn[] = []
+
+        for (let i = 0; i < messages.length; i++) {
+          const message = messages[i]
+          if (message.info.role !== 'user') continue
+
+          const turn: Turn = {
+            userCreated: message.info.time.created,
+            assistantIds: new Set<string>(),
           }
-          if (lastAssistant?.info.time.completed) {
-            map.set(lastAssistant.info.id, lastAssistant.info.time.completed - userCreated)
+
+          for (let j = i + 1; j < messages.length && messages[j].info.role !== 'user'; j++) {
+            const nextMessage = messages[j]
+            if (nextMessage.info.role !== 'assistant') continue
+
+            turn.assistantIds.add(nextMessage.info.id)
+            if (nextMessage.info.time.completed != null) {
+              turn.lastCompleted = nextMessage.info.time.completed
+            }
+          }
+
+          if (turn.lastCompleted != null) {
+            turns.push(turn)
           }
         }
+
+        for (const turn of turns) {
+          let targetId: string | undefined
+          for (const visibleMessage of visibleMessages) {
+            if (visibleMessage.info.role === 'assistant' && turn.assistantIds.has(visibleMessage.info.id)) {
+              targetId = visibleMessage.info.id
+            }
+          }
+
+          if (targetId && turn.lastCompleted != null) {
+            map.set(targetId, turn.lastCompleted - turn.userCreated)
+          }
+        }
+
         return map
-      }, [visibleMessages])
+      }, [messages, visibleMessages])
 
       const messageMaxWidthClass = isWideMode ? 'max-w-[95%] xl:max-w-6xl' : 'max-w-2xl'
 

@@ -32,6 +32,7 @@ import type {
   CompactionPart,
   AssistantMessageInfo,
 } from '../../types/message'
+import { formatDuration } from '../../utils/formatUtils'
 
 interface MessageRendererProps {
   message: Message
@@ -296,6 +297,7 @@ const AssistantMessageView = memo(function AssistantMessageView({
   onEnsureParts?: (messageId: string) => void
 }) {
   const { parts, isStreaming, info } = message
+  const { stepFinishDisplay } = useTheme()
 
   const wrapperRef = useEntryGrowAnimation(info.time.created)
 
@@ -338,7 +340,10 @@ const AssistantMessageView = memo(function AssistantMessageView({
 
   // 消息总耗时
   const { created, completed } = info.time
-  const duration = completed ? completed - created : undefined
+  const duration = completed != null ? completed - created : undefined
+  const hasStepFinishPart = parts.some(part => part.type === 'step-finish')
+  const showTurnDurationFooter =
+    !isStreaming && !hasStepFinishPart && stepFinishDisplay.turnDuration && turnDuration != null && turnDuration > 0
 
   if (!isStreaming && parts.length === 0) {
     // 有错误时直接显示错误信息
@@ -418,6 +423,12 @@ const AssistantMessageView = memo(function AssistantMessageView({
 
       {/* Message-level error */}
       {messageError && <MessageErrorView error={messageError} />}
+
+      {showTurnDurationFooter && (
+        <div className="flex items-center gap-3 text-[10px] text-text-500 pl-5 py-0.5">
+          <span>total {formatDuration(turnDuration!)}</span>
+        </div>
+      )}
 
       {/* Copy button */}
       {fullText.trim() && (
