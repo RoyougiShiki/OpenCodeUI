@@ -22,6 +22,8 @@ interface FolderRecentListProps {
   projects: FolderRecentProject[]
   currentDirectory?: string
   selectedSessionId: string | null
+  expandedProjectIds: string[]
+  onExpandedProjectIdsChange: React.Dispatch<React.SetStateAction<string[]>>
   onSelectSession: (session: ApiSession) => void
   onRenameSession: (session: ApiSession, newTitle: string) => Promise<void>
   onDeleteSession: (session: ApiSession) => Promise<void>
@@ -50,6 +52,8 @@ export function FolderRecentList({
   projects,
   currentDirectory,
   selectedSessionId,
+  expandedProjectIds,
+  onExpandedProjectIdsChange,
   onSelectSession,
   onRenameSession,
   onDeleteSession,
@@ -57,9 +61,6 @@ export function FolderRecentList({
 }: FolderRecentListProps) {
   const { t } = useTranslation(['chat', 'common'])
   const isMobile = useIsMobile()
-  const [expandedProjectIds, setExpandedProjectIds] = useState<string[]>(() =>
-    getInitialExpandedProjectIds(projects, currentDirectory),
-  )
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteSession | null>(null)
 
   // ---- 拖拽状态 ----
@@ -80,11 +81,11 @@ export function FolderRecentList({
   // 当 projects 列表变化时，过滤掉已不存在的展开项
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 响应 prop 变化同步 derived state
-    setExpandedProjectIds(prev => {
+    onExpandedProjectIdsChange(prev => {
       const next = prev.filter(id => projects.some(project => project.id === id))
       return next.length > 0 ? next : getInitialExpandedProjectIds(projects, currentDirectory)
     })
-  }, [projects, currentDirectory])
+  }, [projects, currentDirectory, onExpandedProjectIdsChange])
 
   // 确保当前目录对应的 project 展开
   useEffect(() => {
@@ -93,14 +94,17 @@ export function FolderRecentList({
     if (!currentProject) return
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 响应 prop 变化同步 derived state
-    setExpandedProjectIds(prev => (prev.includes(currentProject.id) ? prev : [currentProject.id, ...prev]))
-  }, [projects, currentDirectory])
+    onExpandedProjectIdsChange(prev => (prev.includes(currentProject.id) ? prev : [currentProject.id, ...prev]))
+  }, [projects, currentDirectory, onExpandedProjectIdsChange])
 
-  const handleToggleProject = useCallback((projectId: string) => {
-    setExpandedProjectIds(prev =>
-      prev.includes(projectId) ? prev.filter(id => id !== projectId) : [...prev, projectId],
-    )
-  }, [])
+  const handleToggleProject = useCallback(
+    (projectId: string) => {
+      onExpandedProjectIdsChange(prev =>
+        prev.includes(projectId) ? prev.filter(id => id !== projectId) : [...prev, projectId],
+      )
+    },
+    [onExpandedProjectIdsChange],
+  )
 
   // ============================================
   // 桌面端拖拽 (HTML5 Drag & Drop)
@@ -112,10 +116,10 @@ export function FolderRecentList({
       // 延迟一帧再收起文件夹，避免 dragstart 期间 DOM 变化导致浏览器取消拖拽
       requestAnimationFrame(() => {
         savedExpandedRef.current = expandedProjectIds
-        setExpandedProjectIds([])
+        onExpandedProjectIdsChange([])
       })
     },
-    [expandedProjectIds],
+    [expandedProjectIds, onExpandedProjectIdsChange],
   )
 
   const handleDragOver = useCallback((e: React.DragEvent, projectId: string) => {
@@ -148,25 +152,25 @@ export function FolderRecentList({
       }
       // 恢复展开状态
       if (savedExpandedRef.current) {
-        setExpandedProjectIds(savedExpandedRef.current)
+        onExpandedProjectIdsChange(savedExpandedRef.current)
         savedExpandedRef.current = null
       }
       draggedIdRef.current = null
       setDraggedId(null)
       setDropTarget({ id: '', position: null })
     },
-    [projects, onReorderProject],
+    [projects, onReorderProject, onExpandedProjectIdsChange],
   )
 
   const cancelDrag = useCallback(() => {
     if (savedExpandedRef.current) {
-      setExpandedProjectIds(savedExpandedRef.current)
+      onExpandedProjectIdsChange(savedExpandedRef.current)
       savedExpandedRef.current = null
     }
     draggedIdRef.current = null
     setDraggedId(null)
     setDropTarget({ id: '', position: null })
-  }, [])
+  }, [onExpandedProjectIdsChange])
 
   // ============================================
   // 移动端触摸拖拽
@@ -185,13 +189,13 @@ export function FolderRecentList({
         if (!touchMovedRef.current) {
           // 触发拖拽模式
           savedExpandedRef.current = expandedProjectIds
-          setExpandedProjectIds([])
+          onExpandedProjectIdsChange([])
           touchDragIdRef.current = projectId
           setTouchDragId(projectId)
         }
       }, 400)
     },
-    [projects, expandedProjectIds],
+    [projects, expandedProjectIds, onExpandedProjectIdsChange],
   )
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
@@ -244,12 +248,12 @@ export function FolderRecentList({
 
     // 恢复展开状态
     if (savedExpandedRef.current) {
-      setExpandedProjectIds(savedExpandedRef.current)
+      onExpandedProjectIdsChange(savedExpandedRef.current)
       savedExpandedRef.current = null
     }
     touchDragIdRef.current = null
     setTouchDragId(null)
-  }, [projects, onReorderProject])
+  }, [projects, onReorderProject, onExpandedProjectIdsChange])
 
   // 清理长按定时器
   useEffect(() => {

@@ -89,6 +89,7 @@ export function SidePanel({
   })
   const [projectsExpanded, setProjectsExpanded] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'recents' | 'active'>('recents')
+  const [expandedRecentProjectIds, setExpandedRecentProjectIds] = useState<string[]>([])
 
   const showLabels = isExpanded || isMobile
   const newChatShortcut = useKeybindingLabel('newSession')
@@ -568,6 +569,8 @@ export function SidePanel({
                   projects={folderProjects}
                   currentDirectory={currentDirectory}
                   selectedSessionId={selectedSessionId}
+                  expandedProjectIds={expandedRecentProjectIds}
+                  onExpandedProjectIdsChange={setExpandedRecentProjectIds}
                   onSelectSession={handleSelectActive}
                   onRenameSession={handleRenameFolderSession}
                   onDeleteSession={handleDeleteFolderSession}
