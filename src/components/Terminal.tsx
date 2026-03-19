@@ -140,7 +140,7 @@ const MOBILE_EXTRA_KEY_ROWS: MobileExtraKey[][] = [
     { label: 'HOME', data: '\x1b[H' },
     { label: '↑', data: '\x1b[A' },
     { label: 'END', data: '\x1b[F' },
-    { label: 'PgUp', data: '\x1b[5~' },
+    { label: 'PGUP', data: '\x1b[5~' },
   ],
   [
     { label: 'TAB', data: '\t' },
@@ -149,7 +149,7 @@ const MOBILE_EXTRA_KEY_ROWS: MobileExtraKey[][] = [
     { label: '←', data: '\x1b[D' },
     { label: '↓', data: '\x1b[B' },
     { label: '→', data: '\x1b[C' },
-    { label: 'PgDn', data: '\x1b[6~' },
+    { label: 'PGDN', data: '\x1b[6~' },
   ],
 ]
 
