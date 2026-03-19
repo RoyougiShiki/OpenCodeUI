@@ -80,7 +80,7 @@ export const McpPanel = memo(function McpPanel({ isResizing: _isResizing }: McpP
     } finally {
       setLoading(false)
     }
-  }, [currentDirectory])
+  }, [currentDirectory, t])
 
   // 初始加载
   useEffect(() => {

@@ -188,7 +188,7 @@ export function SidePanel({
       })
     })
     return list
-  }, [savedDirectories, recentProjects])
+  }, [savedDirectories, recentProjects, t])
 
   const currentProject = useMemo<ProjectItem>(() => {
     if (!currentDirectory) return projects[0]

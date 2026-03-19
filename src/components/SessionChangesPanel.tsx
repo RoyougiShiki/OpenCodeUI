@@ -126,7 +126,7 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
       cancelled = true
       clearTimeout(timer)
     }
-  }, [sessionId])
+  }, [sessionId, t])
 
   // 刷新
   const handleRefresh = useCallback(() => {
@@ -150,7 +150,7 @@ export const SessionChangesPanel = memo(function SessionChangesPanel({
         })
         .finally(() => setLoading(false))
     }
-  }, [sessionId])
+  }, [sessionId, t])
 
   // 选中文件
   const handleSelectFile = useCallback((file: string) => {

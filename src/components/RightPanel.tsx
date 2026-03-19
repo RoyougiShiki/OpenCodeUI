@@ -136,7 +136,7 @@ export const RightPanel = memo(function RightPanel() {
           return null
       }
     },
-    [currentDirectory, sessionId, isPanelResizing],
+    [currentDirectory, sessionId, isPanelResizing, t],
   )
 
   return (

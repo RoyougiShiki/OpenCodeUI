@@ -92,7 +92,6 @@ export function FolderRecentList({
 
   // 当 projects 列表变化时，过滤掉已不存在的展开项
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 响应 prop 变化同步 derived state
     onExpandedProjectIdsChange(prev => {
       const next = prev.filter(id => projects.some(project => project.id === id))
       return next.length > 0 ? next : getInitialExpandedProjectIds(projects, currentDirectory)
@@ -105,7 +104,6 @@ export function FolderRecentList({
     const currentProject = projects.find(project => isSameDirectory(project.worktree, currentDirectory))
     if (!currentProject) return
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 响应 prop 变化同步 derived state
     onExpandedProjectIdsChange(prev => (prev.includes(currentProject.id) ? prev : [currentProject.id, ...prev]))
   }, [projects, currentDirectory, onExpandedProjectIdsChange])
 

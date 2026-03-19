@@ -47,7 +47,7 @@ export const SkillPanel = memo(function SkillPanel({ isResizing: _isResizing }: 
     } finally {
       setLoading(false)
     }
-  }, [currentDirectory])
+  }, [currentDirectory, t])
 
   useEffect(() => {
     loadSkills()

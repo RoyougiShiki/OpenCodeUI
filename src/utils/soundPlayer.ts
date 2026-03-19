@@ -62,7 +62,9 @@ let _audioCtx: AudioContext | null = null
 function getAudioContext(): AudioContext | null {
   if (_audioCtx && _audioCtx.state !== 'closed') return _audioCtx
   try {
-    _audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    _audioCtx = new (
+      window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    )()
     return _audioCtx
   } catch {
     return null
@@ -71,7 +73,10 @@ function getAudioContext(): AudioContext | null {
 
 /** 检查当前环境是否支持声音播放 */
 export function isSoundSupported(): boolean {
-  return typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined'
+  return (
+    typeof AudioContext !== 'undefined' ||
+    typeof (window as unknown as Record<string, unknown>).webkitAudioContext !== 'undefined'
+  )
 }
 
 // ============================================

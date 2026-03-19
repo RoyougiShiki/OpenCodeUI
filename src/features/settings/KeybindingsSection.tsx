@@ -94,7 +94,7 @@ function KeybindingRow({ config, onEdit, onReset, isKeyUsed, t }: KeybindingRowP
       setTempKey(newKey)
       setError(isKeyUsed(newKey, config.action) ? t('keybindings.alreadyInUse') : '')
     },
-    [isKeyUsed, config.action],
+    [isKeyUsed, config.action, t],
   )
 
   const confirm = useCallback(() => {

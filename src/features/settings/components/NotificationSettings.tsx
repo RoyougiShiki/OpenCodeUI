@@ -160,7 +160,7 @@ function EventSoundCard({
       const result = await soundStore.uploadCustomAudio(type, file)
       if (!result.success && result.error) {
         const errorKey = `notifications.error${result.error.charAt(0).toUpperCase()}${result.error.slice(1)}`
-        setUploadError(t(errorKey as any))
+        setUploadError(t(errorKey as `notifications.${string}`))
       }
 
       // Reset file input
@@ -193,8 +193,8 @@ function EventSoundCard({
         <div className="flex items-center gap-2.5">
           <span className={color}>{icon}</span>
           <div>
-            <div className="text-[13px] font-medium text-text-100">{t(labelKey as any)}</div>
-            <div className="text-[11px] text-text-400">{t(descKey as any)}</div>
+            <div className="text-[13px] font-medium text-text-100">{t(labelKey as `notifications.${string}`)}</div>
+            <div className="text-[11px] text-text-400">{t(descKey as `notifications.${string}`)}</div>
           </div>
         </div>
         <Button

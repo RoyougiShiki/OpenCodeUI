@@ -132,7 +132,7 @@ function App() {
       setFullAutoHint(label)
       fullAutoHintTimerRef.current = setTimeout(() => setFullAutoHint(null), 2000)
     })
-  }, [])
+  }, [t])
 
   // Viewport height tracking (移动端键盘适配)
   useViewportHeight()
@@ -329,7 +329,7 @@ function App() {
     } catch (error) {
       uiErrorHandler('create terminal', error)
     }
-  }, [effectiveDirectory])
+  }, [effectiveDirectory, t])
 
   const keybindingHandlers = useMemo<KeybindingHandlers>(
     () => ({

@@ -155,7 +155,7 @@ export function CodePreview({ code, language, truncateLines = true, maxHeight, i
 
   // 渲染可见行：分别生成 gutter 和 content
   // tokens 通过 ref 存储（避免大数据进 state），version 变化时重新读取
-  const tokens = tokensRef.current // eslint-disable-line react-hooks/refs -- tokensRef 是数据缓存，version 保证时序正确
+  const tokens = tokensRef.current // tokensRef 是数据缓存，version 保证时序正确
   const { gutterRows, contentRows } = useMemo(() => {
     const gutters: React.ReactNode[] = []
     const contents: React.ReactNode[] = []

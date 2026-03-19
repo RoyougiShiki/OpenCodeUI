@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- Icon re-exports barrel file */
 // Icon components - powered by lucide-react
 // Re-exports with project defaults (size=16, aria-hidden)
 import type { SVGProps, ComponentType } from 'react'

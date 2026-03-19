@@ -198,7 +198,7 @@ export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelP
           return null
       }
     },
-    [isRestoring, handleNewTerminal, directory, sessionId, isPanelResizing],
+    [isRestoring, handleNewTerminal, directory, sessionId, isPanelResizing, t],
   )
 
   return (
