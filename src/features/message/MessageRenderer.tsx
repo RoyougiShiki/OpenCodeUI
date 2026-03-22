@@ -488,7 +488,6 @@ interface ToolGroupProps {
 
 const ToolGroup = memo(function ToolGroup({ parts, stepFinish, duration, turnDuration, isStreaming }: ToolGroupProps) {
   const { t } = useTranslation('message')
-  const [expanded, setExpanded] = useState(true)
   const { descriptiveToolSteps, inlineToolRequests } = useTheme()
   const { pendingPermissions, pendingQuestions } = useInlineToolRequests()
   const hasPendingInteraction =
@@ -500,8 +499,6 @@ const ToolGroup = memo(function ToolGroup({ parts, stepFinish, duration, turnDur
         findQuestionRequestForTool(pendingQuestions, part.callID, childSessionId)
       )
     })
-  const effectiveExpanded = expanded || hasPendingInteraction
-  const shouldRenderBody = useDelayedRender(effectiveExpanded)
 
   const doneCount = parts.filter(p => p.state.status === 'completed').length
   const totalCount = parts.length
@@ -509,6 +506,20 @@ const ToolGroup = memo(function ToolGroup({ parts, stepFinish, duration, turnDur
   const hasActiveTools = parts.some(isToolPartActive)
   const hasErroredTools = parts.some(part => part.state.status === 'error')
   const stepsSummary = descriptiveToolSteps ? buildDescriptiveToolStepsSummary(parts, t) : undefined
+
+  // descriptive 模式默认收起，运行时展开，完成后保持展开
+  const [expanded, setExpanded] = useState(() => (descriptiveToolSteps ? false : true))
+
+  useEffect(() => {
+    if (!descriptiveToolSteps) return
+    if (hasActiveTools || hasPendingInteraction) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setExpanded(true)
+    }
+  }, [descriptiveToolSteps, hasActiveTools, hasPendingInteraction])
+
+  const effectiveExpanded = expanded || hasPendingInteraction
+  const shouldRenderBody = useDelayedRender(effectiveExpanded)
 
   // compact: 单工具时用紧凑布局（图标内联，无 timeline 连接线）
   // 不区分 streaming 状态 — 单工具始终 compact，第二个工具到来时再自然过渡到 timeline

@@ -119,6 +119,11 @@ export const ToolPartView = memo(function ToolPartView({
   )
 
   if (descriptive) {
+    const data = extractToolData(part)
+    const exitCode = data.exitCode
+    const diffStats = data.diffStats
+    const hasDiffFiles = !!data.files?.length
+
     return (
       <div className="group py-0.5">
         <button
@@ -150,7 +155,26 @@ export const ToolPartView = memo(function ToolPartView({
             )}
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {/* Diff stats */}
+            {!isActive && (diffStats || hasDiffFiles) && (
+              <span className="flex items-center gap-1 text-[10px] font-mono font-medium tabular-nums">
+                {(diffStats?.additions ?? 0) > 0 && <span className="text-success-100">+{diffStats!.additions}</span>}
+                {(diffStats?.deletions ?? 0) > 0 && <span className="text-danger-100">-{diffStats!.deletions}</span>}
+              </span>
+            )}
+
+            {/* Exit code */}
+            {exitCode !== undefined && !isActive && (
+              <span
+                className={`text-[10px] font-mono font-medium tabular-nums ${
+                  exitCode === 0 ? 'text-accent-secondary-100' : 'text-warning-100'
+                }`}
+              >
+                exit:{exitCode}
+              </span>
+            )}
+
             {duration !== undefined && state.status === 'completed' && (
               <span
                 className={`text-[10px] font-mono tabular-nums ${isError ? 'text-danger-100/70' : 'text-text-500'}`}
