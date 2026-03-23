@@ -75,6 +75,8 @@
     "descriptiveToolStepsDesc": "把普通 steps 计数改成带工具描述的摘要，并让单工具调用也显示步骤描述",
     "inlineToolRequests": "工具内嵌请求",
     "inlineToolRequestsDesc": "把待处理的权限和提问显示在对应工具下方，而不是浮层弹窗",
+    "compactInlinePermission": "精简内嵌权限",
+    "compactInlinePermissionDesc": "工具已有内容时，内嵌权限只显示操作按钮，避免重复",
     "toolCardStyle": "工具输出风格",
     "toolCardStyleDesc": "选择工具调用结果的展示方式",
     "toolCardClassic": "经典",

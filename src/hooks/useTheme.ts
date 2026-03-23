@@ -235,5 +235,11 @@ export function useTheme() {
     // 沉浸模式
     immersiveMode: state.immersiveMode,
     setImmersiveMode,
+
+    // 内嵌权限精简模式
+    compactInlinePermission: state.compactInlinePermission,
+    setCompactInlinePermission: useCallback((enabled: boolean) => {
+      themeStore.setCompactInlinePermission(enabled)
+    }, []),
   }
 }

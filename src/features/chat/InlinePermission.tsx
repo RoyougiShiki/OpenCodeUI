@@ -19,6 +19,8 @@ interface InlinePermissionProps {
   isReplying: boolean
   /** 权限已批准但工具还没完成，保留渲染避免跳动 */
   resolved?: boolean
+  /** ToolBody 已渲染内容时隐藏权限内容区，只显示操作按钮 */
+  contentHidden?: boolean
 }
 
 export const InlinePermission = memo(function InlinePermission({
@@ -26,6 +28,7 @@ export const InlinePermission = memo(function InlinePermission({
   onReply,
   isReplying,
   resolved = false,
+  contentHidden = false,
 }: InlinePermissionProps) {
   const { t } = useTranslation(['chat', 'common'])
   const { toolCardStyle } = useSyncExternalStore(themeStore.subscribe, themeStore.getSnapshot)
@@ -65,24 +68,25 @@ export const InlinePermission = memo(function InlinePermission({
 
   return (
     <div className="space-y-2">
-      {/* 内容 */}
-      {isFileEdit && diffData ? (
-        <ContentBlock
-          label={request.permission}
-          filePath={filepath}
-          diff={diffData}
-          collapsible={false}
-          compact={isCompact}
-        />
-      ) : patternsText ? (
-        <ContentBlock
-          label={request.permission}
-          content={patternsText}
-          language="bash"
-          collapsible={false}
-          compact={isCompact}
-        />
-      ) : null}
+      {/* 内容 — contentHidden 时跳过（ToolBody 已渲染） */}
+      {!contentHidden &&
+        (isFileEdit && diffData ? (
+          <ContentBlock
+            label={request.permission}
+            filePath={filepath}
+            diff={diffData}
+            collapsible={false}
+            compact={isCompact}
+          />
+        ) : patternsText ? (
+          <ContentBlock
+            label={request.permission}
+            content={patternsText}
+            language="bash"
+            collapsible={false}
+            compact={isCompact}
+          />
+        ) : null)}
 
       {/* 操作按钮 / 已批准状态 */}
       {resolved ? (

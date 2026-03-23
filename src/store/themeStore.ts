@@ -86,6 +86,7 @@ const DEFAULT_CODE_WORD_WRAP = false
 export type ToolCardStyle = 'classic' | 'compact'
 const DEFAULT_TOOL_CARD_STYLE: ToolCardStyle = 'classic'
 const DEFAULT_IMMERSIVE_MODE = false
+const DEFAULT_COMPACT_INLINE_PERMISSION = false
 
 export interface ThemeState {
   /** 当前选中的主题风格 ID */
@@ -114,6 +115,8 @@ export interface ThemeState {
   toolCardStyle: ToolCardStyle
   /** 沉浸模式 */
   immersiveMode: boolean
+  /** 内嵌权限精简模式：ToolBody 有内容时只显示操作按钮 */
+  compactInlinePermission: boolean
 }
 
 // ============================================
@@ -133,6 +136,7 @@ const STORAGE_KEY_INLINE_TOOL_REQUESTS = 'inline-tool-requests'
 const STORAGE_KEY_CODE_WORD_WRAP = 'code-word-wrap'
 const STORAGE_KEY_TOOL_CARD_STYLE = 'tool-card-style'
 const STORAGE_KEY_IMMERSIVE_MODE = 'immersive-mode'
+const STORAGE_KEY_COMPACT_INLINE_PERMISSION = 'compact-inline-permission'
 
 // ============================================
 // DOM Style Element IDs
@@ -193,6 +197,12 @@ class ThemeStore {
     const savedImmersiveMode = localStorage.getItem(STORAGE_KEY_IMMERSIVE_MODE)
     const immersiveMode = savedImmersiveMode === 'true' ? true : DEFAULT_IMMERSIVE_MODE
 
+    const savedCompactInlinePermission = localStorage.getItem(STORAGE_KEY_COMPACT_INLINE_PERMISSION)
+    const compactInlinePermission =
+      savedCompactInlinePermission === null
+        ? DEFAULT_COMPACT_INLINE_PERMISSION
+        : savedCompactInlinePermission === 'true'
+
     this.state = {
       presetId: savedPreset,
       colorMode: savedMode,
@@ -207,6 +217,7 @@ class ThemeStore {
       codeWordWrap,
       toolCardStyle,
       immersiveMode,
+      compactInlinePermission,
     }
   }
 
@@ -254,6 +265,9 @@ class ThemeStore {
   }
   get immersiveMode() {
     return this.state.immersiveMode
+  }
+  get compactInlinePermission() {
+    return this.state.compactInlinePermission
   }
 
   /** 获取当前主题预设（内置主题返回对象，自定义返回 undefined） */
@@ -385,15 +399,24 @@ class ThemeStore {
     this.state = {
       ...this.state,
       immersiveMode: enabled,
-      // 联动三个子功能
+      // 联动四个子功能
       inlineToolRequests: enabled,
       descriptiveToolSteps: enabled,
       toolCardStyle: enabled ? 'compact' : 'classic',
+      compactInlinePermission: enabled,
     }
     localStorage.setItem(STORAGE_KEY_IMMERSIVE_MODE, String(enabled))
     localStorage.setItem(STORAGE_KEY_INLINE_TOOL_REQUESTS, String(enabled))
     localStorage.setItem(STORAGE_KEY_DESCRIPTIVE_TOOL_STEPS, String(enabled))
     localStorage.setItem(STORAGE_KEY_TOOL_CARD_STYLE, enabled ? 'compact' : 'classic')
+    localStorage.setItem(STORAGE_KEY_COMPACT_INLINE_PERMISSION, String(enabled))
+    this.emit()
+  }
+
+  setCompactInlinePermission(enabled: boolean) {
+    if (this.state.compactInlinePermission === enabled) return
+    this.state = { ...this.state, compactInlinePermission: enabled }
+    localStorage.setItem(STORAGE_KEY_COMPACT_INLINE_PERMISSION, String(enabled))
     this.emit()
   }
 

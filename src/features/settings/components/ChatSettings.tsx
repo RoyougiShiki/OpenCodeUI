@@ -31,6 +31,7 @@ export function ChatSettings() {
   const [inlineToolRequests, setInlineToolRequests] = useState(themeStore.inlineToolRequests)
   const [toolCardStyle, setToolCardStyle] = useState(themeStore.toolCardStyle)
   const [immersiveMode, setImmersiveMode] = useState(themeStore.immersiveMode)
+  const [compactInlinePermission, setCompactInlinePermission] = useState(themeStore.compactInlinePermission)
   const isMobile = useIsMobile()
   void isMobile // reserved for future mobile-specific logic
 
@@ -68,6 +69,12 @@ export function ChatSettings() {
     themeStore.setInlineToolRequests(v)
   }
 
+  const handleCompactInlinePermissionToggle = () => {
+    const v = !compactInlinePermission
+    setCompactInlinePermission(v)
+    themeStore.setCompactInlinePermission(v)
+  }
+
   const handleToolCardStyleChange = (style: ToolCardStyle) => {
     setToolCardStyle(style)
     themeStore.setToolCardStyle(style)
@@ -81,6 +88,7 @@ export function ChatSettings() {
     setInlineToolRequests(v)
     setDescriptiveToolSteps(v)
     setToolCardStyle(v ? 'compact' : 'classic')
+    setCompactInlinePermission(v)
   }
 
   return (
@@ -166,6 +174,16 @@ export function ChatSettings() {
               className="bg-bg-100/35 border-border-200/45"
             >
               <Toggle enabled={inlineToolRequests} onChange={handleInlineToolRequestsToggle} />
+            </SettingRow>
+
+            <SettingRow
+              label={t('chat.compactInlinePermission')}
+              description={t('chat.compactInlinePermissionDesc')}
+              icon={<CompactIcon size={14} />}
+              onClick={handleCompactInlinePermissionToggle}
+              className="bg-bg-100/35 border-border-200/45"
+            >
+              <Toggle enabled={compactInlinePermission} onChange={handleCompactInlinePermissionToggle} />
             </SettingRow>
 
             <SettingRow

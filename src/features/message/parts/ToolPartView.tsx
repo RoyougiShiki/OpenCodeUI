@@ -58,7 +58,7 @@ export const ToolPartView = memo(function ToolPartView({
   const isError = state.status === 'error'
   const [expanded, setExpanded] = useState(() => isActive)
   const hasAutoExpandedReadableRef = useRef(false)
-  const { inlineToolRequests, immersiveMode } = useTheme()
+  const { inlineToolRequests, immersiveMode, compactInlinePermission } = useTheme()
 
   const { pendingPermissions, pendingQuestions, onPermissionReply, onQuestionReply, onQuestionReject, isReplying } =
     useInlineToolRequests()
@@ -89,8 +89,12 @@ export const ToolPartView = memo(function ToolPartView({
   const permissionResolved = !permissionRequest && !!lastPermissionRef.current && isFilePermission && !toolDone
 
   const hasPendingInteraction = !!permissionRequest || !!questionRequest
-  const hideToolBodyForPermission =
+  // 精简模式：非 edit/write 权限时不隐藏 ToolBody（ToolBody 已经渲染了命令内容）
+  const isEditWritePermission =
     permissionRequest?.permission === 'edit' || permissionRequest?.permission === 'write' || permissionResolved
+  const hideToolBodyForPermission = isEditWritePermission
+  // 精简模式：ToolBody 已渲染时，InlinePermission 只显示按钮
+  const permissionContentHidden = compactInlinePermission && !isEditWritePermission && !!permissionRequest
   const effectiveExpanded = expanded || hasPendingInteraction || permissionResolved
   const shouldRenderBody = useDelayedRender(effectiveExpanded)
   const isReadable = isReadableTool(toolName)
@@ -137,12 +141,13 @@ export const ToolPartView = memo(function ToolPartView({
     <>
       {!hideToolBodyForPermission && <ToolBody part={part} />}
       {displayPermission && (
-        <div className={hideToolBodyForPermission ? '' : 'pt-2'}>
+        <div className={hideToolBodyForPermission && !permissionContentHidden ? '' : 'pt-2'}>
           <InlinePermission
             request={displayPermission}
             onReply={onPermissionReply}
             isReplying={isReplying}
             resolved={permissionResolved}
+            contentHidden={permissionContentHidden}
           />
         </div>
       )}
