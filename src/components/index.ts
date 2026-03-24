@@ -18,5 +18,5 @@ export { ContentBlock } from './ContentBlock'
 export type { ContentBlockProps } from './ContentBlock'
 
 // Re-export FullscreenViewer
-export { FullscreenViewer, CodeViewer, DiffModalViewer } from './FullscreenViewer'
-export type { FullscreenViewerProps, ViewerMode } from './FullscreenViewer'
+export { FullscreenViewer, ViewModeSwitch } from './FullscreenViewer'
+export type { FullscreenViewerProps } from './FullscreenViewer'

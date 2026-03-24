@@ -1,19 +1,18 @@
 /**
  * MultiFileDiffModal - 全屏多文件 Diff 查看器
  *
- * VSCode 风格：全屏铺满 + 毛玻璃背景 + 左侧文件列表 + 右侧 Diff
+ * 基于通用 FullscreenViewer，真全屏铺满视口。
+ * VSCode 风格：左侧文件列表 + 右侧 Diff。
  */
 
 import { memo, useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CloseIcon } from './Icons'
 import { getMaterialIconUrl } from '../utils/materialIcons'
 import { DiffViewer, type ViewMode } from './DiffViewer'
-import { ViewModeSwitch } from './FullscreenViewer'
+import { FullscreenViewer, ViewModeSwitch } from './FullscreenViewer'
 import { getSessionDiff } from '../api/session'
 import type { FileDiff } from '../api/types'
 import { detectLanguage } from '../utils/languageUtils'
-import { ModalShell } from './ui/ModalShell'
 import { sessionErrorHandler } from '../utils'
 
 // ============================================
@@ -44,11 +43,12 @@ export const MultiFileDiffModal = memo(function MultiFileDiffModal({
   const requestIdRef = useRef(0)
 
   useEffect(() => {
+    if (!isOpen) return
     const checkWidth = () => setViewMode(window.innerWidth >= 1200 ? 'split' : 'unified')
     checkWidth()
     window.addEventListener('resize', checkWidth)
     return () => window.removeEventListener('resize', checkWidth)
-  }, [])
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen || !sessionId) return
@@ -100,9 +100,10 @@ export const MultiFileDiffModal = memo(function MultiFileDiffModal({
   }, [diffs])
 
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} variant="fullscreen">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between h-11 px-4 border-b border-border-100/40 shrink-0">
+    <FullscreenViewer
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
         <div className="flex items-center gap-4 min-w-0">
           <span className="text-text-100 font-medium text-[13px]">{t('multiFileDiff.sessionChanges')}</span>
           <div className="flex items-center gap-3 text-[11px] font-mono text-text-400 tabular-nums">
@@ -115,22 +116,11 @@ export const MultiFileDiffModal = memo(function MultiFileDiffModal({
             )}
           </div>
         </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <ViewModeSwitch viewMode={viewMode} onChange={setViewMode} />
-          <div className="w-px h-4 bg-border-200/30" />
-          <button
-            onClick={onClose}
-            className="p-1 text-text-400 hover:text-text-100 hover:bg-bg-200/60 rounded-md transition-colors"
-            title={t('common:closeEsc')}
-          >
-            <CloseIcon size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
+      }
+      headerRight={<ViewModeSwitch viewMode={viewMode} onChange={setViewMode} />}
+    >
+      {/* Body: sidebar + diff */}
+      <div className="flex h-full overflow-hidden">
         {/* Sidebar */}
         <div className="w-56 border-r border-border-100/30 flex flex-col shrink-0">
           <div className="flex-1 overflow-y-auto custom-scrollbar py-1">
@@ -218,6 +208,6 @@ export const MultiFileDiffModal = memo(function MultiFileDiffModal({
           )}
         </div>
       </div>
-    </ModalShell>
+    </FullscreenViewer>
   )
 })

@@ -15,7 +15,7 @@ import { CopyButton } from './ui'
 import { DiffViewer, type ViewMode } from './DiffViewer'
 import { CodePreview } from './CodePreview'
 import { detectLanguage } from '../utils/languageUtils'
-import { FullscreenViewer } from './FullscreenViewer'
+import { FullscreenViewer, ViewModeSwitch } from './FullscreenViewer'
 import { extractContentFromUnifiedDiff } from '../utils/diffUtils'
 import { useResponsiveMaxHeight } from '../hooks/useResponsiveMaxHeight'
 
@@ -83,6 +83,7 @@ export const ContentBlock = memo(function ContentBlock({
   const [collapsed, setCollapsed] = useState(compact ? false : defaultCollapsed)
   const [fullscreenOpen, setFullscreenOpen] = useState(false)
   const [diffViewMode, setDiffViewMode] = useState<ViewMode>('split')
+  const [fullscreenDiffViewMode, setFullscreenDiffViewMode] = useState<ViewMode>('split')
   const contentRef = useRef<HTMLDivElement>(null)
 
   // 响应式 maxHeight，外部传入的值优先
@@ -147,6 +148,15 @@ export const ContentBlock = memo(function ContentBlock({
     observer.observe(container)
     return () => observer.disconnect()
   }, [isDiff])
+
+  // 全屏时响应式切换 diff view mode
+  useEffect(() => {
+    if (!fullscreenOpen || !isDiff) return
+    const checkWidth = () => setFullscreenDiffViewMode(window.innerWidth >= 1000 ? 'split' : 'unified')
+    checkWidth()
+    window.addEventListener('resize', checkWidth)
+    return () => window.removeEventListener('resize', checkWidth)
+  }, [fullscreenOpen, isDiff])
 
   // 是否展开内容区
   const showBody = (hasContent && !collapsed) || (isLoading && !hasContent)
@@ -262,25 +272,37 @@ export const ContentBlock = memo(function ContentBlock({
       </div>
 
       {/* Fullscreen Viewer - 支持 diff 和代码 */}
-      {isDiff && diff ? (
+      {isDiff && diff && resolvedDiff ? (
         <FullscreenViewer
-          mode="diff"
           isOpen={fullscreenOpen}
           onClose={() => setFullscreenOpen(false)}
-          diff={diff}
-          filePath={filePath}
-          language={lang}
-          diffStats={diffStats || undefined}
-        />
+          title={fileName || label}
+          titleExtra={
+            diffStats && (
+              <div className="flex items-center gap-1.5 text-[11px] font-mono tabular-nums shrink-0">
+                {diffStats.additions > 0 && <span className="text-success-100">+{diffStats.additions}</span>}
+                {diffStats.deletions > 0 && <span className="text-danger-100">-{diffStats.deletions}</span>}
+              </div>
+            )
+          }
+          headerRight={<ViewModeSwitch viewMode={fullscreenDiffViewMode} onChange={setFullscreenDiffViewMode} />}
+        >
+          <DiffViewer
+            before={resolvedDiff.before}
+            after={resolvedDiff.after}
+            language={lang}
+            viewMode={fullscreenDiffViewMode}
+          />
+        </FullscreenViewer>
       ) : content?.trim() ? (
         <FullscreenViewer
-          mode="code"
           isOpen={fullscreenOpen}
           onClose={() => setFullscreenOpen(false)}
-          content={content}
-          filePath={filePath}
-          language={lang}
-        />
+          title={fileName || label}
+          headerRight={<CopyButton text={content} position="static" />}
+        >
+          <CodePreview code={content} language={lang} truncateLines={false} />
+        </FullscreenViewer>
       ) : null}
     </div>
   )

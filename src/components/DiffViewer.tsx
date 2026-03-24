@@ -180,7 +180,7 @@ function getGutterBgClass(type: LineType): string {
     case 'empty':
       return 'bg-bg-100/30'
     default:
-      return 'bg-bg-100'
+      return ''
   }
 }
 
@@ -383,7 +383,7 @@ const WrappedSplitDiffView = memo(function WrappedSplitDiffView({
         <div
           className={`flex-1 flex items-stretch min-w-0 border-r border-border-100/30 ${getLineBgClass(pair.left.type)}`}
         >
-          <div className={`shrink-0 ${getGutterBgClass(pair.left.type)}`} style={{ width: gutterWidth }}>
+          <div className="shrink-0" style={{ width: gutterWidth }}>
             {useChangeBars ? (
               <div className="flex items-stretch h-full">
                 <div {...getChangeBarProps(pair.left.type)} />
@@ -413,7 +413,7 @@ const WrappedSplitDiffView = memo(function WrappedSplitDiffView({
 
         {/* Right panel */}
         <div className={`flex-1 flex items-stretch min-w-0 ${getLineBgClass(pair.right.type)}`}>
-          <div className={`shrink-0 ${getGutterBgClass(pair.right.type)}`} style={{ width: gutterWidth }}>
+          <div className="shrink-0" style={{ width: gutterWidth }}>
             {useChangeBars ? (
               <div className="flex items-stretch h-full">
                 <div {...getChangeBarProps(pair.right.type)} />
@@ -1168,7 +1168,7 @@ const WrappedUnifiedDiffView = memo(function WrappedUnifiedDiffView({
 
     visibleRows.push(
       <div key={i} ref={el => measureRef(i, el)} className={`flex items-stretch ${getLineBgClass(line.type)}`}>
-        <div className={`shrink-0 ${getGutterBgClass(line.type)}`} style={{ width: gutterWidth }}>
+        <div className="shrink-0" style={{ width: gutterWidth }}>
           {useChangeBars ? (
             <div className="flex items-stretch h-full">
               <div {...getChangeBarProps(line.type)} />

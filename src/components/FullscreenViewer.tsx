@@ -1,196 +1,107 @@
 /**
- * FullscreenViewer - 通用全屏查看器
+ * FullscreenViewer - 通用真全屏容器
  *
- * 设计理念：
- * - 卡片居中，固定高度 min(90vh, 1000px)，和 IDE 行为一致
- * - 优雅的暗色背景 + 微弱光晕效果
- * - 支持代码预览和 Diff 两种模式
+ * 纯 UI 壳：ModalShell（铺满视口） + 可选 header + children 填满剩余空间。
+ * 不绑定任何业务逻辑——丢什么进去就全屏展示什么。
  *
- * 布局：
- *   ModalShell card (flex-col, max-height: min(90vh,1000px), overflow-hidden)
- *     Header (h-11 = 44px, shrink-0)
- *     Content (height: calc(min(90vh,1000px) - 44px))
- *       → 确定的 CSS 高度，子组件 h-full 正确解析，虚拟滚动正常工作
- *       → 卡片被 children 撑满到 maxHeight，不会收缩
+ * 用法示例：
+ *   <FullscreenViewer isOpen={open} onClose={close} title="preview.txt">
+ *     <MyContent />
+ *   </FullscreenViewer>
+ *
+ *   <FullscreenViewer isOpen={open} onClose={close} headerRight={<ViewModeSwitch ... />}>
+ *     <DiffViewer ... />
+ *   </FullscreenViewer>
  */
 
-import { memo, useState, useEffect, useMemo } from 'react'
+import { memo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { diffLines } from 'diff'
 import { CloseIcon } from './Icons'
-import { CopyButton } from './ui'
-import { detectLanguage } from '../utils/languageUtils'
-import { extractContentFromUnifiedDiff } from '../utils/diffUtils'
-import { DiffViewer, type ViewMode } from './DiffViewer'
-import { CodePreview } from './CodePreview'
 import { ModalShell } from './ui/ModalShell'
+import type { ViewMode } from './DiffViewer'
 
 // ============================================
 // Types
 // ============================================
 
-export type ViewerMode = 'code' | 'diff'
-
-interface BaseProps {
+export interface FullscreenViewerProps {
   isOpen: boolean
   onClose: () => void
-  filePath?: string
-  language?: string
+  children: ReactNode
+  /** 左侧标题（可选） */
+  title?: ReactNode
+  /** 标题右侧的附加信息，如 diff stats（可选） */
+  titleExtra?: ReactNode
+  /** header 右侧自定义区域，如 ViewModeSwitch、CopyButton 等（可选） */
+  headerRight?: ReactNode
+  /** 是否显示默认 header（默认 true，设为 false 则完全由 children 控制布局） */
+  showHeader?: boolean
+  /** z-index，默认 100 */
+  zIndex?: number
 }
-
-interface CodeViewerProps extends BaseProps {
-  mode: 'code'
-  content: string
-}
-
-interface DiffViewerProps extends BaseProps {
-  mode: 'diff'
-  diff: { before: string; after: string } | string
-  diffStats?: { additions: number; deletions: number }
-}
-
-export type FullscreenViewerProps = CodeViewerProps | DiffViewerProps
 
 // ============================================
 // Main Component
 // ============================================
 
-export const FullscreenViewer = memo(function FullscreenViewer(props: FullscreenViewerProps) {
-  const { t } = useTranslation(['components', 'common'])
-  const { isOpen, onClose, filePath, language } = props
-
-  const [diffViewMode, setDiffViewMode] = useState<ViewMode>('split')
-
-  // 响应式 diff view mode
-  useEffect(() => {
-    if (props.mode !== 'diff') return
-    const checkWidth = () => setDiffViewMode(window.innerWidth >= 1000 ? 'split' : 'unified')
-    checkWidth()
-    window.addEventListener('resize', checkWidth)
-    return () => window.removeEventListener('resize', checkWidth)
-  }, [props.mode])
-
-  // 解析内容
-  const { content, resolvedDiff, diffStats, lang, fileName, lineCount } = useMemo(() => {
-    const lang = language || detectLanguage(filePath) || 'text'
-    const fileName = filePath?.split(/[/\\]/).pop()
-
-    if (props.mode === 'code') {
-      const lines = props.content.split('\n').length
-      return {
-        content: props.content,
-        resolvedDiff: null,
-        diffStats: null,
-        lang,
-        fileName,
-        lineCount: lines,
-      }
-    }
-
-    // Diff mode
-    const diff = props.diff
-    const resolved = typeof diff === 'object' ? diff : extractContentFromUnifiedDiff(diff)
-
-    // 计算 diff stats
-    let stats = props.diffStats
-    if (!stats) {
-      const changes = diffLines(resolved.before, resolved.after)
-      let additions = 0,
-        deletions = 0
-      for (const c of changes) {
-        if (c.added) additions += c.count || 0
-        if (c.removed) deletions += c.count || 0
-      }
-      stats = { additions, deletions }
-    }
-
-    const maxLines = Math.max(resolved.before.split('\n').length, resolved.after.split('\n').length)
-
-    return {
-      content: null,
-      resolvedDiff: resolved,
-      diffStats: stats,
-      lang,
-      fileName,
-      lineCount: maxLines,
-    }
-  }, [props, language, filePath])
+export const FullscreenViewer = memo(function FullscreenViewer({
+  isOpen,
+  onClose,
+  children,
+  title,
+  titleExtra,
+  headerRight,
+  showHeader = true,
+  zIndex,
+}: FullscreenViewerProps) {
+  const { t } = useTranslation('common')
 
   return (
-    <ModalShell isOpen={isOpen} onClose={onClose} variant="card" closeOnBackdrop>
-      {/* Header */}
-      <div className="flex items-center h-11 px-4 border-b border-border-100/60 bg-bg-200/30 shrink-0 gap-3">
-        {/* Left: file info */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          {fileName && (
-            <span className="text-text-100 font-mono text-[13px] font-medium truncate min-w-0 flex-1">{fileName}</span>
-          )}
-          {filePath && fileName && filePath !== fileName && (
-            <span className="text-text-500 font-mono text-[11px] truncate hidden sm:block min-w-0">{filePath}</span>
-          )}
-
-          {/* Diff stats */}
-          {diffStats && (
-            <div className="flex items-center gap-1.5 text-[11px] font-mono tabular-nums shrink-0">
-              {diffStats.additions > 0 && <span className="text-success-100">+{diffStats.additions}</span>}
-              {diffStats.deletions > 0 && <span className="text-danger-100">-{diffStats.deletions}</span>}
+    <ModalShell isOpen={isOpen} onClose={onClose} zIndex={zIndex}>
+      <div className="w-full h-full flex flex-col bg-bg-100">
+        {showHeader && (
+          <div className="flex items-center h-11 px-4 border-b border-border-100/40 shrink-0 gap-3">
+            {/* Left: title area */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              {title &&
+                (typeof title === 'string' ? (
+                  <span className="text-text-100 font-mono text-[13px] font-medium truncate min-w-0 flex-1">
+                    {title}
+                  </span>
+                ) : (
+                  title
+                ))}
+              {titleExtra}
             </div>
-          )}
 
-          {/* Line count for code */}
-          {props.mode === 'code' && (
-            <span className="text-text-500 text-[11px] font-mono shrink-0">
-              {lineCount} {t('fullscreenViewer.lines')}
-            </span>
-          )}
-        </div>
+            {/* Right: custom actions + close */}
+            <div className="flex items-center gap-2 shrink-0">
+              {headerRight}
+              {headerRight && <div className="w-px h-4 bg-border-200/30" />}
+              <button
+                onClick={onClose}
+                className="p-1.5 text-text-400 hover:text-text-100 hover:bg-bg-200/60 rounded-lg transition-colors"
+                title={t('closeEsc')}
+              >
+                <CloseIcon size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
-        {/* Right: controls */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Copy button for code */}
-          {props.mode === 'code' && content && <CopyButton text={content} position="static" />}
-
-          {/* View mode switch for diff */}
-          {props.mode === 'diff' && (
-            <>
-              <ViewModeSwitch viewMode={diffViewMode} onChange={setDiffViewMode} />
-              <div className="w-px h-4 bg-border-200/40" />
-            </>
-          )}
-
-          <button
-            onClick={onClose}
-            className="p-1.5 text-text-400 hover:text-text-100 hover:bg-bg-300/60 rounded-lg transition-colors"
-            title={t('common:closeEsc')}
-          >
-            <CloseIcon size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/*
-        Content 区：
-        - 给确定的 CSS 高度 = ModalShell 卡片 maxHeight - header 高度(44px)
-        - 这样子组件 h-full 能解析为确定 px 值，虚拟滚动正常工作
-        - 卡片固定高度，和 IDE 行为一致（小文件也用大窗口）
-      */}
-      <div style={{ height: 'calc(min(90vh, 1000px) - 44px)' }}>
-        {props.mode === 'diff' && resolvedDiff ? (
-          <DiffViewer before={resolvedDiff.before} after={resolvedDiff.after} language={lang} viewMode={diffViewMode} />
-        ) : props.mode === 'code' && content ? (
-          <CodePreview code={content} language={lang} truncateLines={false} />
-        ) : null}
+        {/* Content: 填满剩余空间 */}
+        <div className="flex-1 min-h-0">{children}</div>
       </div>
     </ModalShell>
   )
 })
 
 // ============================================
-// ViewModeSwitch - 导出供其他组件使用
+// ViewModeSwitch - 独立的 diff 视图模式切换
 // ============================================
 
 export function ViewModeSwitch({ viewMode, onChange }: { viewMode: ViewMode; onChange: (mode: ViewMode) => void }) {
-  const { t } = useTranslation(['components', 'common'])
+  const { t } = useTranslation('components')
 
   return (
     <div className="flex items-center bg-bg-300/50 rounded-lg p-0.5 text-[11px]">
@@ -212,18 +123,4 @@ export function ViewModeSwitch({ viewMode, onChange }: { viewMode: ViewMode; onC
       </button>
     </div>
   )
-}
-
-// ============================================
-// Convenience exports
-// ============================================
-
-/** 简化的代码查看器 */
-export function CodeViewer(props: Omit<CodeViewerProps, 'mode'>) {
-  return <FullscreenViewer {...props} mode="code" />
-}
-
-/** 简化的 Diff 查看器 */
-export function DiffModalViewer(props: Omit<DiffViewerProps, 'mode'>) {
-  return <FullscreenViewer {...props} mode="diff" />
 }
