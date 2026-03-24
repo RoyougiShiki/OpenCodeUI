@@ -126,16 +126,19 @@ const MarkdownTable = memo(function MarkdownTable({
   }
 
   return (
-    <div className="group/table relative overflow-x-auto my-5 first:mt-0 last:mb-0 rounded-md border border-border-200/35 w-full px-3 sm:px-4">
-      {/* Floating copy button */}
+    <div className="group/table relative my-5 first:mt-0 last:mb-0 rounded-md border border-border-200/35 w-full">
+      {/* Scrollable table area */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-[13px] border-collapse">{children}</table>
+      </div>
+      {/* Copy button — outside scroll, pinned to visible top-right */}
       {copyText && (
         <CopyButton
           text={copyText}
           position="absolute"
-          className="!top-2 !right-2 opacity-0 group-hover/table:opacity-100 transition-opacity z-10"
+          className="!top-1.5 !right-1.5 opacity-0 group-hover/table:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity z-20"
         />
       )}
-      <table className="w-full min-w-max border-collapse text-[13px]">{children}</table>
     </div>
   )
 })
@@ -314,8 +317,8 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
         <td
           className={
             isReasoning
-              ? 'px-3 py-1.5 text-xs text-text-300 border-b border-border-200/18'
-              : 'px-3 py-2 text-[13px] text-text-300 leading-[1.55] border-b border-border-200/14'
+              ? 'px-3 py-1.5 text-xs text-text-300 w-max border-b border-border-200/18'
+              : 'px-3 py-2 text-[13px] text-text-300 leading-[1.55] w-max border-b border-border-200/14'
           }
         >
           {children}

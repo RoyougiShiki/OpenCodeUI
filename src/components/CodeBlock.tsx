@@ -122,7 +122,7 @@ export const CodeBlock = memo(function CodeBlock({
       <CopyButton
         text={code}
         position="static"
-        className="!p-1 absolute top-2 right-2 z-10 opacity-0 group-hover/code:opacity-100 transition-opacity"
+        className="!p-1 absolute top-2 right-2 z-10 opacity-0 group-hover/code:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
       />
 
       {/* Scrollable content */}
