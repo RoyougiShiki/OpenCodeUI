@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.3.2] - 2026-03-24
+
+- fix: align fullscreen diff test mocks with typed children (fdf1a74)
+- fix: restore release validation after fullscreen refactor (ef2d755)
+- fix: adjust outline index spacing for visual balance (fb98097)
+- refactor: unify fullscreen components into generic FullscreenViewer (9e6d8ed)
+- refactor: redesign settings UI with section-based layout and cleaner primitives (478351a)
+
 ## [v0.3.1] - 2026-03-23
 
 - fix: unify chevron arrow direction - collapsed points right, expanded points down (3557e5a)
