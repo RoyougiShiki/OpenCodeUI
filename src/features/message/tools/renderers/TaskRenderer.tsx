@@ -74,21 +74,8 @@ export const TaskRenderer = memo(function TaskRenderer({ part }: ToolRendererPro
   }, [isRunning])
 
   return (
-    <div className="relative overflow-hidden min-w-0">
-      {/* 左侧装饰线 */}
-      <div
-        className={`absolute left-0 top-0 bottom-0 w-px transition-colors ${
-          isRunning
-            ? 'bg-accent-main-100 animate-pulse'
-            : isError
-              ? 'bg-danger-100'
-              : isCompleted
-                ? 'bg-border-300/50'
-                : 'bg-border-300/30'
-        }`}
-      />
-
-      <div className="pl-3">
+    <div className="min-w-0">
+      <div>
         {/* Header */}
         <TaskHeader
           agentType={agentType}
@@ -111,8 +98,8 @@ export const TaskRenderer = memo(function TaskRenderer({ part }: ToolRendererPro
               <div className="pt-2 space-y-3">
                 {/* Prompt */}
                 {prompt && (
-                  <div className="text-[11px] text-text-400 leading-relaxed whitespace-pre-wrap break-words border-l-2 border-border-200/50 pl-2.5">
-                    {prompt.length > 300 ? prompt.slice(0, 300) + '...' : prompt}
+                  <div className="text-[11px] text-text-500 leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
+                    {prompt}
                   </div>
                 )}
 
@@ -202,7 +189,17 @@ const TaskHeader = memo(function TaskHeader({
       </span>
 
       {/* Agent type badge */}
-      <span className="px-1.5 py-0.5 text-[10px] font-medium font-mono rounded-xs bg-bg-200/60 text-text-400">
+      <span
+        className={`px-1.5 py-0.5 text-[10px] font-medium rounded-xs ${
+          isRunning
+            ? 'bg-accent-main-100/20 text-accent-main-100'
+            : isError
+              ? 'bg-danger-100/20 text-danger-100'
+              : isCompleted
+                ? 'bg-accent-secondary-100/20 text-accent-secondary-100'
+                : 'bg-bg-300 text-text-300'
+        }`}
+      >
         {agentType}
       </span>
 
