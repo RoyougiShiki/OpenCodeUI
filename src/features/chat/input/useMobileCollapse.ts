@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useIsMobile } from '../../../hooks'
 import type { CollapsedDialogInfo } from '../InputBox'
 
 // ============================================
@@ -8,6 +7,8 @@ import type { CollapsedDialogInfo } from '../InputBox'
 // ============================================
 
 interface UseMobileCollapseOptions {
+  /** 是否启用移动端输入交互（只代表交互，不代表 UI） */
+  enabled: boolean
   /** 文本内容是否非空 */
   hasContent: boolean
   /** 是否处于页面底部 */
@@ -43,6 +44,7 @@ interface UseMobileCollapseReturn {
 }
 
 export function useMobileCollapse({
+  enabled,
   hasContent,
   isAtBottom,
   textareaRef,
@@ -53,8 +55,6 @@ export function useMobileCollapse({
   collapsedPermission,
   collapsedQuestion,
 }: UseMobileCollapseOptions): UseMobileCollapseReturn {
-  const isMobile = useIsMobile()
-
   // 判断节点是否在输入区域内部（inputContainer / contentWrap / footer）
   const isInsideInputArea = useCallback(
     (node: Node | null): boolean => {
@@ -73,7 +73,7 @@ export function useMobileCollapse({
 
   // 直接计算是否收起（纯派生值）
   const hasPendingDialogs = !!collapsedPermission || !!collapsedQuestion
-  const isCollapsed = isMobile && !isAtBottom && !hasContent && !isFocused && !hasPendingDialogs
+  const isCollapsed = enabled && !isAtBottom && !hasContent && !isFocused && !hasPendingDialogs
 
   // 展开态内容区高度（用于收起时占位，防 isAtBottom 反馈循环）
   const [expandedHeight, setExpandedHeight] = useState(0)
@@ -146,7 +146,7 @@ export function useMobileCollapse({
   // 需要监听 document pointerdown：如果点击/触摸发生在容器外部 → 清除 isFocused。
   // 同时，滚动事件也应该能清除（用户在 chat 区域滑动 = 离开输入区域）。
   useEffect(() => {
-    if (!isFocused || !isMobile) return
+    if (!isFocused || !enabled) return
 
     const handleOutsidePointerDown = (e: PointerEvent) => {
       if (isInsideInputArea(e.target as Node)) return
@@ -163,7 +163,7 @@ export function useMobileCollapse({
     return () => {
       document.removeEventListener('pointerdown', handleOutsidePointerDown, { capture: true })
     }
-  }, [isFocused, isMobile, isInsideInputArea, textareaRef])
+  }, [isFocused, enabled, isInsideInputArea, textareaRef])
 
   // ---- 持续追踪展开态内容区高度 ----
   useEffect(() => {

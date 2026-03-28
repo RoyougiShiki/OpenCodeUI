@@ -8,6 +8,7 @@ import { useMessageStore } from '../store'
 import { ResizablePanel } from './ui/ResizablePanel'
 import { logger } from '../utils/logger'
 import { uiErrorHandler } from '../utils'
+import { useChatViewport } from '../features/chat/chatViewport'
 
 const Terminal = lazy(() => import('./Terminal').then(module => ({ default: module.Terminal })))
 const SessionChangesPanel = lazy(() =>
@@ -33,6 +34,7 @@ export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelP
   const { t } = useTranslation(['components', 'common'])
   const { bottomPanelOpen, bottomPanelHeight } = useLayoutStore()
   const { sessionId } = useMessageStore()
+  const { interaction, layout } = useChatViewport()
 
   const [isRestoring, setIsRestoring] = useState(false)
 
@@ -205,7 +207,9 @@ export const BottomPanel = memo(function BottomPanel({ directory }: BottomPanelP
     <ResizablePanel
       position="bottom"
       isOpen={bottomPanelOpen}
+      overlay={interaction.bottomPanelBehavior === 'overlay'}
       size={bottomPanelHeight}
+      maxSize={layout.bottomPanel.maxHeight}
       onSizeChange={layoutStore.setBottomPanelHeight}
       onClose={layoutStore.closeBottomPanel}
       className="pb-[var(--safe-area-inset-bottom)]"

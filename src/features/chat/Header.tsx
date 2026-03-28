@@ -10,6 +10,7 @@ import { useSessionContext } from '../../contexts/useSessionContext'
 import { updateSession } from '../../api'
 import { useDirectory } from '../../contexts/useDirectory'
 import { uiErrorHandler } from '../../utils'
+import { useChatViewport } from './chatViewport'
 import type { ModelInfo } from '../../api'
 
 interface HeaderProps {
@@ -19,6 +20,83 @@ interface HeaderProps {
   onModelChange: (modelKey: string, model: ModelInfo) => void
   onOpenSidebar?: () => void
   modelSelectorRef?: React.RefObject<ModelSelectorHandle | null>
+}
+
+interface SessionTitleControlProps {
+  compact: boolean
+  isEditingTitle: boolean
+  editTitle: string
+  sessionTitle: string
+  titleInputRef: React.RefObject<HTMLInputElement | null>
+  setEditTitle: (value: string) => void
+  setIsEditingTitle: (value: boolean) => void
+  handleRename: () => void
+  handleStartEdit: () => void
+  onShare: () => void
+  clickToRenameTitle: string
+  shareTitle: string
+}
+
+function SessionTitleControl({
+  compact,
+  isEditingTitle,
+  editTitle,
+  sessionTitle,
+  titleInputRef,
+  setEditTitle,
+  setIsEditingTitle,
+  handleRename,
+  handleStartEdit,
+  onShare,
+  clickToRenameTitle,
+  shareTitle,
+}: SessionTitleControlProps) {
+  const inputClass = compact
+    ? 'px-2 py-1.5 text-sm font-medium text-text-100 bg-transparent border-none outline-none w-[160px] h-full'
+    : 'px-3 py-1.5 text-sm font-medium text-text-100 bg-transparent border-none outline-none w-[200px] lg:w-[300px] h-full text-center'
+  const buttonClass = compact
+    ? 'px-2 py-1.5 text-sm font-medium text-text-200 hover:text-text-100 transition-colors truncate max-w-[200px] cursor-text select-none'
+    : 'px-3 py-1.5 text-sm font-medium text-text-200 hover:text-text-100 transition-colors truncate max-w-[300px] cursor-text select-none text-center'
+  const dividerClass = compact
+    ? 'w-[1.5px] h-3 bg-border-200/50 mx-0.5 shrink-0'
+    : 'w-[1.5px] h-3 bg-border-200/50 mx-0.5 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100 transition-opacity'
+  const shareButtonClass = compact
+    ? 'p-1 text-text-400 hover:text-text-100 transition-colors rounded-md hover:bg-bg-300/50 shrink-0'
+    : 'p-1 text-text-400 hover:text-text-100 transition-colors rounded-md hover:bg-bg-300/50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100 shrink-0'
+
+  return (
+    <div
+      className={`flex items-center group ${isEditingTitle ? 'bg-bg-200/50 ring-1 ring-accent-main-100' : 'bg-transparent hover:bg-bg-200/50 border border-transparent hover:border-border-200/50'} rounded-lg transition-all duration-200 p-0.5 min-w-0 shrink`}
+    >
+      {isEditingTitle ? (
+        <input
+          ref={titleInputRef}
+          type="text"
+          value={editTitle}
+          onChange={e => setEditTitle(e.target.value)}
+          onBlur={handleRename}
+          onKeyDown={e => {
+            if (e.key === 'Enter') handleRename()
+            if (e.key === 'Escape') setIsEditingTitle(false)
+          }}
+          className={inputClass}
+        />
+      ) : (
+        <button onClick={handleStartEdit} className={buttonClass} title={clickToRenameTitle}>
+          {sessionTitle}
+        </button>
+      )}
+
+      {!isEditingTitle && (
+        <>
+          <div className={dividerClass} />
+          <button className={shareButtonClass} title={shareTitle} onClick={onShare}>
+            <ChevronDownIcon size={12} />
+          </button>
+        </>
+      )}
+    </div>
+  )
 }
 
 export function Header({
@@ -34,28 +112,23 @@ export function Header({
   const { rightPanelOpen, bottomPanelOpen } = useLayoutStore()
   const { refresh } = useSessionContext()
   const { currentDirectory } = useDirectory()
+  const { presentation, interaction } = useChatViewport()
 
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
-
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const titleInputRef = useRef<HTMLInputElement>(null)
 
   const sessionTitle = currentSessionTitle || t('header.newChat')
+  const isCompact = presentation.isCompact
 
-  // 同步 document.title - 有 session 标题时显示 "标题 - OpenCode"，否则只显示 "OpenCode"
   useEffect(() => {
-    if (currentSessionTitle) {
-      document.title = `${currentSessionTitle} - OpenCode`
-    } else {
-      document.title = 'OpenCode'
-    }
+    document.title = currentSessionTitle ? `${currentSessionTitle} - OpenCode` : 'OpenCode'
     return () => {
       document.title = 'OpenCode'
     }
   }, [currentSessionTitle])
 
-  // Editing Logic
   useEffect(() => {
     setIsEditingTitle(false)
   }, [sessionId])
@@ -89,22 +162,39 @@ export function Header({
     }
   }
 
+  const titleControl = (
+    <SessionTitleControl
+      compact={isCompact}
+      isEditingTitle={isEditingTitle}
+      editTitle={editTitle}
+      sessionTitle={sessionTitle}
+      titleInputRef={titleInputRef}
+      setEditTitle={setEditTitle}
+      setIsEditingTitle={setIsEditingTitle}
+      handleRename={handleRename}
+      handleStartEdit={handleStartEdit}
+      onShare={() => setShareDialogOpen(true)}
+      clickToRenameTitle={t('header.clickToRename')}
+      shareTitle={t('header.shareSession')}
+    />
+  )
+
   return (
-    <div className="h-14 flex justify-between items-center px-4 z-20 bg-bg-100 transition-colors duration-200 relative">
-      {/* Left: Mobile Menu + Model/Title (z-20) */}
+    <div
+      className={`h-14 flex justify-between items-center z-20 bg-bg-100 transition-colors duration-200 relative ${isCompact ? 'px-2' : 'px-4'}`}
+    >
       <div className="flex items-center gap-2 min-w-0 shrink-1 z-20">
-        {/* Mobile Sidebar Toggle - 只在移动端显示 */}
-        {onOpenSidebar && (
+        {interaction.sidebarBehavior === 'overlay' && onOpenSidebar && (
           <IconButton
             aria-label={t('header.openSidebar')}
             onClick={onOpenSidebar}
-            className="md:hidden hover:bg-bg-200/50 text-text-400 hover:text-text-100 -ml-2"
+            className="hover:bg-bg-200/50 text-text-400 hover:text-text-100 -ml-2"
           >
             <SidebarIcon size={18} />
           </IconButton>
         )}
-        {/* PC端：ModelSelector */}
-        <div className="hidden md:block">
+
+        {!isCompact && (
           <ModelSelector
             ref={modelSelectorRef}
             models={models}
@@ -112,96 +202,14 @@ export function Header({
             onSelect={onModelChange}
             isLoading={modelsLoading}
           />
-        </div>
-        {/* 移动端：Session Title（移动端不显示 ModelSelector，模型选择在输入框） */}
-        <div className="md:hidden min-w-0">
-          <div
-            className={`flex items-center group ${isEditingTitle ? 'bg-bg-200/50 ring-1 ring-accent-main-100' : 'bg-transparent hover:bg-bg-200/50 border border-transparent hover:border-border-200/50'} rounded-lg transition-all duration-200 p-0.5 min-w-0 shrink`}
-          >
-            {isEditingTitle ? (
-              <input
-                ref={titleInputRef}
-                type="text"
-                value={editTitle}
-                onChange={e => setEditTitle(e.target.value)}
-                onBlur={handleRename}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') handleRename()
-                  if (e.key === 'Escape') setIsEditingTitle(false)
-                }}
-                className="px-2 py-1.5 text-sm font-medium text-text-100 bg-transparent border-none outline-none w-[160px] h-full"
-              />
-            ) : (
-              <button
-                onClick={handleStartEdit}
-                className="px-2 py-1.5 text-sm font-medium text-text-200 hover:text-text-100 transition-colors truncate max-w-[200px] cursor-text select-none"
-                title={t('header.clickToRename')}
-              >
-                {sessionTitle}
-              </button>
-            )}
-            {!isEditingTitle && (
-              <>
-                <div className="w-[1.5px] h-3 bg-border-200/50 mx-0.5 shrink-0" />
-                <button
-                  className="p-1 text-text-400 hover:text-text-100 transition-colors rounded-md hover:bg-bg-300/50 shrink-0"
-                  title={t('header.shareSession')}
-                  onClick={() => setShareDialogOpen(true)}
-                >
-                  <ChevronDownIcon size={12} />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+        )}
+
+        {isCompact && <div className="min-w-0">{titleControl}</div>}
       </div>
 
-      {/* Center: Session Title (PC only, 居中) (z-20) */}
-      <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex z-20">
-        <div
-          className={`flex items-center group ${isEditingTitle ? 'bg-bg-200/50 ring-1 ring-accent-main-100' : 'bg-transparent hover:bg-bg-200/50 border border-transparent hover:border-border-200/50'} rounded-lg transition-all duration-200 p-0.5 min-w-0 shrink`}
-        >
-          {isEditingTitle ? (
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={editTitle}
-              onChange={e => setEditTitle(e.target.value)}
-              onBlur={handleRename}
-              onKeyDown={e => {
-                if (e.key === 'Enter') handleRename()
-                if (e.key === 'Escape') setIsEditingTitle(false)
-              }}
-              className="px-3 py-1.5 text-sm font-medium text-text-100 bg-transparent border-none outline-none w-[200px] lg:w-[300px] h-full text-center"
-            />
-          ) : (
-            <button
-              onClick={handleStartEdit}
-              className="px-3 py-1.5 text-sm font-medium text-text-200 hover:text-text-100 transition-colors truncate max-w-[300px] cursor-text select-none text-center"
-              title={t('header.clickToRename')}
-            >
-              {sessionTitle}
-            </button>
-          )}
+      {!isCompact && <div className="absolute left-1/2 -translate-x-1/2 flex z-20">{titleControl}</div>}
 
-          {!isEditingTitle && (
-            <>
-              <div className="w-[1.5px] h-3 bg-border-200/50 mx-0.5 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100 transition-opacity" />
-              <button
-                className="p-1 text-text-400 hover:text-text-100 transition-colors rounded-md hover:bg-bg-300/50 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(any-pointer:coarse)]:opacity-100 shrink-0"
-                title={t('header.shareSession')}
-                onClick={() => setShareDialogOpen(true)}
-              >
-                <ChevronDownIcon size={12} />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Right: Panel Toggles (z-20) */}
       <div className="flex items-center gap-1 pointer-events-auto shrink-0 z-20">
-        {/* Panel Toggles Group */}
         <div className="flex items-center gap-0.5">
           <IconButton
             aria-label={bottomPanelOpen ? t('header.closeBottomPanel') : t('header.openBottomPanel')}
@@ -223,7 +231,6 @@ export function Header({
 
       <ShareDialog isOpen={shareDialogOpen} onClose={() => setShareDialogOpen(false)} />
 
-      {/* Smooth gradient - z-10 */}
       <div className="absolute top-full left-0 right-0 h-8 bg-gradient-to-b from-bg-100 to-transparent pointer-events-none z-10" />
     </div>
   )

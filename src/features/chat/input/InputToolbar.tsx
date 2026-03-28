@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ChevronDownIcon, SendIcon, StopIcon, PaperclipIcon, AgentIcon, ThinkingIcon } from '../../../components/Icons'
 import { DropdownMenu, MenuItem, IconButton, AnimatedPresence } from '../../../components/ui'
 import { InputToolbarModelSelector } from '../ModelSelector'
-import { useIsMobile } from '../../../hooks'
+import { useChatViewport } from '../chatViewport'
 import { isTauri, isTauriMobile, extToMime } from '../../../utils/tauri'
 import type { ApiAgent } from '../../../api/client'
 import type { ModelInfo, FileCapabilities } from '../../../api'
@@ -57,7 +57,8 @@ export function InputToolbar({
   inputContainerRef,
 }: InputToolbarProps) {
   const { t } = useTranslation(['chat', 'common'])
-  const isMobile = useIsMobile()
+  const { presentation } = useChatViewport()
+  const isCompact = presentation.isCompact
   const useBrowserFileInput = !isTauri() || isTauriMobile()
 
   // 根据模型能力计算支持的文件类型
@@ -179,9 +180,9 @@ export function InputToolbar({
   return (
     <div className="flex items-center justify-between px-3 pb-3 relative">
       {/* Left side: Model (mobile) + Agent + Variant selectors */}
-      <div className="flex items-center gap-1 md:gap-2 min-w-0">
+      <div className={`flex items-center min-w-0 ${isCompact ? 'gap-1' : 'gap-2'}`}>
         {/* Model Selector — 移动端显示在最左边 */}
-        {isMobile && onModelChange && (
+        {isCompact && onModelChange && (
           <InputToolbarModelSelector
             models={models}
             selectedModelKey={selectedModelKey}
@@ -192,7 +193,7 @@ export function InputToolbar({
         )}
 
         {/* Agent Selector */}
-        <AnimatedPresence show={selectableAgents.length > 1} className={isMobile ? 'shrink-0' : ''}>
+        <AnimatedPresence show={selectableAgents.length > 1} className={isCompact ? 'shrink-0' : ''}>
           <div className="relative">
             <button
               ref={agentTriggerRef}
@@ -205,15 +206,15 @@ export function InputToolbar({
                   : selectedAgent || 'build'
               }
             >
-              {/* 移动端隐藏 AgentIcon 节省空间 */}
+              {/* 紧凑信息流隐藏 AgentIcon 节省空间 */}
               <span
-                className="text-text-400 hidden md:inline shrink-0"
+                className={`text-text-400 shrink-0 ${isCompact ? 'hidden' : ''}`}
                 style={currentAgent?.color ? { color: currentAgent.color } : undefined}
               >
                 <AgentIcon />
               </span>
               <span className="text-xs text-text-300 capitalize truncate">{selectedAgent || 'build'}</span>
-              <span className="text-text-400 hidden md:inline shrink-0">
+              <span className={`text-text-400 shrink-0 ${isCompact ? 'hidden' : ''}`}>
                 <ChevronDownIcon />
               </span>
             </button>
@@ -249,7 +250,7 @@ export function InputToolbar({
         </AnimatedPresence>
 
         {/* Variant Selector */}
-        <AnimatedPresence show={variants.length > 0} className={isMobile ? 'shrink-0' : ''}>
+        <AnimatedPresence show={variants.length > 0} className={isCompact ? 'shrink-0' : ''}>
           <div className="relative">
             <button
               ref={variantTriggerRef}
@@ -262,8 +263,8 @@ export function InputToolbar({
                   : t('inputToolbar.default')
               }
             >
-              {/* 移动端隐藏 ThinkingIcon */}
-              <span className="text-text-400 hidden md:inline shrink-0">
+              {/* 紧凑信息流隐藏 ThinkingIcon */}
+              <span className={`text-text-400 shrink-0 ${isCompact ? 'hidden' : ''}`}>
                 <ThinkingIcon />
               </span>
               <span className="text-xs text-text-300 truncate">
@@ -271,7 +272,7 @@ export function InputToolbar({
                   ? selectedVariant.charAt(0).toUpperCase() + selectedVariant.slice(1)
                   : t('inputToolbar.default')}
               </span>
-              <span className="text-text-400 hidden md:inline shrink-0">
+              <span className={`text-text-400 shrink-0 ${isCompact ? 'hidden' : ''}`}>
                 <ChevronDownIcon />
               </span>
             </button>

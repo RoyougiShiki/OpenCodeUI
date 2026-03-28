@@ -9,6 +9,7 @@ import type { TerminalTab } from '../store/layoutStore'
 import { ResizablePanel } from './ui/ResizablePanel'
 import { logger } from '../utils/logger'
 import { uiErrorHandler } from '../utils'
+import { useChatViewport } from '../features/chat/chatViewport'
 
 const SessionChangesPanel = lazy(() =>
   import('./SessionChangesPanel').then(module => ({ default: module.SessionChangesPanel })),
@@ -31,6 +32,7 @@ export const RightPanel = memo(function RightPanel() {
   const { rightPanelOpen, rightPanelWidth } = useLayoutStore()
   const { sessionId } = useMessageStore()
   const { currentDirectory } = useDirectory()
+  const { interaction, layout } = useChatViewport()
 
   // 追踪面板 resize 状态
   const [isPanelResizing, setIsPanelResizing] = useState(false)
@@ -143,8 +145,10 @@ export const RightPanel = memo(function RightPanel() {
     <ResizablePanel
       position="right"
       isOpen={rightPanelOpen}
-      size={rightPanelWidth}
-      maxSize={1280}
+      overlay={interaction.rightPanelBehavior === 'overlay'}
+      size={layout.rightPanel.dockedWidth || rightPanelWidth}
+      minSize={layout.rightPanel.hardMinWidth}
+      maxSize={layout.rightPanel.resizeMaxWidth}
       onSizeChange={layoutStore.setRightPanelWidth}
       onClose={layoutStore.closeRightPanel}
       className="pb-[var(--safe-area-inset-bottom)]"

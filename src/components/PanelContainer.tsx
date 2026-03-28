@@ -288,7 +288,7 @@ export const PanelContainer = memo(function PanelContainer({
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 relative overflow-hidden">{children(activeTab)}</div>
+      <div className="flex-1 min-h-0 min-w-0 relative overflow-hidden">{children(activeTab)}</div>
 
       {/* Context Menu - Portal */}
       {contextMenu &&

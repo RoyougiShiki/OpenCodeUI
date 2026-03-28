@@ -103,7 +103,7 @@ class LayoutStore {
       const savedWidth = localStorage.getItem('opencode-right-panel-width')
       if (savedWidth) {
         const width = parseInt(savedWidth)
-        if (!isNaN(width) && width >= 300 && width <= MAX_RIGHT_PANEL_WIDTH) {
+        if (!isNaN(width) && width >= 160 && width <= MAX_RIGHT_PANEL_WIDTH) {
           this.state.rightPanelWidth = width
         }
       }
@@ -398,7 +398,7 @@ class LayoutStore {
   }
 
   setRightPanelWidth(width: number) {
-    this.state.rightPanelWidth = Math.min(Math.max(width, 300), MAX_RIGHT_PANEL_WIDTH)
+    this.state.rightPanelWidth = Math.min(Math.max(width, 160), MAX_RIGHT_PANEL_WIDTH)
     try {
       localStorage.setItem('opencode-right-panel-width', this.state.rightPanelWidth.toString())
     } catch {

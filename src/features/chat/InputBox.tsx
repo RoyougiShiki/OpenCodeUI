@@ -18,7 +18,7 @@ import { useAttachmentRail } from './input/useAttachmentRail'
 import { useInputHistory } from './input/useInputHistory'
 import { TEXT_STYLE, detectSlashTrigger, isFileSupported, ensureFileMime, readFileAsDataUrl } from './input/inputUtils'
 import { keybindingStore, matchesKeybinding } from '../../store/keybindingStore'
-import { useIsMobile } from '../../hooks'
+import { useChatViewport } from './chatViewport'
 import type { ApiAgent } from '../../api/client'
 import type { ModelInfo, FileCapabilities } from '../../api'
 import type { Command } from '../../api/command'
@@ -157,8 +157,8 @@ function InputBoxComponent({
   const [isDragging, setIsDragging] = useState(false)
   const dragCounterRef = useRef(0)
 
-  // 响应式 placeholder
-  const isMobile = useIsMobile()
+  const { presentation, interaction } = useChatViewport()
+  const isCompact = presentation.isCompact
 
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -191,6 +191,7 @@ function InputBoxComponent({
   const hasContent = text.trim().length > 0 || attachments.length > 0
   const { isCollapsed, expandedHeight, handleExpandInput, handleFocus, handleBlur, handleContainerPointerDown } =
     useMobileCollapse({
+      enabled: interaction.enableCollapsedInputDock,
       hasContent,
       isAtBottom,
       textareaRef,
@@ -252,9 +253,9 @@ function InputBoxComponent({
     // 原生层已处理键盘 resize，window.innerHeight 即可用高度
     const viewportH = window.innerHeight
     // 可用高度 = viewport - header(48px) - toolbar/padding/footer(~100px) - 安全余量
-    const maxH = isMobile ? Math.max(80, viewportH - 48 - 100 - 72) : viewportH * 0.35
+    const maxH = isCompact ? Math.max(80, viewportH - 48 - 100 - 72) : viewportH * 0.35
     textarea.style.height = Math.max(24, Math.min(scrollHeight, maxH)) + 'px'
-  }, [text, isMobile])
+  }, [text, isCompact])
 
   // 计算
   const inputDisabled = !!disabled || isSubmitting
@@ -883,7 +884,7 @@ function InputBoxComponent({
   return (
     <div className="w-full">
       <div
-        className="mx-auto max-w-3xl px-4 pointer-events-auto transition-[max-width] duration-300 ease-in-out"
+        className={`mx-auto max-w-3xl pointer-events-auto transition-[max-width] duration-300 ease-in-out ${isCompact ? 'px-2' : 'px-4'}`}
         style={{ paddingBottom: bottomDockPadding }}
       >
         <div
@@ -1028,12 +1029,12 @@ function InputBoxComponent({
                           onFocus={handleFocus}
                           onBlur={handleBlur}
                           disabled={inputDisabled}
-                          placeholder={isMobile ? t('inputBox.replyToAgentMobile') : t('inputBox.replyToAgent')}
-                          className="w-full resize-none focus:outline-none focus:ring-0 bg-transparent text-text-100 placeholder:text-text-400 custom-scrollbar px-4"
+                          placeholder={isCompact ? t('inputBox.replyToAgentMobile') : t('inputBox.replyToAgent')}
+                          className={`w-full resize-none focus:outline-none focus:ring-0 bg-transparent text-text-100 placeholder:text-text-400 custom-scrollbar ${isCompact ? 'px-3' : 'px-4'}`}
                           style={{
                             ...TEXT_STYLE,
                             minHeight: '24px',
-                            maxHeight: isMobile ? 'calc(var(--app-height, 100vh) - 220px)' : '35vh',
+                            maxHeight: isCompact ? 'calc(var(--app-height, 100vh) - 220px)' : '35vh',
                           }}
                           rows={1}
                         />

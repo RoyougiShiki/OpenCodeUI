@@ -28,7 +28,7 @@ import type { Message } from '../../types/message'
 import { RetryStatusInline, type RetryStatusInlineData } from './RetryStatusInline'
 import { buildVisibleMessageEntries } from './chatAreaVisibility'
 import { AT_BOTTOM_THRESHOLD_PX } from '../../constants'
-import { useIsMobile } from '../../hooks'
+import { useChatViewport } from './chatViewport'
 
 const MESSAGE_RENDER_ROOT_MARGIN = '150% 0px'
 const STICKY_RENDER_MESSAGE_COUNT = 8
@@ -99,8 +99,9 @@ export const ChatArea = memo(
       const loadMoreBlockedRef = useRef(true)
 
       const { isWideMode } = useTheme()
-      const isMobile = useIsMobile()
-      const atBottomThreshold = isMobile ? 150 : AT_BOTTOM_THRESHOLD_PX
+      const { presentation } = useChatViewport()
+      const atBottomThreshold = presentation.isCompact ? 150 : AT_BOTTOM_THRESHOLD_PX
+      const messagePaddingClass = presentation.isCompact ? 'px-2' : 'px-4'
 
       // ---- Data ----
       const visibleMessageEntries = useMemo(() => buildVisibleMessageEntries(messages), [messages])
@@ -378,7 +379,7 @@ export const ChatArea = memo(
           const isUser = messages[0].info.role === 'user'
           return (
             <div
-              className={`w-full ${messageMaxWidthClass} mx-auto px-4 py-3 transition-[max-width] duration-300 ease-in-out`}
+              className={`w-full ${messageMaxWidthClass} mx-auto ${messagePaddingClass} py-3 transition-[max-width] duration-300 ease-in-out`}
             >
               <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                 <div className={`min-w-0 group ${!isUser ? 'w-full' : ''} flex flex-col gap-2`}>
@@ -417,6 +418,7 @@ export const ChatArea = memo(
           onFork,
           canUndo,
           messageMaxWidthClass,
+          messagePaddingClass,
           sessionId,
           turnDurationMap,
           allowStreamingLayoutAnimation,
@@ -457,7 +459,7 @@ export const ChatArea = memo(
 
             {/* Retry status */}
             {retryStatus && (
-              <div className={`w-full ${messageMaxWidthClass} mx-auto px-4 shrink-0`}>
+              <div className={`w-full ${messageMaxWidthClass} mx-auto ${messagePaddingClass} shrink-0`}>
                 <div className="flex justify-start">
                   <div className="w-full min-w-0">
                     <RetryStatusInline status={retryStatus} />

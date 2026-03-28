@@ -14,6 +14,7 @@
 import { memo, useMemo, useRef, useEffect, useCallback, useState } from 'react'
 import type { Message } from '../types/message'
 import { getMessageText, isUserMessage } from '../types/message'
+import { useChatViewport } from '../features/chat/chatViewport'
 
 // ============================================
 // Types
@@ -226,13 +227,13 @@ function extractOutlineEntries(messages: Message[]): OutlineEntry[] {
 
 export const OutlineIndex = memo(function OutlineIndex({ messages, onScrollToMessageId }: OutlineIndexProps) {
   const entries = useMemo(() => extractOutlineEntries(messages), [messages])
+  const { interaction } = useChatViewport()
   if (entries.length < 2) return null
 
-  return (
-    <>
-      <DesktopFisheye entries={entries} onSelect={onScrollToMessageId} />
-      <MobileFisheye entries={entries} onSelect={onScrollToMessageId} />
-    </>
+  return interaction.outlineInteraction === 'touch' ? (
+    <MobileFisheye entries={entries} onSelect={onScrollToMessageId} />
+  ) : (
+    <DesktopFisheye entries={entries} onSelect={onScrollToMessageId} />
   )
 })
 
@@ -331,7 +332,7 @@ const DesktopFisheye = memo(function DesktopFisheye({ entries, onSelect }: Fishe
   return (
     <div
       ref={containerRef}
-      className="hidden md:flex flex-col items-end absolute right-2 top-1/2 -translate-y-1/2 z-[5] py-1 select-none"
+      className="flex flex-col items-end absolute right-2 top-1/2 -translate-y-1/2 z-[5] py-1 select-none"
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -506,7 +507,7 @@ const MobileFisheye = memo(function MobileFisheye({ entries, onSelect }: Fisheye
   useEffect(() => () => cancelAnimationFrame(rafIdRef.current), [])
 
   return (
-    <div className="md:hidden">
+    <div>
       {/* 背景模糊 overlay + 居中标题 */}
       {overlayVisible && (
         <div className="absolute inset-0 z-[14] bg-bg-100/40 backdrop-blur-sm flex items-start justify-center pt-[30%]">
