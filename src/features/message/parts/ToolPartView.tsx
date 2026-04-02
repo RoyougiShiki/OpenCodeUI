@@ -56,8 +56,6 @@ export const ToolPartView = memo(function ToolPartView({
 
   const isActive = state.status === 'running' || state.status === 'pending'
   const isError = state.status === 'error'
-  const [expanded, setExpanded] = useState(() => isActive)
-  const hasAutoExpandedReadableRef = useRef(false)
   const { inlineToolRequests, immersiveMode, compactInlinePermission } = useTheme()
 
   const { pendingPermissions, pendingQuestions, onPermissionReply, onQuestionReply, onQuestionReject, isReplying } =
@@ -102,9 +100,17 @@ export const ToolPartView = memo(function ToolPartView({
   const isTaskTool = toolName.toLowerCase() === 'task'
   const permissionContentHidden =
     compactInlinePermission && !isEditWritePermission && !isTaskTool && !!permissionRequest
+  const isReadable = isReadableTool(toolName)
+  const shouldStartExpanded =
+    isActive ||
+    hasPendingInteraction ||
+    permissionResolved ||
+    (immersiveMode && descriptive && isStreaming && isReadable)
+
+  const [expanded, setExpanded] = useState(() => shouldStartExpanded)
+  const hasAutoExpandedReadableRef = useRef(shouldStartExpanded && immersiveMode && descriptive && isReadable)
   const effectiveExpanded = expanded || hasPendingInteraction || permissionResolved
   const shouldRenderBody = useDelayedRender(effectiveExpanded)
-  const isReadable = isReadableTool(toolName)
 
   useEffect(() => {
     if (isActive || hasPendingInteraction || permissionResolved) {
