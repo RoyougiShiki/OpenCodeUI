@@ -8,6 +8,7 @@ export type ChatPanelBehavior = 'docked' | 'overlay'
 export const CHAT_SURFACE_MIN_WIDTH = 380
 export const CHAT_SURFACE_COMPACT_BREAKPOINT = 680
 export const CHAT_VIEWPORT_MOBILE_BREAKPOINT = 768
+export const CHAT_SPLIT_TOUCH_MIN_WIDTH = 900
 
 const SIDEBAR_STORAGE_KEY = 'sidebar-width'
 const SIDEBAR_RAIL_WIDTH = 49
@@ -100,6 +101,13 @@ export interface ChatViewportValue {
   actions: {
     setSidebarRequestedWidth: (width: number) => void
   }
+}
+
+export function canUseSplitPane(viewport: Pick<ChatViewportValue, 'interaction' | 'layout'>): boolean {
+  if (!viewport.interaction.touchCapable) return true
+
+  const { viewportWidth, viewportHeight } = viewport.layout
+  return viewportWidth >= CHAT_SPLIT_TOUCH_MIN_WIDTH && viewportWidth > viewportHeight
 }
 
 function computeChatViewport(input: ComputedViewportInput): Omit<ChatViewportValue, 'actions'> {

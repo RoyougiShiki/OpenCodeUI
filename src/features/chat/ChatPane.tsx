@@ -16,7 +16,7 @@ import { PaneHeader } from './PaneHeader'
 import { useChatSession, useModels, useModelSelection } from '../../hooks'
 import { useCancelHint } from '../../hooks/useCancelHint'
 import { InlineToolRequestContext, type InlineToolRequestContextValue } from './InlineToolRequestContext'
-import { ChatViewportProvider, useChatViewportMaybe, type ChatViewportValue } from './chatViewport'
+import { ChatViewportProvider, canUseSplitPane, useChatViewportMaybe, type ChatViewportValue } from './chatViewport'
 import { SessionNavigationContext } from '../../contexts/SessionNavigationContext'
 import { paneLayoutStore } from '../../store/paneLayoutStore'
 import { autoApproveStore } from '../../store/autoApproveStore'
@@ -111,6 +111,7 @@ export const ChatPane = memo(function ChatPane({
   // When fullscreen we pass this through so children keep the real desktop viewport;
   // in normal split mode we use the static PANE_VIEWPORT instead.
   const outerViewport = useChatViewportMaybe()
+  const splitPaneEnabled = canUseSplitPane(outerViewport ?? PANE_VIEWPORT)
 
   // ============================================
   // Refs
@@ -697,6 +698,7 @@ export const ChatPane = memo(function ChatPane({
             paneCount={paneCount}
             showSidebarButton={showSidebarButton}
             onOpenSidebar={onOpenSidebar}
+            canSplitPane={splitPaneEnabled}
             isPaneFullscreen={isPaneFullscreen}
             onTogglePaneFullscreen={onTogglePaneFullscreen}
             onFocus={handlePaneFocus}

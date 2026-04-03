@@ -20,7 +20,12 @@ import {
   usePaneControllers,
   usePaneLayout,
 } from './store'
-import { ChatViewportProvider, CHAT_SURFACE_MIN_WIDTH, useChatViewportController } from './features/chat/chatViewport'
+import {
+  ChatViewportProvider,
+  CHAT_SURFACE_MIN_WIDTH,
+  canUseSplitPane,
+  useChatViewportController,
+} from './features/chat/chatViewport'
 import { uiErrorHandler, isSameDirectory } from './utils'
 import { initNotificationSound } from './utils/notificationSoundBridge'
 import { createPtySession } from './api/pty'
@@ -53,6 +58,7 @@ function App() {
     rightPanelOpen,
     requestedRightPanelWidth: rightPanelWidth,
   })
+  const splitPaneEnabled = canUseSplitPane(chatViewport)
   const paneLayout = usePaneLayout()
   const focusedController = usePaneController(paneLayout.focusedPaneId)
   const paneControllers = usePaneControllers()
@@ -169,7 +175,7 @@ function App() {
         isPaneFullscreen={paneLayout.fullscreenPaneId === paneId}
         onOpenSidebar={handleOpenSidebar}
         showSidebarButton={chatViewport.interaction.sidebarBehavior === 'overlay'}
-        onSplitPane={paneLayout.fullscreenPaneId ? undefined : handleEnterSplitMode}
+        onSplitPane={splitPaneEnabled && !paneLayout.fullscreenPaneId ? handleEnterSplitMode : undefined}
         onTogglePaneFullscreen={paneLayout.isSplit ? handleToggleFocusedPaneFullscreen : undefined}
         navigatePaneToSession={navigatePaneToSession}
         navigatePaneHome={navigatePaneHome}
@@ -180,6 +186,7 @@ function App() {
       paneLayout.paneCount,
       paneLayout.isSplit,
       paneLayout.fullscreenPaneId,
+      splitPaneEnabled,
       handleOpenSidebar,
       handleEnterSplitMode,
       handleToggleFocusedPaneFullscreen,

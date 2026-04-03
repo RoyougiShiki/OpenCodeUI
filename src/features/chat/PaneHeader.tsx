@@ -25,12 +25,14 @@ import { messageStore } from '../../store'
 import { updateSession } from '../../api'
 import { useDirectory } from '../../contexts/useDirectory'
 import { uiErrorHandler } from '../../utils'
+import { useChatViewport, canUseSplitPane } from './chatViewport'
 
 interface PaneHeaderProps {
   paneId: string
   sessionId: string | null
   isFocused: boolean
   paneCount: number
+  canSplitPane?: boolean
   isPaneFullscreen?: boolean
   showSidebarButton?: boolean
   onOpenSidebar?: () => void
@@ -43,6 +45,7 @@ export function PaneHeader({
   sessionId,
   isFocused,
   paneCount,
+  canSplitPane,
   isPaneFullscreen = false,
   showSidebarButton = false,
   onOpenSidebar,
@@ -50,6 +53,7 @@ export function PaneHeader({
   onFocus,
 }: PaneHeaderProps) {
   const { t } = useTranslation('chat')
+  const viewport = useChatViewport()
   const sessionState = useSessionState(sessionId)
   const { currentDirectory } = useDirectory()
   const { rightPanelOpen, bottomPanelOpen } = useLayoutStore()
@@ -61,6 +65,7 @@ export function PaneHeader({
   const [isDragOver, setIsDragOver] = useState(false)
 
   const title = sessionState?.title || t('header.newChat')
+  const splitEnabled = canSplitPane ?? canUseSplitPane(viewport)
 
   // Reset editing when session changes
   useEffect(() => {
@@ -215,29 +220,33 @@ export function PaneHeader({
             </IconButton>
           )}
 
-          <IconButton
-            size="sm"
-            aria-label="Split horizontal"
-            onClick={e => {
-              e.stopPropagation()
-              handleSplitH()
-            }}
-            className="text-text-400 hover:text-text-100 hover:bg-bg-200/50"
-          >
-            <SplitHorizontalIcon size={14} />
-          </IconButton>
+          {splitEnabled && (
+            <>
+              <IconButton
+                size="sm"
+                aria-label="Split horizontal"
+                onClick={e => {
+                  e.stopPropagation()
+                  handleSplitH()
+                }}
+                className="text-text-400 hover:text-text-100 hover:bg-bg-200/50"
+              >
+                <SplitHorizontalIcon size={14} />
+              </IconButton>
 
-          <IconButton
-            size="sm"
-            aria-label="Split vertical"
-            onClick={e => {
-              e.stopPropagation()
-              handleSplitV()
-            }}
-            className="text-text-400 hover:text-text-100 hover:bg-bg-200/50"
-          >
-            <SplitVerticalIcon size={14} />
-          </IconButton>
+              <IconButton
+                size="sm"
+                aria-label="Split vertical"
+                onClick={e => {
+                  e.stopPropagation()
+                  handleSplitV()
+                }}
+                className="text-text-400 hover:text-text-100 hover:bg-bg-200/50"
+              >
+                <SplitVerticalIcon size={14} />
+              </IconButton>
+            </>
+          )}
         </div>
 
         {isFocused && (
