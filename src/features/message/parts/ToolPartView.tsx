@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { diffLines } from 'diff'
 import { ChevronDownIcon, ChevronRightIcon } from '../../../components/Icons'
@@ -149,9 +149,12 @@ export const ToolPartView = memo(function ToolPartView({
   // 需要渲染权限组件的请求对象：优先用活跃的，否则用缓存的（resolved 态）
   const displayPermission = permissionRequest || (permissionResolved ? cachedPermissionRequest : undefined)
 
+  // Memoize once — shared by both the descriptive header (diffStats) and ToolBody.
+  const toolData = useMemo(() => extractToolData(part), [part])
+
   const bodyContent = (
     <>
-      {!hideToolBodyForPermission && <ToolBody part={part} />}
+      {!hideToolBodyForPermission && <ToolBody part={part} data={toolData} />}
       {displayPermission && (
         <div className={hideToolBodyForPermission && !permissionContentHidden ? '' : 'pt-2'}>
           <InlinePermission
@@ -177,10 +180,9 @@ export const ToolPartView = memo(function ToolPartView({
   )
 
   if (descriptive) {
-    const data = extractToolData(part)
-    const hasDiffFiles = !!data.files?.length
+    const hasDiffFiles = !!toolData.files?.length
     // diffStats 可能从 metadata 来，也可能需要从 diff 数据计算
-    const diffStats = data.diffStats || computeDiffStatsFromData(data)
+    const diffStats = toolData.diffStats || computeDiffStatsFromData(toolData)
 
     return (
       <div className="group py-0.5">
@@ -449,10 +451,9 @@ function computeDiffPair(before: string, after: string): { additions: number; de
 // ToolBody - 根据工具类型选择渲染器
 // ============================================
 
-function ToolBody({ part }: { part: ToolPart }) {
+const ToolBody = memo(function ToolBody({ part, data }: { part: ToolPart; data: ReturnType<typeof extractToolData> }) {
   const { tool } = part
   const lowerTool = tool.toLowerCase()
-  const data = extractToolData(part)
 
   if (lowerTool === 'task') {
     return <TaskRenderer part={part} data={data} />
@@ -469,7 +470,7 @@ function ToolBody({ part }: { part: ToolPart }) {
   }
 
   return <DefaultRenderer part={part} data={data} />
-}
+})
 
 function getTaskChildSessionId(part: ToolPart): string | undefined {
   if (part.tool.toLowerCase() !== 'task') return undefined

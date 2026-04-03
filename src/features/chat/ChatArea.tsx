@@ -33,6 +33,9 @@ import { useChatViewport } from './chatViewport'
 const MESSAGE_RENDER_ROOT_MARGIN = '150% 0px'
 const STICKY_RENDER_MESSAGE_COUNT = 8
 
+/** Stable no-op to avoid creating a new closure on every render. */
+const NOOP = () => {}
+
 interface ChatAreaProps {
   messages: Message[]
   sessionId?: string | null
@@ -404,7 +407,7 @@ export const ChatArea = memo(
                         onFork={onFork}
                         forkMessageId={forkTargetIdMap.get(msg.info.id)}
                         canUndo={canUndo}
-                        onEnsureParts={() => {}}
+                        onEnsureParts={NOOP}
                       />
                     </ViewportMessageItem>
                   ))}
@@ -422,7 +425,6 @@ export const ChatArea = memo(
           canUndo,
           messageMaxWidthClass,
           messagePaddingClass,
-          sessionId,
           turnDurationMap,
           forkTargetIdMap,
           allowStreamingLayoutAnimation,
