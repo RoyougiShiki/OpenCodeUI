@@ -201,7 +201,11 @@ function computeChatViewport(input: ComputedViewportInput): Omit<ChatViewportVal
       sidebarBehavior: overlayPanels ? 'overlay' : 'docked',
       rightPanelBehavior: overlayPanels ? 'overlay' : 'docked',
       bottomPanelBehavior: overlayPanels ? 'overlay' : 'docked',
-      outlineInteraction: overlayPanels || touchCapable ? 'touch' : 'pointer',
+      // Hybrid devices (touchscreen laptops, external touch monitors) can report
+      // touch capability even when the user is actively using a mouse. For the
+      // message outline rail, prefer pointer interaction whenever hover is
+      // available; only switch to touch when the UI itself prefers touch.
+      outlineInteraction: overlayPanels || preferTouchUi ? 'touch' : 'pointer',
       enableCollapsedInputDock: overlayPanels,
     },
     layout: {
