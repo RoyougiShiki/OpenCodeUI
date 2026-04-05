@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.4.3] - 2026-04-05
+
+- fix: improve pane navigation and sidebar drag affordances (a3dd889)
+- fix: keep input focus after sending (161e7b8)
+- fix: render bash tool commands inline (b6a6db2)
+- fix: remove sidebar footer divider (d6e59b9)
+- fix: prefer pointer outline interaction on hybrid devices (a20ebc0)
+
 ## [v0.4.2] - 2026-04-03
 
 - fix: switch folder recents to the clicked directory (d579407)
