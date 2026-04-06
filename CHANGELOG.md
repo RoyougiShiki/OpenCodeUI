@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.4.4] - 2026-04-06
+
+- fix: keep edit mode checkboxes compact on mobile (3d7c342)
+- feat: support shift-select in recents edit mode (6181f5f)
+- style: refine edit mode selection visuals (c7ca524)
+- feat: add batch edit mode for sidebar recents and rewrite folder drag-sort (a1326d5)
+- fix: persist panel layout and terminal positions (e1aeea8)
+
 ## [v0.4.3] - 2026-04-05
 
 - fix: improve pane navigation and sidebar drag affordances (a3dd889)
