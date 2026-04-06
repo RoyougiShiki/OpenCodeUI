@@ -616,6 +616,7 @@ function FolderRecentSection({
             <button
               type="button"
               aria-pressed={isProjectChecked}
+              data-compact
               data-selection-kind="project"
               data-selection-id={project.id}
               onMouseDown={e => {

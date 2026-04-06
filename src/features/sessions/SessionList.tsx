@@ -524,6 +524,7 @@ export function SessionListItem({
           <button
             type="button"
             aria-pressed={isChecked}
+            data-compact
             data-selection-kind="session"
             data-selection-id={session.id}
             onMouseDown={handleCheckMouseDown}
@@ -633,6 +634,7 @@ export function SessionListItem({
         <button
           type="button"
           aria-pressed={isChecked}
+          data-compact
           data-selection-kind="session"
           data-selection-id={session.id}
           onMouseDown={handleCheckMouseDown}
