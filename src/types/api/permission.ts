@@ -6,18 +6,6 @@ import type {
   QuestionRequest as SDKQuestionRequest,
 } from '@opencode-ai/sdk/v2/client'
 
-export type PermissionAction = 'allow' | 'ask' | 'deny'
-
-export interface PermissionRule {
-  permission: string
-  action: PermissionAction
-  pattern: string
-}
-
-export interface PermissionRuleset {
-  rules: PermissionRule[]
-}
-
 export type PermissionToolInfo = NonNullable<SDKPermissionRequest['tool']>
 
 export type PermissionRequest = SDKPermissionRequest

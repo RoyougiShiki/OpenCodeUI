@@ -26,12 +26,6 @@ export type FileDiff = SDKSnapshotFileDiff & {
   after?: string
 }
 
-export interface FileStatus {
-  path: string
-  status: 'modified' | 'added' | 'deleted' | 'renamed' | 'copied'
-  staged: boolean
-}
-
 export type SymbolRange = SDKSymbol['location']['range']
 
 export type SymbolLocation = SDKSymbol['location']

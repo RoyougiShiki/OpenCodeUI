@@ -19,13 +19,7 @@ export async function getMcpStatus(directory?: string): Promise<MCPStatusRespons
  */
 export async function addMcpServer(name: string, config: McpServerConfig, directory?: string): Promise<void> {
   const sdk = getSDKClient()
-  unwrap(
-    await sdk.mcp.add({
-      name,
-      config: config as unknown as undefined,
-      directory: formatPathForApi(directory),
-    } as Parameters<typeof sdk.mcp.add>[0]),
-  )
+  unwrap(await sdk.mcp.add({ name, config, directory: formatPathForApi(directory) }))
 }
 
 /**

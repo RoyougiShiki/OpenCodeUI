@@ -37,12 +37,10 @@ import {
   extractUserMessageContent,
   type ApiSession,
   type ApiAgent,
-  type ApiMessageWithParts,
-  type ApiUserMessage,
   type Attachment,
   type ModelInfo,
 } from '../api'
-import { getMessageText, type AssistantMessageInfo, type Message as UIMessage } from '../types/message'
+import { getMessageText, isUserMessage, type AssistantMessageInfo, type Message as UIMessage } from '../types/message'
 import { clipboardErrorHandler, copyTextToClipboard, createErrorHandler } from '../utils'
 import { serverStorage } from '../utils/perServerStorage'
 import { STORAGE_KEY_SELECTED_AGENT } from '../constants'
@@ -563,11 +561,10 @@ export function useChatSession({
 
         if (message.info.role !== 'user') return
 
-        const userInfo = message.info as unknown as ApiUserMessage
-        const content = extractUserMessageContent({
-          info: message.info as ApiMessageWithParts['info'],
-          parts: message.parts as unknown as ApiMessageWithParts['parts'],
-        })
+        if (!isUserMessage(message.info)) return
+
+        const userInfo = message.info
+        const content = extractUserMessageContent(message)
         const forkedSession = await forkSession(userInfo.sessionID, targetMessageId, effectiveDirectory)
 
         setRestoredContent({

@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { logger } from '../utils/logger'
+import { isUserUIMessage, toApiMessageWithParts } from '../utils/messageConversion'
 import { messageStore, type RevertState, type SessionState } from '../store'
 import {
   getSessionMessages,
@@ -16,7 +17,6 @@ import {
   revertMessage,
   unrevertSession,
   extractUserMessageContent,
-  type ApiUserMessage,
   type ApiMessageWithParts,
 } from '../api'
 import { sessionErrorHandler } from '../utils'
@@ -36,12 +36,7 @@ function mergeWithLocalStreamingMessages(
   if (!localState?.isStreaming || localState.messages.length === 0) return apiMessages
 
   const apiIds = new Set(apiMessages.map(m => m.info.id))
-  const localOnly = localState.messages
-    .filter(m => !apiIds.has(m.info.id))
-    .map(m => ({
-      info: m.info as ApiMessageWithParts['info'],
-      parts: m.parts as unknown as ApiMessageWithParts['parts'],
-    })) as ApiMessageWithParts[]
+  const localOnly = localState.messages.filter(m => !apiIds.has(m.info.id)).map(toApiMessageWithParts)
 
   if (localOnly.length === 0) return apiMessages
 
@@ -245,14 +240,11 @@ export function useSessionManager({ sessionId, directory, onLoadComplete, onErro
         if (revertIndex === -1) return
 
         // 收集被撤销的用户消息，构建 redo 历史
-        const revertedUserMessages = state.messages.slice(revertIndex).filter(m => m.info.role === 'user')
+        const revertedUserMessages = state.messages.slice(revertIndex).filter(isUserUIMessage)
 
         const history = revertedUserMessages.map(m => {
-          const content = extractUserMessageContent({
-            info: m.info as ApiMessageWithParts['info'],
-            parts: m.parts as unknown as ApiMessageWithParts['parts'],
-          })
-          const userInfo = m.info as unknown as ApiUserMessage
+          const content = extractUserMessageContent(m)
+          const userInfo = m.info
           return {
             messageId: m.info.id,
             text: content.text,

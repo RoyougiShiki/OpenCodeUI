@@ -2,6 +2,7 @@
 // Global Event Subscription (SSE) - Singleton Pattern
 // ============================================
 
+import type { EventTodoUpdated as SDKEventTodoUpdated } from '@opencode-ai/sdk/v2/client'
 import { getApiBaseUrl, getAuthHeader } from './http'
 import { normalizeTodoItems } from './todo'
 import { isTauri } from '../utils/tauri'
@@ -704,7 +705,7 @@ function handleEventForSubscriber(type: string, properties: unknown, callbacks: 
       callbacks.onVcsBranchUpdated?.(properties as VcsBranchUpdatedPayload)
       break
     case 'todo.updated': {
-      const data = properties as { sessionID: string; todos: Array<Record<string, unknown>> }
+      const data = properties as SDKEventTodoUpdated['properties']
       callbacks.onTodoUpdated?.({
         sessionID: data.sessionID,
         todos: normalizeTodoItems(data.todos),

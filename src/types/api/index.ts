@@ -8,14 +8,7 @@
 
 // Common types
 export type {
-  TimeInfo,
-  TokenUsage,
-  ModelRef,
-  PathInfo,
   ErrorInfo,
-  TextRange,
-  BadRequestError,
-  NotFoundError,
   ProviderAuthError,
   UnknownError,
   MessageOutputLengthError,
@@ -27,6 +20,7 @@ export type {
 export type {
   Session,
   SessionStatus,
+  SessionStatusMap,
   SessionSummary,
   SessionShare,
   SessionRevert,
@@ -81,9 +75,6 @@ export type {
 
 // Permission types
 export type {
-  PermissionAction,
-  PermissionRule,
-  PermissionRuleset,
   PermissionToolInfo,
   PermissionRequest,
   PermissionReply,
@@ -102,7 +93,6 @@ export type {
   FileStatusItem,
   FilePatch,
   PatchHunk,
-  FileStatus,
   Symbol,
   SymbolLocation,
   SymbolRange,
@@ -139,7 +129,6 @@ export { EventTypes } from './event'
 // Config types
 export type {
   Config,
-  KeybindsConfig,
   LogLevel,
   ServerConfig,
   PermissionConfig,
@@ -164,7 +153,11 @@ export type {
   MCPStatusNeedsClientRegistration,
   MCPResource,
   MCPStatusResponse,
+  McpServerConfig,
 } from './mcp'
+
+// Skill types
+export type { Skill, SkillList } from './skill'
 
 // PTY types
 export type { Pty, PtySize, PtyCreateParams, PtyUpdateParams } from './pty'

@@ -18,9 +18,9 @@ export async function getConfig(directory?: string): Promise<Config> {
 /**
  * 更新配置
  */
-export async function updateConfig(config: Partial<Config>, directory?: string): Promise<Config> {
+export async function updateConfig(config: Config, directory?: string): Promise<Config> {
   const sdk = getSDKClient()
-  return unwrap(await sdk.config.update({ directory: formatPathForApi(directory), config: config as Config }))
+  return unwrap(await sdk.config.update({ directory: formatPathForApi(directory), config }))
 }
 
 /**

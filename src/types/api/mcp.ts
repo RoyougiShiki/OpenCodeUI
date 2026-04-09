@@ -1,5 +1,8 @@
 import type {
+  McpLocalConfig as SDKMcpLocalConfig,
+  McpOAuthConfig as SDKMcpOAuthConfig,
   McpResource as SDKMcpResource,
+  McpRemoteConfig as SDKMcpRemoteConfig,
   McpStatus as SDKMcpStatus,
   McpStatusConnected as SDKMcpStatusConnected,
   McpStatusDisabled as SDKMcpStatusDisabled,
@@ -26,27 +29,10 @@ export interface MCPStatusResponse {
   [serverName: string]: MCPStatus
 }
 
-export interface McpLocalConfig {
-  type: 'local'
-  command: string[]
-  environment?: Record<string, string>
-  enabled?: boolean
-  timeout?: number
-}
+export type McpLocalConfig = SDKMcpLocalConfig
 
-export interface McpOAuthConfig {
-  clientId?: string
-  clientSecret?: string
-  scope?: string
-}
+export type McpOAuthConfig = SDKMcpOAuthConfig
 
-export interface McpRemoteConfig {
-  type: 'remote'
-  url: string
-  enabled?: boolean
-  headers?: Record<string, string>
-  oauth?: McpOAuthConfig | false
-  timeout?: number
-}
+export type McpRemoteConfig = SDKMcpRemoteConfig
 
 export type McpServerConfig = McpLocalConfig | McpRemoteConfig

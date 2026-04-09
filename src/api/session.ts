@@ -249,5 +249,5 @@ export type ApiTodo = TodoItem
 export async function getSessionTodos(sessionId: string, directory?: string): Promise<ApiTodo[]> {
   const sdk = getSDKClient()
   const todos = unwrap(await sdk.session.todo({ sessionID: sessionId, directory: formatPathForApi(directory) }))
-  return normalizeTodoItems(todos as Array<Record<string, unknown>>)
+  return normalizeTodoItems(todos)
 }

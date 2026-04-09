@@ -8,9 +8,10 @@
 // 3. Undo/Redo 通过 revertState 实现
 // 4. RAF 批量通知 React 组件更新
 
-import type { Message, Part, MessageInfo, FilePart, AgentPart } from '../types/message'
+import type { Message, Part, FilePart, AgentPart } from '../types/message'
 import type { ApiMessageWithParts, ApiMessage, ApiPart, ApiSession, Attachment } from '../api/types'
 import { logger } from '../utils/logger'
+import { isUserUIMessage, toUIMessage, toUIMessageInfo, toUIPart } from '../utils/messageConversion'
 import type { RevertState, RevertHistoryItem, SessionState, SendRollbackSnapshot } from './messageStoreTypes'
 
 // Re-export types for consumers
@@ -278,7 +279,7 @@ class MessageStore {
   ) {
     const state = this.ensureSession(sessionId)
 
-    state.messages = apiMessages.map(this.convertApiMessage)
+    state.messages = apiMessages.map(toUIMessage)
     state.loadState = 'loaded'
     state.hasMoreHistory = options?.hasMoreHistory ?? false
     state.directory = options?.directory ?? ''
@@ -290,22 +291,17 @@ class MessageStore {
     if (options?.revertState?.messageID) {
       const revertIndex = state.messages.findIndex(m => m.info.id === options.revertState!.messageID)
       if (revertIndex !== -1) {
-        const revertedUserMessages = state.messages.slice(revertIndex).filter(m => m.info.role === 'user')
+        const revertedUserMessages = state.messages.slice(revertIndex).filter(isUserUIMessage)
         state.revertState = {
           messageId: options.revertState.messageID,
           history: revertedUserMessages.map(m => {
-            const userInfo = m.info as MessageInfo & {
-              model?: RevertHistoryItem['model']
-              variant?: string
-              agent?: string
-            }
             return {
               messageId: m.info.id,
               text: this.extractUserText(m),
               attachments: this.extractUserAttachments(m),
-              model: userInfo.model,
-              variant: userInfo.variant,
-              agent: userInfo.agent,
+              model: m.info.model,
+              variant: m.info.variant,
+              agent: m.info.agent,
             }
           }),
         }
@@ -317,8 +313,7 @@ class MessageStore {
     // Streaming 检测
     const lastMsg = state.messages[state.messages.length - 1]
     if (lastMsg?.info.role === 'assistant') {
-      const assistantInfo = lastMsg.info as { time?: { completed?: number } }
-      const isLastMsgStreaming = !assistantInfo.time?.completed
+      const isLastMsgStreaming = !lastMsg.info.time?.completed
       state.isStreaming = isLastMsgStreaming
       if (isLastMsgStreaming) {
         const lastIndex = state.messages.length - 1
@@ -335,7 +330,7 @@ class MessageStore {
     const state = this.sessions.get(sessionId)
     if (!state) return
 
-    const newMessages = apiMessages.map(this.convertApiMessage)
+    const newMessages = apiMessages.map(toUIMessage)
 
     // 去重
     const existingIds = new Set(state.messages.map(m => m.info.id))
@@ -383,7 +378,7 @@ class MessageStore {
 
     if (existingIndex >= 0) {
       const oldMessage = state.messages[existingIndex]
-      const newMessage = { ...oldMessage, info: apiMsg as MessageInfo }
+      const newMessage = { ...oldMessage, info: toUIMessageInfo(apiMsg) }
       state.messages = [
         ...state.messages.slice(0, existingIndex),
         newMessage,
@@ -391,7 +386,7 @@ class MessageStore {
       ]
     } else {
       const newMsg: Message = {
-        info: apiMsg as MessageInfo,
+        info: toUIMessageInfo(apiMsg),
         parts: [],
         isStreaming: apiMsg.role === 'assistant',
       }
@@ -416,9 +411,9 @@ class MessageStore {
     const existingPartIndex = newParts.findIndex(p => p.id === apiPart.id)
 
     if (existingPartIndex >= 0) {
-      newParts[existingPartIndex] = apiPart as Part
+      newParts[existingPartIndex] = toUIPart(apiPart)
     } else {
-      newParts.push(apiPart as Part)
+      newParts.push(toUIPart(apiPart))
     }
 
     const newMessage = { ...oldMessage, parts: newParts }
@@ -615,15 +610,6 @@ class MessageStore {
   // ============================================
   // Private Helpers
   // ============================================
-
-  private convertApiMessage = (apiMsg: ApiMessageWithParts): Message => {
-    return {
-      info: apiMsg.info as MessageInfo,
-      parts: apiMsg.parts as Part[],
-      isStreaming: false,
-    }
-  }
-
   private extractUserText(message: Message): string {
     return message.parts
       .filter((p): p is Part & { type: 'text' } => p.type === 'text' && !p.synthetic)

@@ -3,7 +3,8 @@
 // ============================================
 
 import { useState, useCallback } from 'react'
-import type { Message, Part } from '../types/message'
+import type { Message } from '../types/message'
+import { toUIMessage } from '../utils/messageConversion'
 import {
   getSessionMessages,
   revertMessage,
@@ -11,19 +12,9 @@ import {
   extractUserMessageContent,
   type ApiSession,
   type RevertedMessage,
-  type ApiMessageWithParts,
 } from '../api'
 import { revertErrorHandler } from '../utils'
 import { INITIAL_MESSAGE_LIMIT } from '../constants'
-
-/** 将 API 消息转换为 UI Message */
-function convertApiToMessage(apiMsg: ApiMessageWithParts): Message {
-  return {
-    info: apiMsg.info as Message['info'],
-    parts: apiMsg.parts as Part[],
-    isStreaming: false,
-  }
-}
 
 export interface RevertHistoryItem {
   messageId: string
@@ -135,7 +126,7 @@ export function useRevertState({
 
         // 8. 过滤掉被撤销的消息及其后的所有消息
         const filteredApiMessages = apiMessages.slice(0, targetIndex)
-        setMessages(filteredApiMessages.map(convertApiToMessage))
+        setMessages(filteredApiMessages.map(toUIMessage))
 
         // 9. 滚动到末尾，让用户看到"断点"
         // 等 React 渲染完成后再滚动
@@ -181,10 +172,10 @@ export function useRevertState({
       if (updatedSession.revert?.messageID) {
         const revertedIndex = apiMessages.findIndex(m => m.info.id === updatedSession.revert!.messageID)
         const filteredApiMessages = apiMessages.slice(0, revertedIndex)
-        setMessages(filteredApiMessages.map(convertApiToMessage))
+        setMessages(filteredApiMessages.map(toUIMessage))
       } else {
         // 没有 revert 状态，显示所有消息
-        setMessages(apiMessages.map(convertApiToMessage))
+        setMessages(apiMessages.map(toUIMessage))
       }
     } catch (error) {
       revertErrorHandler('redo', error)
@@ -205,7 +196,7 @@ export function useRevertState({
 
       // 重新加载所有消息
       const apiMessages = await getSessionMessages(routeSessionId, Math.max(INITIAL_MESSAGE_LIMIT, 200))
-      setMessages(apiMessages.map(convertApiToMessage))
+      setMessages(apiMessages.map(toUIMessage))
     } catch (error) {
       revertErrorHandler('redo all', error)
     }

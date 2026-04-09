@@ -14,10 +14,6 @@ import type {
   ServerConfig as SDKServerConfig,
 } from '@opencode-ai/sdk/v2/client'
 
-export interface KeybindsConfig {
-  [action: string]: string
-}
-
 export type LogLevel = SDKLogLevel
 
 export type ServerConfig = SDKServerConfig
