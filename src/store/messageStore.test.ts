@@ -113,7 +113,7 @@ describe('messageStore', () => {
     messageStore.handlePartRemoved({
       sessionID: 'session-1',
       messageID: 'message-1',
-      id: 'part-message-1',
+      partID: 'part-message-1',
     })
 
     const state = messageStore.getSessionState('session-1')

@@ -14,6 +14,7 @@ import { todoStore } from './store/todoStore'
 import { autoApproveStore } from './store/autoApproveStore'
 import { serviceStore } from './store/serviceStore'
 import { reconnectSSE } from './api/events'
+import { getSDKClientAsync, invalidateSDKClient } from './api/sdk'
 import { resetPathModeCache } from './utils/directoryUtils'
 import { isTauri } from './utils/tauri'
 import { apiErrorHandler, globalErrorHandler } from './utils/errorHandling'
@@ -58,6 +59,11 @@ if (document.readyState === 'loading') {
 
 // 注册 server 切换 → 清理所有 server-specific 状态 + SSE 重连
 serverStore.onServerChange(() => {
+  invalidateSDKClient()
+  if (isTauri()) {
+    void getSDKClientAsync().catch(err => apiErrorHandler('reinitialize sdk client after server switch', err))
+  }
+
   // 1. 清空内存中的 session/消息数据
   messageStore.clearAll()
   childSessionStore.clearAll()
@@ -129,14 +135,22 @@ window.addEventListener('beforeunload', _event => {
   console.trace()
 })
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Suspense fallback={null}>
-      <DirectoryProvider>
-        <SessionProvider>
-          <App />
-        </SessionProvider>
-      </DirectoryProvider>
-    </Suspense>
-  </StrictMode>,
-)
+async function bootstrap() {
+  if (isTauri()) {
+    await getSDKClientAsync().catch(err => apiErrorHandler('initialize sdk client', err))
+  }
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <Suspense fallback={null}>
+        <DirectoryProvider>
+          <SessionProvider>
+            <App />
+          </SessionProvider>
+        </DirectoryProvider>
+      </Suspense>
+    </StrictMode>,
+  )
+}
+
+void bootstrap()

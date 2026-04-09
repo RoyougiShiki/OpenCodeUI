@@ -447,7 +447,7 @@ class MessageStore {
     this.notify()
   }
 
-  handlePartRemoved(data: { id: string; messageID: string; sessionID: string }) {
+  handlePartRemoved(data: { partID: string; messageID: string; sessionID: string }) {
     const state = this.sessions.get(data.sessionID)
     if (!state) return
 
@@ -455,9 +455,9 @@ class MessageStore {
     if (msgIndex === -1) return
 
     const oldMessage = state.messages[msgIndex]
-    if (!oldMessage.parts.some(p => p.id === data.id)) return
+    if (!oldMessage.parts.some(p => p.id === data.partID)) return
 
-    const newMessage = { ...oldMessage, parts: oldMessage.parts.filter(p => p.id !== data.id) }
+    const newMessage = { ...oldMessage, parts: oldMessage.parts.filter(p => p.id !== data.partID) }
     state.messages = [...state.messages.slice(0, msgIndex), newMessage, ...state.messages.slice(msgIndex + 1)]
     this.notify()
   }

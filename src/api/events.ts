@@ -3,6 +3,7 @@
 // ============================================
 
 import { getApiBaseUrl, getAuthHeader } from './http'
+import { normalizeTodoItems } from './todo'
 import { isTauri } from '../utils/tauri'
 import type {
   ApiMessageWithParts,
@@ -14,11 +15,13 @@ import type {
   GlobalEvent,
   EventCallbacks,
   PartDeltaPayload,
+  PartRemovedPayload,
   SessionStatusPayload,
   WorktreeReadyPayload,
   WorktreeFailedPayload,
   VcsBranchUpdatedPayload,
   TodoUpdatedPayload,
+  QuestionAnswer,
 } from './types'
 
 // ============================================
@@ -655,7 +658,7 @@ function handleEventForSubscriber(type: string, properties: unknown, callbacks: 
       break
     }
     case 'message.part.removed':
-      callbacks.onPartRemoved?.(properties as { id: string; messageID: string; sessionID: string })
+      callbacks.onPartRemoved?.(properties as PartRemovedPayload)
       break
     case 'session.updated': {
       const data = properties as { info: ApiSession }
@@ -686,7 +689,7 @@ function handleEventForSubscriber(type: string, properties: unknown, callbacks: 
       callbacks.onQuestionAsked?.(properties as ApiQuestionRequest)
       break
     case 'question.replied':
-      callbacks.onQuestionReplied?.(properties as { sessionID: string; requestID: string; answers: string[][] })
+      callbacks.onQuestionReplied?.(properties as { sessionID: string; requestID: string; answers: QuestionAnswer[] })
       break
     case 'question.rejected':
       callbacks.onQuestionRejected?.(properties as { sessionID: string; requestID: string })
@@ -700,9 +703,14 @@ function handleEventForSubscriber(type: string, properties: unknown, callbacks: 
     case 'vcs.branch.updated':
       callbacks.onVcsBranchUpdated?.(properties as VcsBranchUpdatedPayload)
       break
-    case 'todo.updated':
-      callbacks.onTodoUpdated?.(properties as TodoUpdatedPayload)
+    case 'todo.updated': {
+      const data = properties as { sessionID: string; todos: Array<Record<string, unknown>> }
+      callbacks.onTodoUpdated?.({
+        sessionID: data.sessionID,
+        todos: normalizeTodoItems(data.todos),
+      } satisfies TodoUpdatedPayload)
       break
+    }
     default:
       // 忽略其他事件类型
       break

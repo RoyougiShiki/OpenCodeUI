@@ -4,6 +4,7 @@
 // ============================================
 
 import type { Session, SessionStatus } from './session'
+import type { FileDiff } from './file'
 import type { Message, Part } from './message'
 import type { PermissionRequest, PermissionReply, QuestionRequest, QuestionAnswer } from './permission'
 import type { Project } from './project'
@@ -29,17 +30,11 @@ export interface SessionStatusPayload {
 
 export interface SessionDiffPayload {
   sessionID: string
-  diffs: Array<{
-    file: string
-    before: string
-    after: string
-    additions: number
-    deletions: number
-  }>
+  diff: FileDiff[]
 }
 
 export interface PartRemovedPayload {
-  id: string
+  partID: string
   messageID: string
   sessionID: string
 }
@@ -70,6 +65,7 @@ export interface QuestionRejectedPayload {
 }
 
 export interface TodoItem {
+  // SDK 的 Todo 没有 id，这里是前端适配层补上的稳定 key
   id: string
   content: string
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled'

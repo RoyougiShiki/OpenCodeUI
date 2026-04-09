@@ -85,6 +85,7 @@ export type {
   GlobalEvent,
   EventCallbacks,
   PartDeltaPayload,
+  PartRemovedPayload,
   SessionStatusPayload,
   WorktreeReadyPayload,
   WorktreeFailedPayload,

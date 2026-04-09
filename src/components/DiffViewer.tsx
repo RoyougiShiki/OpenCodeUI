@@ -207,15 +207,17 @@ function CollapsedBar({
   count,
   t,
   onExpand,
+  height = LINE_HEIGHT + 4,
 }: {
   count: number
   t: (key: string, opts?: Record<string, unknown>) => string
   onExpand?: () => void
+  height?: number
 }) {
   return (
     <div
-      className="flex items-center justify-center text-[11px] text-text-500 select-none bg-bg-200/40 border-y border-border-100/30 cursor-pointer hover:bg-bg-200/60 transition-colors"
-      style={{ height: LINE_HEIGHT + 4 }}
+      className="box-border flex items-center justify-center text-[11px] text-text-500 select-none bg-bg-200/40 border-y border-border-100/30 cursor-pointer hover:bg-bg-200/60 transition-colors"
+      style={{ height }}
       onClick={onExpand}
     >
       <span className="px-3 py-0.5 rounded bg-bg-300/50 text-text-400 font-mono">
@@ -646,19 +648,30 @@ const SplitDiffView = memo(function SplitDiffView({
 
     if (isCollapsed(item)) {
       const barNode = (
+        <CollapsedBar key={i} count={item.count} t={t} onExpand={() => handleExpand(item.id)} height={LINE_HEIGHT} />
+      )
+      leftGutterRows.push(
         <div
           key={i}
-          className="flex items-center justify-center text-[11px] text-text-500 select-none bg-bg-200/40 cursor-pointer hover:bg-bg-200/60 transition-colors"
+          className="box-border bg-bg-200/40 border-y border-border-100/30"
           style={{ height: LINE_HEIGHT }}
-          onClick={() => handleExpand(item.id)}
-        >
-          <span className="px-2 text-text-400 font-mono">{t('diffViewer.linesUnchanged', { count: item.count })}</span>
-        </div>
+        />,
       )
-      leftGutterRows.push(<div key={i} className="bg-bg-200/40" style={{ height: LINE_HEIGHT }} />)
       leftContentRows.push(barNode)
-      rightGutterRows.push(<div key={i} className="bg-bg-200/40" style={{ height: LINE_HEIGHT }} />)
-      rightContentRows.push(<div key={i} className="bg-bg-200/40" style={{ height: LINE_HEIGHT }} />)
+      rightGutterRows.push(
+        <div
+          key={i}
+          className="box-border bg-bg-200/40 border-y border-border-100/30"
+          style={{ height: LINE_HEIGHT }}
+        />,
+      )
+      rightContentRows.push(
+        <div
+          key={i}
+          className="box-border bg-bg-200/40 border-y border-border-100/30"
+          style={{ height: LINE_HEIGHT }}
+        />,
+      )
       continue
     }
 
@@ -968,16 +981,15 @@ const UnifiedDiffView = memo(function UnifiedDiffView({
     const item = displayLines[i]
 
     if (isCollapsed(item)) {
-      gutterRows.push(<div key={i} className="bg-bg-200/40" style={{ height: LINE_HEIGHT }} />)
-      contentRows.push(
+      gutterRows.push(
         <div
           key={i}
-          className="flex items-center text-[11px] text-text-500 select-none bg-bg-200/40 cursor-pointer hover:bg-bg-200/60 transition-colors"
+          className="box-border bg-bg-200/40 border-y border-border-100/30"
           style={{ height: LINE_HEIGHT }}
-          onClick={() => handleExpand(item.id)}
-        >
-          <span className="px-2 text-text-400 font-mono">{t('diffViewer.linesUnchanged', { count: item.count })}</span>
-        </div>,
+        />,
+      )
+      contentRows.push(
+        <CollapsedBar key={i} count={item.count} t={t} onExpand={() => handleExpand(item.id)} height={LINE_HEIGHT} />,
       )
       continue
     }

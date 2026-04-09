@@ -4,10 +4,12 @@
 // ============================================
 
 import { getSDKClient, unwrap } from './sdk'
+import { normalizeTodoItems } from './todo'
 import { formatPathForApi } from '../utils/directoryUtils'
 import { getSessionMessages } from './message'
 import type { ApiSession, SessionListParams, FileDiff, ApiMessageWithParts, ApiUserMessage } from './types'
 import type { SessionStatusMap } from '../types/api/session'
+import type { TodoItem } from '../types/api/event'
 
 // ============================================
 // Session Status & Diff
@@ -242,12 +244,7 @@ export async function getSessionChildren(sessionId: string, directory?: string):
 /**
  * Session Todo
  */
-export interface ApiTodo {
-  id: string
-  content: string
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
-  priority: 'high' | 'medium' | 'low'
-}
+export type ApiTodo = TodoItem
 
 /**
  * 获取 session 的 todo 列表
@@ -256,10 +253,5 @@ export interface ApiTodo {
 export async function getSessionTodos(sessionId: string, directory?: string): Promise<ApiTodo[]> {
   const sdk = getSDKClient()
   const todos = unwrap(await sdk.session.todo({ sessionID: sessionId, directory: formatPathForApi(directory) }))
-  return (todos ?? []).map((t: Record<string, unknown>, i: number) => ({
-    id: `todo-${i}-${String(t.content ?? '').slice(0, 20)}`,
-    content: t.content as string,
-    status: t.status as ApiTodo['status'],
-    priority: t.priority as ApiTodo['priority'],
-  }))
+  return normalizeTodoItems(todos as Array<Record<string, unknown>>)
 }

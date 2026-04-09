@@ -5,6 +5,7 @@
 
 import { getSDKClient, unwrap } from './sdk'
 import { formatPathForApi } from '../utils/directoryUtils'
+import type { ModelInfo, ApiProject, ApiPath } from './types'
 
 // Re-export all types
 export * from './types'

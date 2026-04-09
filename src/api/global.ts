@@ -3,6 +3,7 @@
 // ============================================
 
 import { getSDKClient, unwrap } from './sdk'
+import { formatPathForApi } from '../utils/directoryUtils'
 
 export interface HealthInfo {
   healthy: boolean
@@ -28,8 +29,9 @@ export async function disposeGlobal(): Promise<boolean> {
 
 /**
  * 释放当前实例
- * 注意：SDK 没有 /instance/dispose 端点，用 global.dispose 代替
  */
-export async function disposeInstance(_directory?: string): Promise<boolean> {
-  return disposeGlobal()
+export async function disposeInstance(directory?: string): Promise<boolean> {
+  const sdk = getSDKClient()
+  unwrap(await sdk.instance.dispose({ directory: formatPathForApi(directory) }))
+  return true
 }
