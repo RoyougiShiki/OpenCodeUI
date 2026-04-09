@@ -149,7 +149,7 @@ export type EventType = SDKGlobalEvent['payload']['type']
 
 export interface EventCallbacks {
   onMessageUpdated?: (message: Message) => void
-  onPartUpdated?: (part: Part, delta?: string) => void
+  onPartUpdated?: (part: Part) => void
   onPartDelta?: (data: PartDeltaPayload) => void
   onPartRemoved?: (data: PartRemovedPayload) => void
   onSessionCreated?: (session: Session) => void

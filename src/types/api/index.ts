@@ -41,7 +41,6 @@ export type {
   TextPart,
   ReasoningPart,
   ToolPart,
-  ToolState,
   FilePart,
   FileSource,
   FileSourceType,

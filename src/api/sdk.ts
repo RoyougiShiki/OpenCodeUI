@@ -97,7 +97,7 @@ export function invalidateSDKClient(): void {
  * 我们的上层 API 函数期望直接返回数据，所以需要 unwrap
  */
 export function unwrap<T>(result: { data?: T; error?: unknown }): T {
-  if (result.error !== undefined) {
+  if (result.error != null) {
     const err = result.error
     if (err instanceof Error) throw err
     if (typeof err === 'string') throw new Error(err)

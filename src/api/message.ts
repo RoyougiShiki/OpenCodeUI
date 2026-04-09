@@ -241,5 +241,5 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
  */
 export async function sendMessageAsync(params: SendMessageParams): Promise<void> {
   const sdk = getSDKClient()
-  await sdk.session.promptAsync(buildPromptParams(params))
+  unwrap(await sdk.session.promptAsync(buildPromptParams(params)))
 }

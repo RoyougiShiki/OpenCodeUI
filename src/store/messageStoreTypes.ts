@@ -15,7 +15,7 @@ export interface RevertHistoryItem {
   messageId: string
   text: string
   attachments: unknown[]
-  model?: { providerID: string; modelID: string }
+  model?: { providerID: string; modelID: string; variant?: string }
   variant?: string
   agent?: string
 }
