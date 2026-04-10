@@ -67,7 +67,7 @@ pub async fn pty_connect(
         tokio::select! {
             outbound = rx.recv() => match outbound {
                 Some(PtyCommand::Send(data)) => {
-                    if let Err(error) = write.send(Message::text(data)).await {
+                    if let Err(error) = write.send(Message::Text(data.into())).await {
                         let message = format!("PTY write failed: {}", error);
                         send_event(&on_event, PtyEvent::Error { message: message.clone() });
                         state.remove_if_current(&key, conn_id);
@@ -95,7 +95,7 @@ pub async fn pty_connect(
                         });
                     }
                     Message::Ping(payload) => {
-                        if let Err(error) = write.send(Message::pong(payload)).await {
+                        if let Err(error) = write.send(Message::Pong(payload)).await {
                             let message = format!("PTY pong failed: {}", error);
                             send_event(&on_event, PtyEvent::Error { message: message.clone() });
                             state.remove_if_current(&key, conn_id);
