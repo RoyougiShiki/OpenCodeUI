@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.4.9] - 2026-04-11
+
+- fix: prevent model restoration from overriding user selection during streaming (0c799e3)
+- fix: return 404 for /api on frontend-only image (b07a30e)
+- fix: align UI hook dependencies with live state (63a2b87)
+- refactor: remove dead UI cleanup leftovers (5b82694)
+- fix: remove unused resolveAlias function in shiki module (81d5fdb)
+- perf: lazy-load shiki languages and optimize Tauri release profile (1be34e0)
+- fix: PTY WebSocket auth fails behind reverse proxy (4bbb3c5)
+- fix: prevent session fetch storm on SSE reconnect in SessionContext (ae26e6c)
+- refactor: unify SSE and PTY into a single transparent bridge (73e638f)
+- fix: use tungstenite message variants for PTY bridge (6210294)
+- fix: bridge Tauri mobile PTY through native client (e33bde5)
+
 ## [v0.4.8] - 2026-04-10
 
 - feat: queue follow-up messages behind active turns (90756e3)
