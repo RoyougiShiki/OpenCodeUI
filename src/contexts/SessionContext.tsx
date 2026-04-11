@@ -28,6 +28,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const currentDirectoryRef = useRef(currentDirectory)
   const searchRef = useRef(search)
   const isLoadingMoreRef = useRef(false) // 防止并发 loadMore
+  const isFetchingRef = useRef(false) // 防止 onReconnected 密集触发时重复请求
   const fetchSessionsRef = useRef<() => Promise<void>>(() => Promise.resolve())
   const currentLimitRef = useRef(30) // 当前 limit，loadMore 时递增
 
@@ -47,6 +48,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     async (params: SessionListParams & { append?: boolean } = {}) => {
       const { append = false, ...queryParams } = params
       const requestId = ++requestIdRef.current
+      isFetchingRef.current = true
 
       if (append) {
         setIsLoadingMore(true)
@@ -87,6 +89,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         sessionErrorHandler('fetch sessions', e)
       } finally {
+        isFetchingRef.current = false
         if (requestId === requestIdRef.current) {
           setIsLoading(false)
           setIsLoadingMore(false)
@@ -174,11 +177,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         todoStore.setTodos(data.sessionID, data.todos)
       },
       onReconnected: () => {
-        // SSE 重连成功后
+        // SSE 重连成功后，如果已经有请求在进行中，跳过重复拉取
+        if (isFetchingRef.current) return
         // 清空旧 session 列表，重新从服务器拉取
         setSessions([])
-
-        // 重新加载 session 列表
         fetchSessionsRef.current()
       },
     })
