@@ -60,6 +60,13 @@ function createStream(chunks: Uint8Array[]): ReadableStream<Uint8Array> {
   })
 }
 
+function createFetchResponse(chunks: Uint8Array[]): Pick<Response, 'ok' | 'body'> {
+  return {
+    ok: true,
+    body: createStream(chunks) as Response['body'],
+  }
+}
+
 describe('subscribeToEvents', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -71,10 +78,7 @@ describe('subscribeToEvents', () => {
   })
 
   it('preserves Chinese text when UTF-8 bytes are split across chunks', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      body: createStream(createEventChunks('中文', 2)),
-    } satisfies Partial<Response>)
+    const fetchMock = vi.fn().mockResolvedValue(createFetchResponse(createEventChunks('中文', 2)))
     vi.stubGlobal('fetch', fetchMock)
 
     const { subscribeToEvents } = await import('./events')
@@ -96,10 +100,7 @@ describe('subscribeToEvents', () => {
   })
 
   it('preserves four-byte characters when split in the middle', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      body: createStream(createEventChunks('𠮷😀', 3)),
-    } satisfies Partial<Response>)
+    const fetchMock = vi.fn().mockResolvedValue(createFetchResponse(createEventChunks('𠮷😀', 3)))
     vi.stubGlobal('fetch', fetchMock)
 
     const { subscribeToEvents } = await import('./events')
