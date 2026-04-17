@@ -108,7 +108,13 @@
     "duration": "Duration",
     "showResponseTime": "Show message response time",
     "totalDuration": "Total Duration",
-    "showTurnElapsed": "Show full turn elapsed time"
+    "showTurnElapsed": "Show full turn elapsed time",
+    "completedAt": "Completed At",
+    "showCompletedAt": "Show message completion time",
+    "completedAtFormat": "Completion Time Format",
+    "completedAtFormatDesc": "Choose whether to show only time or full date and time",
+    "completedAtTimeOnly": "Time Only",
+    "completedAtDateTime": "Date & Time"
   },
   "models": {
     "visibility": "Model Visibility",

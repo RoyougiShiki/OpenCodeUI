@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import { THEME_SWITCH_DISABLE_MS } from '../constants'
 import { themeStore, type ColorMode } from '../store/themeStore'
 import type { StepFinishDisplay } from '../store/themeStore'
-import type { ReasoningDisplayMode, DiffStyle, ToolCardStyle } from '../store/themeStore'
+import type { ReasoningDisplayMode, DiffStyle, ToolCardStyle, CompletedAtFormat } from '../store/themeStore'
 
 // 保持向后兼容的类型别名
 export type ThemeMode = ColorMode
@@ -134,6 +134,10 @@ export function useTheme() {
     themeStore.setStepFinishDisplay(display)
   }, [])
 
+  const setCompletedAtFormat = useCallback((format: CompletedAtFormat) => {
+    themeStore.setCompletedAtFormat(format)
+  }, [])
+
   // ---- Reasoning Display Mode ----
 
   const setReasoningDisplayMode = useCallback((mode: ReasoningDisplayMode) => {
@@ -213,6 +217,8 @@ export function useTheme() {
     // step-finish 信息栏显示
     stepFinishDisplay: state.stepFinishDisplay,
     setStepFinishDisplay,
+    completedAtFormat: state.completedAtFormat,
+    setCompletedAtFormat,
 
     // 思考内容显示样式
     reasoningDisplayMode: state.reasoningDisplayMode,

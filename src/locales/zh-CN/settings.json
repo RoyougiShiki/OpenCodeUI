@@ -108,7 +108,13 @@
     "duration": "耗时",
     "showResponseTime": "显示消息响应时间",
     "totalDuration": "总耗时",
-    "showTurnElapsed": "显示完整轮次耗时"
+    "showTurnElapsed": "显示完整轮次耗时",
+    "completedAt": "完成时刻",
+    "showCompletedAt": "显示消息完成时间",
+    "completedAtFormat": "完成时刻格式",
+    "completedAtFormatDesc": "选择只显示时间，或显示完整日期和时间",
+    "completedAtTimeOnly": "仅时间",
+    "completedAtDateTime": "日期时间"
   },
   "models": {
     "visibility": "模型可见性",

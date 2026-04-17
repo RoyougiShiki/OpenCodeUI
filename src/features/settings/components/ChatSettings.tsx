@@ -3,7 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { PathAutoIcon, PathUnixIcon, PathWindowsIcon } from '../../../components/Icons'
 import { usePathMode, useIsMobile } from '../../../hooks'
 import { autoApproveStore } from '../../../store'
-import { themeStore, type ReasoningDisplayMode, type ToolCardStyle } from '../../../store/themeStore'
+import {
+  themeStore,
+  type ReasoningDisplayMode,
+  type ToolCardStyle,
+  type CompletedAtFormat,
+} from '../../../store/themeStore'
 import { Toggle, SegmentedControl, SettingRow, SettingsSection } from './SettingsUI'
 import type { PathMode } from '../../../utils/directoryUtils'
 
@@ -13,6 +18,7 @@ export function ChatSettings() {
   const [autoApprove, setAutoApprove] = useState(autoApproveStore.enabled)
   const [collapseUserMessages, setCollapseUserMessages] = useState(themeStore.collapseUserMessages)
   const [stepFinishDisplay, setStepFinishDisplay] = useState(themeStore.stepFinishDisplay)
+  const [completedAtFormat, setCompletedAtFormat] = useState(themeStore.completedAtFormat)
   const [reasoningDisplayMode, setReasoningDisplayMode] = useState(themeStore.reasoningDisplayMode)
   const [descriptiveToolSteps, setDescriptiveToolSteps] = useState(themeStore.descriptiveToolSteps)
   const [inlineToolRequests, setInlineToolRequests] = useState(themeStore.inlineToolRequests)
@@ -198,6 +204,7 @@ export function ChatSettings() {
             { key: 'cost', label: t('chat.cost'), desc: t('chat.showApiCost') },
             { key: 'duration', label: t('chat.duration'), desc: t('chat.showResponseTime') },
             { key: 'turnDuration', label: t('chat.totalDuration'), desc: t('chat.showTurnElapsed') },
+            { key: 'completedAt', label: t('chat.completedAt'), desc: t('chat.showCompletedAt') },
           ] as const
         ).map(({ key, label, desc }) => (
           <SettingRow
@@ -220,6 +227,25 @@ export function ChatSettings() {
             />
           </SettingRow>
         ))}
+
+        {stepFinishDisplay.completedAt && (
+          <div>
+            <p className="text-[length:var(--fs-md)] text-text-100 mb-1.5">{t('chat.completedAtFormat')}</p>
+            <p className="text-[length:var(--fs-sm)] text-text-400 mb-3">{t('chat.completedAtFormatDesc')}</p>
+            <SegmentedControl
+              value={completedAtFormat}
+              options={[
+                { value: 'time', label: t('chat.completedAtTimeOnly') },
+                { value: 'dateTime', label: t('chat.completedAtDateTime') },
+              ]}
+              onChange={v => {
+                const next = v as CompletedAtFormat
+                setCompletedAtFormat(next)
+                themeStore.setCompletedAtFormat(next)
+              }}
+            />
+          </div>
+        )}
       </SettingsSection>
     </div>
   )

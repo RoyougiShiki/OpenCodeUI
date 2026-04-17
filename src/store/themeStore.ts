@@ -63,7 +63,10 @@ export interface StepFinishDisplay {
   turnDuration: boolean
   agent: boolean
   model: boolean
+  completedAt: boolean
 }
+
+export type CompletedAtFormat = 'time' | 'dateTime'
 
 export type ReasoningDisplayMode = 'capsule' | 'italic' | 'markdown'
 
@@ -90,7 +93,10 @@ const DEFAULT_STEP_FINISH_DISPLAY: StepFinishDisplay = {
   turnDuration: true,
   agent: false,
   model: false,
+  completedAt: false,
 }
+
+const DEFAULT_COMPLETED_AT_FORMAT: CompletedAtFormat = 'time'
 
 const DEFAULT_REASONING_DISPLAY_MODE: ReasoningDisplayMode = 'capsule'
 const DEFAULT_DIFF_STYLE: DiffStyle = 'markers'
@@ -119,6 +125,8 @@ export interface ThemeState {
   collapseUserMessages: boolean
   /** step-finish 信息栏显示开关 */
   stepFinishDisplay: StepFinishDisplay
+  /** 完成时刻显示格式 */
+  completedAtFormat: CompletedAtFormat
   /** 思考内容展示样式 */
   reasoningDisplayMode: ReasoningDisplayMode
   /** 宽模式 */
@@ -156,6 +164,7 @@ const STORAGE_KEY_COLOR_MODE = 'theme-mode'
 const STORAGE_KEY_CUSTOM_CSS = 'theme-custom-css'
 const STORAGE_KEY_COLLAPSE_USER_MESSAGES = 'collapse-user-messages'
 const STORAGE_KEY_STEP_FINISH_DISPLAY = 'step-finish-display'
+const STORAGE_KEY_COMPLETED_AT_FORMAT = 'completed-at-format'
 const STORAGE_KEY_REASONING_DISPLAY_MODE = 'reasoning-display-mode'
 const STORAGE_KEY_WIDE_MODE = 'chat-wide-mode'
 const STORAGE_KEY_DIFF_STYLE = 'diff-style'
@@ -205,6 +214,10 @@ class ThemeStore {
     } catch {
       /* ignore */
     }
+
+    const savedCompletedAtFormat = localStorage.getItem(STORAGE_KEY_COMPLETED_AT_FORMAT)
+    const completedAtFormat: CompletedAtFormat =
+      savedCompletedAtFormat === 'dateTime' ? 'dateTime' : DEFAULT_COMPLETED_AT_FORMAT
 
     const savedWideMode = localStorage.getItem(STORAGE_KEY_WIDE_MODE) === 'true'
     const savedDiffStyle = localStorage.getItem(STORAGE_KEY_DIFF_STYLE) as DiffStyle | null
@@ -256,6 +269,7 @@ class ThemeStore {
       customCSS: savedCSS,
       collapseUserMessages,
       stepFinishDisplay,
+      completedAtFormat,
       reasoningDisplayMode,
       wideMode: savedWideMode,
       diffStyle,
@@ -292,6 +306,9 @@ class ThemeStore {
   }
   get stepFinishDisplay() {
     return this.state.stepFinishDisplay
+  }
+  get completedAtFormat() {
+    return this.state.completedAtFormat
   }
   get reasoningDisplayMode() {
     return this.state.reasoningDisplayMode
@@ -401,6 +418,13 @@ class ThemeStore {
     const next = { ...this.state.stepFinishDisplay, ...display }
     this.state = { ...this.state, stepFinishDisplay: next }
     localStorage.setItem(STORAGE_KEY_STEP_FINISH_DISPLAY, JSON.stringify(next))
+    this.emit()
+  }
+
+  setCompletedAtFormat(format: CompletedAtFormat) {
+    if (this.state.completedAtFormat === format) return
+    this.state = { ...this.state, completedAtFormat: format }
+    localStorage.setItem(STORAGE_KEY_COMPLETED_AT_FORMAT, format)
     this.emit()
   }
 
