@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.5.3] - 2026-04-17
+
+- style: use distinct icons for settings tabs (9b2adb1)
+- fix: sanitize exported CSS snippet filenames safely (139725c)
+- fix: adapt token usage ring track to all themes (75f2ad4)
+- refactor: derive theme previews from preset tokens (720c426)
+- feat: add reusable CSS overrides for themes (eba9d1d)
+- refactor: split settings into agent and workspace tabs (b38ac6b)
+- feat: add configurable message completion timestamps (2f01c56)
+- feat: add model visibility settings (731efdd)
+- style: improve glass effect - thicker base, blur(22px), saturate(200%) (bd27ce1)
+- feat(themes): 新增Sakura、Ocean、Obsidian三款预设主题 (bfa449c)
+- feat(settings): 添加自定义CSS模板管理功能 (79db9f4)
+
 ## [v0.5.2] - 2026-04-15
 
 - test: fix streamed event mock typing (92627ee)
