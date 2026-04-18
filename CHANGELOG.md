@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.5.5] - 2026-04-18
+
+- fix: remove redundant *Single i18n keys — let i18next handle count=1 natively (9385ef8)
+- style: match pane drop highlight radius to pane shell (rounded-lg) (f8acac2)
+- feat: enable drag-to-split on active session list items (ac20b7b)
+
 ## [v0.5.4] - 2026-04-18
 
 - polish: pane drop overlay — drop text labels, harden edge cases (2be4c13)
