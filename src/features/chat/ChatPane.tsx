@@ -13,6 +13,7 @@ import { ChatArea, Header, InputBox, PermissionDialog, QuestionDialog, type Chat
 import { type ModelSelectorHandle } from './ModelSelector'
 import { OutlineIndex } from '../../components/OutlineIndex'
 import { PaneHeader } from './PaneHeader'
+import { PaneDropOverlay, resolveDropZone, type DropZone } from './PaneDropOverlay'
 import { useChatSession, useModels, useModelSelection } from '../../hooks'
 import { useCancelHint } from '../../hooks/useCancelHint'
 import { InlineToolRequestContext, type InlineToolRequestContextValue } from './InlineToolRequestContext'
@@ -400,6 +401,69 @@ export const ChatPane = memo(function ChatPane({
     paneLayoutStore.focusPane(paneId)
   }, [paneId])
 
+  // ============================================
+  // Drag & Drop — receive a session dragged from the sidebar list
+  // Center drop → replace current session; edge drops → split in that direction
+  // ============================================
+  const [dropZone, setDropZone] = useState<DropZone | null>(null)
+
+  const readSessionDragPayload = useCallback((e: React.DragEvent): { sessionId: string; directory: string } | null => {
+    if (!e.dataTransfer.types.includes('text/x-session-id')) return null
+    const sessionId = e.dataTransfer.getData('text/x-session-id')
+    if (!sessionId) return null
+    const directory = e.dataTransfer.getData('text/x-session-directory') || ''
+    return { sessionId, directory }
+  }, [])
+
+  const handlePaneDragOver = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      if (!splitPaneEnabled) return
+      if (!e.dataTransfer.types.includes('text/x-session-id')) return
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+
+      const rect = e.currentTarget.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return
+      const xRel = (e.clientX - rect.left) / rect.width
+      const yRel = (e.clientY - rect.top) / rect.height
+      const zone = resolveDropZone({ xRel, yRel })
+      if (zone !== dropZone) setDropZone(zone)
+    },
+    [dropZone, splitPaneEnabled],
+  )
+
+  const handlePaneDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    // Ignore bubbles that stay within the pane
+    const related = e.relatedTarget as Node | null
+    if (related && e.currentTarget.contains(related)) return
+    setDropZone(null)
+  }, [])
+
+  const handlePaneDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      const payload = readSessionDragPayload(e)
+      const zone = dropZone
+      setDropZone(null)
+      if (!payload || !zone) return
+      e.preventDefault()
+
+      // Same session dropped onto its own pane → nothing to do
+      if (payload.sessionId === routeSessionId && zone === 'center') return
+
+      if (zone === 'center') {
+        navigatePaneToSession(paneId, payload.sessionId, payload.directory || undefined)
+        return
+      }
+
+      // Split: create new pane on the chosen side, then route the new pane to the session
+      const newPaneId = paneLayoutStore.splitPaneToSide(paneId, zone, null)
+      if (newPaneId) {
+        navigatePaneToSession(newPaneId, payload.sessionId, payload.directory || undefined)
+      }
+    },
+    [dropZone, paneId, routeSessionId, navigatePaneToSession, readSessionDragPayload],
+  )
+
   const handleToggleFullAuto = useCallback(() => {
     autoApproveStore.cyclePaneFullAutoMode(paneId)
   }, [paneId])
@@ -700,14 +764,17 @@ export const ChatPane = memo(function ChatPane({
       <div
         className={
           showCompactShell
-            ? `h-full flex flex-col overflow-hidden rounded-lg transition-all duration-200 ${
+            ? `relative h-full flex flex-col overflow-hidden rounded-lg transition-all duration-200 ${
                 isFocused
                   ? 'ring-1 ring-accent-main-100/60 bg-bg-100'
                   : 'ring-1 ring-border-200/30 bg-bg-100 hover:ring-border-200/50'
               }`
-            : 'h-full flex flex-col overflow-hidden bg-bg-100'
+            : 'relative h-full flex flex-col overflow-hidden bg-bg-100'
         }
         onClick={handlePaneFocus}
+        onDragOver={handlePaneDragOver}
+        onDragLeave={handlePaneDragLeave}
+        onDrop={handlePaneDrop}
       >
         {showCompactShell && (
           <PaneHeader
@@ -724,6 +791,7 @@ export const ChatPane = memo(function ChatPane({
           />
         )}
         {chatContent}
+        <PaneDropOverlay activeZone={dropZone} />
       </div>
     </SessionNavigationContext.Provider>
   )
