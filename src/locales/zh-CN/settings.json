@@ -220,6 +220,8 @@
     "testTitle": "OpenCode",
     "testBody": "这是一条测试通知",
     "notAvailable": "此环境不支持系统通知",
+    "notificationTypes": "通知类型",
+    "notificationTypesDesc": "选择启用哪些通知类型",
     "inAppAlerts": "应用内提醒",
     "inAppAlertsDesc": "后台会话事件的 Toast 通知",
     "toastNotifications": "Toast 通知",

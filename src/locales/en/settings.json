@@ -220,6 +220,8 @@
     "testTitle": "OpenCode",
     "testBody": "This is a test notification",
     "notAvailable": "System notifications are not available in this environment",
+    "notificationTypes": "Notification Types",
+    "notificationTypesDesc": "Choose which notification types are enabled",
     "inAppAlerts": "In-App Alerts",
     "inAppAlertsDesc": "Toast notifications for background session events",
     "toastNotifications": "Toast Notifications",

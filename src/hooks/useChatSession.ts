@@ -20,6 +20,7 @@ import {
 } from '../hooks'
 import { usePermissions, usePermissionHandler, useMessageAnimation, useDirectory, useSessionContext } from '../hooks'
 import { useNotification } from './useNotification'
+import { soundStore } from '../store/soundStore'
 import {
   sendMessageAsync,
   getSessionMessages,
@@ -315,10 +316,12 @@ export function useChatSession({
         // 页面不在前台时通知用户有权限请求等待批准
         const permDesc = request.patterns?.length ? `${request.permission}: ${request.patterns[0]}` : request.permission
         const title = buildNotificationTitle(request.sessionID, 'Permission Required')
-        sendNotification(title, permDesc, {
-          sessionId: request.sessionID,
-          directory: effectiveDirectory,
-        })
+        if (soundStore.isEventEnabled('permission')) {
+          sendNotification(title, permDesc, {
+            sessionId: request.sessionID,
+            directory: effectiveDirectory,
+          })
+        }
         // 应用内 toast 已在 useGlobalEvents 中统一处理
       },
       onPermissionReplied: (data: { sessionID: string; requestID: string }) => {
@@ -333,10 +336,12 @@ export function useChatSession({
         // 页面不在前台时通知用户有问题等待回答
         const questionDesc = request.questions?.[0]?.header || 'AI is waiting for your input'
         const title = buildNotificationTitle(request.sessionID, 'Question')
-        sendNotification(title, questionDesc, {
-          sessionId: request.sessionID,
-          directory: effectiveDirectory,
-        })
+        if (soundStore.isEventEnabled('question')) {
+          sendNotification(title, questionDesc, {
+            sessionId: request.sessionID,
+            directory: effectiveDirectory,
+          })
+        }
         // 应用内 toast 已在 useGlobalEvents 中统一处理
       },
       onQuestionReplied: (data: { sessionID: string; requestID: string }) => {
@@ -351,19 +356,23 @@ export function useChatSession({
       onSessionIdle: (sessionID: string) => {
         // 页面不在前台时发送浏览器通知
         const title = buildNotificationTitle(sessionID, 'Session completed')
-        sendNotification(title, 'Session completed', {
-          sessionId: sessionID,
-          directory: effectiveDirectory,
-        })
+        if (soundStore.isEventEnabled('completed')) {
+          sendNotification(title, 'Session completed', {
+            sessionId: sessionID,
+            directory: effectiveDirectory,
+          })
+        }
         // 应用内 toast 已在 useGlobalEvents 中统一处理
       },
       onSessionError: (sessionID: string) => {
         // 页面不在前台时通知用户 session 出错
         const title = buildNotificationTitle(sessionID, 'Session error')
-        sendNotification(title, 'Session error', {
-          sessionId: sessionID,
-          directory: effectiveDirectory,
-        })
+        if (soundStore.isEventEnabled('error')) {
+          sendNotification(title, 'Session error', {
+            sessionId: sessionID,
+            directory: effectiveDirectory,
+          })
+        }
         // 应用内 toast 已在 useGlobalEvents 中统一处理
       },
       onReconnected: (_reason: 'network' | 'server-switch') => {

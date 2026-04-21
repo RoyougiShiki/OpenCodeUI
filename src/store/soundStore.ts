@@ -20,6 +20,7 @@ import { DEFAULT_SOUNDS } from '../utils/soundPlayer'
 // ============================================
 
 export interface EventSoundConfig {
+  enabled: boolean
   /** 'builtin:xxx' | 'custom' | 'none' */
   soundId: string
   /** 自定义音频的文件名（展示用） */
@@ -58,10 +59,10 @@ function createDefaultSettings(): SoundSettings {
     currentSessionEnabled: false,
     volume: 50,
     events: {
-      completed: { soundId: DEFAULT_SOUNDS.completed },
-      permission: { soundId: DEFAULT_SOUNDS.permission },
-      question: { soundId: DEFAULT_SOUNDS.question },
-      error: { soundId: DEFAULT_SOUNDS.error },
+      completed: { enabled: true, soundId: DEFAULT_SOUNDS.completed },
+      permission: { enabled: true, soundId: DEFAULT_SOUNDS.permission },
+      question: { enabled: true, soundId: DEFAULT_SOUNDS.question },
+      error: { enabled: true, soundId: DEFAULT_SOUNDS.error },
     },
   }
 }
@@ -85,10 +86,38 @@ function loadSettings(): SoundSettings {
           : defaults.currentSessionEnabled,
       volume: typeof parsed.volume === 'number' ? Math.max(0, Math.min(100, parsed.volume)) : defaults.volume,
       events: {
-        completed: parsed.events?.completed || defaults.events.completed,
-        permission: parsed.events?.permission || defaults.events.permission,
-        question: parsed.events?.question || defaults.events.question,
-        error: parsed.events?.error || defaults.events.error,
+        completed: {
+          ...defaults.events.completed,
+          ...parsed.events?.completed,
+          enabled:
+            typeof parsed.events?.completed?.enabled === 'boolean'
+              ? parsed.events.completed.enabled
+              : defaults.events.completed.enabled,
+        },
+        permission: {
+          ...defaults.events.permission,
+          ...parsed.events?.permission,
+          enabled:
+            typeof parsed.events?.permission?.enabled === 'boolean'
+              ? parsed.events.permission.enabled
+              : defaults.events.permission.enabled,
+        },
+        question: {
+          ...defaults.events.question,
+          ...parsed.events?.question,
+          enabled:
+            typeof parsed.events?.question?.enabled === 'boolean'
+              ? parsed.events.question.enabled
+              : defaults.events.question.enabled,
+        },
+        error: {
+          ...defaults.events.error,
+          ...parsed.events?.error,
+          enabled:
+            typeof parsed.events?.error?.enabled === 'boolean'
+              ? parsed.events.error.enabled
+              : defaults.events.error.enabled,
+        },
       },
     }
   } catch {
@@ -205,7 +234,9 @@ class SoundStore {
   }
 
   private notify() {
-    this.subscribers.forEach(cb => cb())
+    this.subscribers.forEach(cb => {
+      cb()
+    })
   }
 
   private persist() {
@@ -245,6 +276,25 @@ class SoundStore {
   // 事件音效配置
   // ============================================
 
+  isEventEnabled(type: NotificationType): boolean {
+    return this.settings.events[type]?.enabled !== false
+  }
+
+  setEventEnabled(type: NotificationType, enabled: boolean) {
+    this.settings = {
+      ...this.settings,
+      events: {
+        ...this.settings.events,
+        [type]: {
+          ...this.settings.events[type],
+          enabled,
+        },
+      },
+    }
+    this.persist()
+    this.notify()
+  }
+
   setEventSound(type: NotificationType, soundId: string) {
     this.settings = {
       ...this.settings,
@@ -282,6 +332,7 @@ class SoundStore {
         events: {
           ...this.settings.events,
           [type]: {
+            ...this.settings.events[type],
             soundId: 'custom',
             customFileName: file.name,
           },
@@ -312,6 +363,7 @@ class SoundStore {
       events: {
         ...this.settings.events,
         [type]: {
+          ...this.settings.events[type],
           soundId: DEFAULT_SOUNDS[type],
           customFileName: undefined,
         },
