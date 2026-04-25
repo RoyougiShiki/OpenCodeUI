@@ -572,7 +572,10 @@ function App() {
       className="relative flex h-[var(--app-height)] flex-col bg-bg-100 overflow-hidden"
       style={{ paddingTop: 'var(--safe-area-inset-top)' }}
     >
-      <DesktopTitlebar />
+      <DesktopTitlebar
+        onOpenSearch={() => setQuickOpenOpen(true)}
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+      />
       <ChatViewportProvider value={chatViewport}>
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <Sidebar

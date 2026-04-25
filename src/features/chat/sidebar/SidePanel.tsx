@@ -240,8 +240,6 @@ export function SidePanel({
 
   const showLabels = isExpanded || isMobile
   const newChatShortcut = useKeybindingLabel('newSession')
-  const quickOpenShortcut = useKeybindingLabel('quickOpen')
-  const commandPaletteShortcut = useKeybindingLabel('commandPalette')
 
   // Session stats
   const { messages } = useMessageStore()
@@ -815,6 +813,38 @@ export function SidePanel({
           </a>
         </div>
 
+        {/* Search & Command buttons - 浏览器环境放在 Logo 旁边 */}
+        {(onOpenSearch || onOpenCommandPalette) && (
+          <div
+            className="flex items-center gap-1 transition-all duration-300 ease-out"
+            style={{
+              width: showLabels ? 'auto' : 0,
+              opacity: showLabels ? 1 : 0,
+              overflow: 'hidden',
+              marginLeft: showLabels ? 8 : 0,
+            }}
+          >
+            {onOpenSearch && (
+              <button
+                onClick={onOpenSearch}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-text-400 hover:text-text-100 hover:bg-bg-200 active:scale-[0.98] transition-all"
+                title={t('sidebar.search')}
+              >
+                <SearchIcon size={15} />
+              </button>
+            )}
+            {onOpenCommandPalette && (
+              <button
+                onClick={onOpenCommandPalette}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-text-400 hover:text-text-100 hover:bg-bg-200 active:scale-[0.98] transition-all"
+                title={t('sidebar.commands')}
+              >
+                <TerminalIcon size={15} />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Toggle Button - 桌面端和移动端都显示 */}
         <div
           className="flex-1 flex items-center transition-all duration-300 ease-out"
@@ -859,51 +889,6 @@ export function SidePanel({
             {newChatShortcut}
           </span>
         </button>
-
-        {(onOpenSearch || onOpenCommandPalette) && (
-          <div className="flex gap-1" style={{ width: showLabels ? '100%' : 32 }}>
-            {onOpenSearch && (
-              <button
-                onClick={onOpenSearch}
-                className="h-8 flex items-center rounded-lg text-text-300 hover:text-text-100 hover:bg-bg-200 active:scale-[0.98] transition-all duration-300 group overflow-hidden flex-1 min-w-0"
-                style={{ paddingLeft: 6, paddingRight: 6 }}
-                title={t('sidebar.search')}
-              >
-                <span className="size-5 flex items-center justify-center shrink-0">
-                  <SearchIcon size={16} />
-                </span>
-                <span
-                  className="ml-2 text-[length:var(--fs-base)] whitespace-nowrap transition-opacity duration-300"
-                  style={{ opacity: showLabels ? 1 : 0 }}
-                >
-                  {t('sidebar.search')}
-                </span>
-                {showLabels && quickOpenShortcut && (
-                  <span className="ml-auto text-[length:var(--fs-xxs)] text-text-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-mono">
-                    {quickOpenShortcut}
-                  </span>
-                )}
-              </button>
-            )}
-            {onOpenCommandPalette && (
-              <button
-                onClick={onOpenCommandPalette}
-                className="h-8 flex items-center rounded-lg text-text-300 hover:text-text-100 hover:bg-accent-main-100/10 active:scale-[0.98] transition-all duration-300 group shrink-0 bg-accent-main-100/[0.03]"
-                style={{ paddingLeft: 6, paddingRight: 6 }}
-                title={t('sidebar.commands')}
-              >
-                {showLabels && commandPaletteShortcut && (
-                  <span className="mr-1 text-[length:var(--fs-xxs)] text-text-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-mono">
-                    {commandPaletteShortcut}
-                  </span>
-                )}
-                <span className="size-5 flex items-center justify-center shrink-0">
-                  <TerminalIcon size={16} />
-                </span>
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Project Selector - 只在展开时显示 */}
         {showLabels && (

@@ -11,6 +11,8 @@ import {
   FolderOpenIcon,
   SettingsIcon,
   AppWindowIcon,
+  SearchIcon,
+  TerminalIcon,
 } from './Icons'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '../hooks/useTheme'
@@ -21,7 +23,12 @@ import { useUpdateStore, hasUpdateAvailable } from '../store/updateStore'
 const TB_BTN =
   'inline-flex h-full w-8 items-center justify-center text-text-300 transition-colors hover:bg-bg-200/70 hover:text-text-100'
 
-export function DesktopTitlebar() {
+interface DesktopTitlebarProps {
+  onOpenSearch?: () => void
+  onOpenCommandPalette?: () => void
+}
+
+export function DesktopTitlebar({ onOpenSearch, onOpenCommandPalette }: DesktopTitlebarProps) {
   const { t } = useTranslation('components')
   const { mode, resolvedTheme } = useTheme()
   const updateState = useUpdateStore()
@@ -93,7 +100,7 @@ export function DesktopTitlebar() {
       className="desktop-titlebar relative grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center bg-bg-100"
       style={{ height: DESKTOP_TITLEBAR_HEIGHT, zIndex: DESKTOP_TITLEBAR_Z_INDEX }}
     >
-      {/* ---- 左侧：平台占位 + 导航 + 分隔 + 功能按钮 ---- */}
+      {/* ---- 左侧：平台占位 + 导航 + 功能按钮 + 搜索/命令 ---- */}
       <div className="flex h-full shrink-0 items-stretch">
         {platform === 'macos' ? (
           <div className="h-full shrink-0" style={{ width: DESKTOP_MACOS_TRAFFIC_LIGHTS_WIDTH }} />
@@ -157,6 +164,32 @@ export function DesktopTitlebar() {
         >
           <AppWindowIcon size={14} />
         </button>
+
+        {/* 搜索 / 命令面板 */}
+        {(onOpenSearch || onOpenCommandPalette) && (
+          <div className="flex items-center gap-1 ml-2 no-drag">
+            {onOpenSearch && (
+              <button
+                onClick={onOpenSearch}
+                className="h-7 px-2 flex items-center gap-1.5 rounded-md text-text-400 hover:text-text-100 hover:bg-bg-200 active:scale-[0.98] transition-all duration-200"
+                title="Quick Open"
+              >
+                <SearchIcon size={14} />
+                <span className="text-[11px] font-medium">Search</span>
+              </button>
+            )}
+            {onOpenCommandPalette && (
+              <button
+                onClick={onOpenCommandPalette}
+                className="h-7 px-2 flex items-center gap-1.5 rounded-md text-text-400 hover:text-text-100 hover:bg-bg-200 active:scale-[0.98] transition-all duration-200"
+                title="Command Palette"
+              >
+                <TerminalIcon size={14} />
+                <span className="text-[11px] font-medium">Commands</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ---- 中间：拖拽区 ---- */}
