@@ -297,6 +297,12 @@ export function useTheme() {
       themeStore.setCompactInlinePermission(enabled)
     }, []),
 
+    // 工具输出默认折叠
+    collapseToolOutput: state.collapseToolOutput,
+    setCollapseToolOutput: useCallback((enabled: boolean) => {
+      themeStore.setCollapseToolOutput(enabled)
+    }, []),
+
     // 毛玻璃效果
     glassEffect: state.glassEffect,
     setGlassEffect: useCallback((enabled: boolean) => {

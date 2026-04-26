@@ -83,8 +83,8 @@
     "collapseLongMessagesDesc": "Auto-collapse lengthy user messages",
     "descriptiveToolSteps": "Descriptive Steps",
     "descriptiveToolStepsDesc": "Replace plain step counts with tool-aware summaries and show a steps line even for single tool calls",
-    "inlineToolRequests": "Inline Tool Requests",
-    "inlineToolRequestsDesc": "Show pending permission and question requests under the related tool call instead of floating dialogs",
+    "inlineToolRequests": "Inline Permission Display",
+    "inlineToolRequestsDesc": "Show permission requests inline under the tool, compact buttons, dialog collapsed by default",
     "compactInlinePermission": "Compact Inline Permission",
     "compactInlinePermissionDesc": "When the tool already shows content, only display action buttons for permissions to avoid duplication",
     "permissionDialogCollapsed": "Permission Dialog Collapsed",
@@ -120,7 +120,9 @@
     "completedAtFormat": "Completion Time Format",
     "completedAtFormatDesc": "Choose whether to show only time or full date and time",
     "completedAtTimeOnly": "Time Only",
-    "completedAtDateTime": "Date & Time"
+    "completedAtDateTime": "Date & Time",
+    "collapseToolOutput": "Collapse Tool Output",
+    "collapseToolOutputDesc": "Tool call results start collapsed by default, click to expand"
   },
   "agent": {
     "behavior": "Agent Behavior",
@@ -333,4 +335,4 @@
       "permission": "Permission"
     }
   }
-}
+} 940c5ae (feat(settings): add tool output collapse setting, merge permission toggles)

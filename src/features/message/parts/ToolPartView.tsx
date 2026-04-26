@@ -62,7 +62,7 @@ export const ToolPartView = memo(function ToolPartView({
   const endTime = state.time?.end ?? (isActive ? (calibratedNow ?? now) : undefined)
   const rawDuration = startTime !== undefined && endTime !== undefined ? endTime - startTime : undefined
   const duration = rawDuration !== undefined && isActive ? Math.max(0, rawDuration) : rawDuration
-  const { inlineToolRequests, immersiveMode, compactInlinePermission } = useTheme()
+  const { inlineToolRequests, immersiveMode, compactInlinePermission, collapseToolOutput } = useTheme()
 
   const { pendingPermissions, pendingQuestions, onPermissionReply, onQuestionReply, onQuestionReject, isReplying } =
     useInlineToolRequests()
@@ -107,11 +107,9 @@ export const ToolPartView = memo(function ToolPartView({
   const permissionContentHidden =
     compactInlinePermission && !isEditWritePermission && !isTaskTool && !!permissionRequest
   const isReadable = isReadableTool(toolName)
-  const shouldStartExpanded =
-    isActive ||
-    hasPendingInteraction ||
-    permissionResolved ||
-    (immersiveMode && descriptive && isStreaming && isReadable)
+  const shouldStartExpanded = collapseToolOutput
+    ? hasPendingInteraction || permissionResolved
+    : true
 
   const [expanded, setExpanded] = useState(() => shouldStartExpanded)
   const hasAutoExpandedReadableRef = useRef(shouldStartExpanded && immersiveMode && descriptive && isReadable)
@@ -119,18 +117,20 @@ export const ToolPartView = memo(function ToolPartView({
   const shouldRenderBody = useDelayedRender(effectiveExpanded)
 
   useEffect(() => {
-    if (isActive || hasPendingInteraction || permissionResolved) {
+    if (hasPendingInteraction || permissionResolved) {
       if (immersiveMode && descriptive && isReadable) {
         hasAutoExpandedReadableRef.current = true
       }
       setExpanded(true)
-    } else if (immersiveMode && descriptive && !isReadable) {
+    } else if (collapseToolOutput) {
+      setExpanded(false)
+    } else if (!isActive && immersiveMode && descriptive && !isReadable) {
       setExpanded(false)
     } else if (immersiveMode && descriptive && isStreaming && isReadable && !hasAutoExpandedReadableRef.current) {
       hasAutoExpandedReadableRef.current = true
       setExpanded(true)
     }
-  }, [isActive, hasPendingInteraction, permissionResolved, immersiveMode, descriptive, isStreaming, isReadable])
+  }, [isActive, hasPendingInteraction, permissionResolved, immersiveMode, descriptive, isStreaming, isReadable, collapseToolOutput])
 
   // Shared icon element
   const toolIcon = (

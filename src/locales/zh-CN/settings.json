@@ -83,8 +83,8 @@
     "collapseLongMessagesDesc": "自动折叠较长的用户消息",
     "descriptiveToolSteps": "描述型步骤",
     "descriptiveToolStepsDesc": "把普通 steps 计数改成带工具描述的摘要，并让单工具调用也显示步骤描述",
-    "inlineToolRequests": "工具内嵌请求",
-    "inlineToolRequestsDesc": "把待处理的权限和提问显示在对应工具下方，而不是浮层弹窗",
+    "inlineToolRequests": "内嵌权限显示",
+    "inlineToolRequestsDesc": "权限请求内嵌在工具下方，精简显示，对话框默认折叠",
     "compactInlinePermission": "精简内嵌权限",
     "compactInlinePermissionDesc": "工具已有内容时，内嵌权限只显示操作按钮，避免重复",
     "permissionDialogCollapsed": "权限对话框折叠",
@@ -120,7 +120,9 @@
     "completedAtFormat": "完成时刻格式",
     "completedAtFormatDesc": "选择只显示时间，或显示完整日期和时间",
     "completedAtTimeOnly": "仅时间",
-    "completedAtDateTime": "日期时间"
+    "completedAtDateTime": "日期时间",
+    "collapseToolOutput": "工具输出默认折叠",
+    "collapseToolOutputDesc": "工具调用结果默认折叠，点击展开查看详情"
   },
   "agent": {
     "behavior": "Agent 行为",
@@ -333,4 +335,4 @@
       "permission": "权限"
     }
   }
-}
+} 940c5ae (feat(settings): add tool output collapse setting, merge permission toggles)

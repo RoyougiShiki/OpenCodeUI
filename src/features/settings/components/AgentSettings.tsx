@@ -12,8 +12,7 @@ export function AgentSettings() {
   const [inlineToolRequests, setInlineToolRequests] = useState(themeStore.inlineToolRequests)
   const [toolCardStyle, setToolCardStyle] = useState(themeStore.toolCardStyle)
   const [immersiveMode, setImmersiveMode] = useState(themeStore.immersiveMode)
-  const [compactInlinePermission, setCompactInlinePermission] = useState(themeStore.compactInlinePermission)
-  const [permissionDialogCollapsed, setPermissionDialogCollapsed] = useState(themeStore.permissionDialogCollapsed)
+  const [collapseToolOutput, setCollapseToolOutput] = useState(themeStore.collapseToolOutput)
 
   const handleAutoApprove = () => {
     const next = !autoApprove
@@ -37,19 +36,13 @@ export function AgentSettings() {
   const handleInlineToolRequestsToggle = () => {
     const next = !inlineToolRequests
     setInlineToolRequests(next)
-    themeStore.setInlineToolRequests(next)
+    themeStore.setPermissionDisplayMode(next)
   }
 
-  const handleCompactInlinePermissionToggle = () => {
-    const next = !compactInlinePermission
-    setCompactInlinePermission(next)
-    themeStore.setCompactInlinePermission(next)
-  }
-
-  const handlePermissionDialogCollapsedToggle = () => {
-    const next = !permissionDialogCollapsed
-    setPermissionDialogCollapsed(next)
-    themeStore.setPermissionDialogCollapsed(next)
+  const handleCollapseToolOutputToggle = () => {
+    const next = !collapseToolOutput
+    setCollapseToolOutput(next)
+    themeStore.setCollapseToolOutput(next)
   }
 
   const handleToolCardStyleChange = (style: ToolCardStyle) => {
@@ -64,7 +57,6 @@ export function AgentSettings() {
     setInlineToolRequests(next)
     setDescriptiveToolSteps(next)
     setToolCardStyle(next ? 'compact' : 'classic')
-    setCompactInlinePermission(next)
   }
 
   return (
@@ -113,19 +105,11 @@ export function AgentSettings() {
         </SettingRow>
 
         <SettingRow
-          label={t('chat.compactInlinePermission')}
-          description={t('chat.compactInlinePermissionDesc')}
-          onClick={handleCompactInlinePermissionToggle}
+          label={t('chat.collapseToolOutput')}
+          description={t('chat.collapseToolOutputDesc')}
+          onClick={handleCollapseToolOutputToggle}
         >
-          <Toggle enabled={compactInlinePermission} onChange={handleCompactInlinePermissionToggle} />
-        </SettingRow>
-
-        <SettingRow
-          label={t('chat.permissionDialogCollapsed')}
-          description={t('chat.permissionDialogCollapsedDesc')}
-          onClick={handlePermissionDialogCollapsedToggle}
-        >
-          <Toggle enabled={permissionDialogCollapsed} onChange={handlePermissionDialogCollapsedToggle} />
+          <Toggle enabled={collapseToolOutput} onChange={handleCollapseToolOutputToggle} />
         </SettingRow>
 
         <div>
