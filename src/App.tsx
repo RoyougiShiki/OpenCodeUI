@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { invoke } from '@tauri-apps/api/core'
 import { Sidebar } from './features/chat'
 import { ChatPane } from './features/chat/ChatPane'
 import { SplitContainer } from './features/chat/SplitContainer'
@@ -9,6 +8,7 @@ import { ToastContainer } from './components/ToastContainer'
 import { RightPanel } from './components/RightPanel'
 import { BottomPanel } from './components/BottomPanel'
 import { DesktopTitlebar } from './components/DesktopTitlebar'
+import { usesCustomDesktopTitlebar } from './utils/tauri'
 import { useDirectory, useGlobalEvents, useGlobalKeybindings, useRouter } from './hooks'
 import { useViewportHeight } from './hooks/useViewportHeight'
 import { useCloseServiceDialog } from './hooks/useCloseServiceDialog'
@@ -35,7 +35,6 @@ import { initNotificationSound } from './utils/notificationSoundBridge'
 import { createPtySession } from './api/pty'
 import type { TerminalTab } from './store/layoutStore'
 import type { SettingsTab } from './features/settings/SettingsDialog'
-import { isTauri, isTauriMobile } from './utils/tauri'
 
 const SettingsDialog = lazy(() =>
   import('./features/settings/SettingsDialog').then(module => ({ default: module.SettingsDialog })),
@@ -84,14 +83,6 @@ function App() {
   useEffect(() => {
     const cleanup = initNotificationSound()
     return cleanup
-  }, [])
-
-  useEffect(() => {
-    if (!isTauri() || isTauriMobile()) return
-
-    void invoke('desktop_window_ready').catch(() => {
-      // best effort only
-    })
   }, [])
 
   useEffect(() => {
@@ -243,18 +234,6 @@ function App() {
   const [projectDialogOpen, setProjectDialogOpen] = useState(false)
   const openProject = useCallback(() => setProjectDialogOpen(true), [])
   const closeProjectDialog = useCallback(() => setProjectDialogOpen(false), [])
-
-  // 桌面标题栏通过 CustomEvent 触发打开项目/设置
-  useEffect(() => {
-    const onOpenProject = () => openProject()
-    const onOpenSettings = () => openSettings()
-    window.addEventListener('titlebar:open-project', onOpenProject)
-    window.addEventListener('titlebar:open-settings', onOpenSettings)
-    return () => {
-      window.removeEventListener('titlebar:open-project', onOpenProject)
-      window.removeEventListener('titlebar:open-settings', onOpenSettings)
-    }
-  }, [openProject, openSettings])
 
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [quickOpenOpen, setQuickOpenOpen] = useState(false)
@@ -567,6 +546,8 @@ function App() {
 
   const { showCloseDialog, handleCloseDialogConfirm, handleCloseDialogCancel } = useCloseServiceDialog()
 
+  const hasDesktopTitlebar = useMemo(() => usesCustomDesktopTitlebar(), [])
+
   return (
     <div
       className="relative flex h-[var(--app-height)] flex-col bg-bg-100 overflow-hidden"
@@ -587,8 +568,8 @@ function App() {
             onClose={() => setSidebarExpanded(false)}
             contextLimit={focusedController?.contextLimit}
             onOpenSettings={openSettings}
-            onOpenSearch={() => setQuickOpenOpen(true)}
-            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+            onOpenSearch={hasDesktopTitlebar ? undefined : () => setQuickOpenOpen(true)}
+            onOpenCommandPalette={hasDesktopTitlebar ? undefined : () => setCommandPaletteOpen(true)}
             projectDialogOpen={projectDialogOpen}
             onProjectDialogClose={closeProjectDialog}
           />
