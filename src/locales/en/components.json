@@ -138,6 +138,14 @@
   "fullscreenViewer": {
     "lines": "lines"
   },
+  "desktopTitlebar": {
+    "goBack": "Go Back",
+    "goForward": "Go Forward",
+    "openProject": "Open Project",
+    "openSettings": "Open Settings",
+    "settingsUpdate": "Update available — open settings",
+    "newWindow": "New Window"
+  },
   "multiFileDiff": {
     "sessionChanges": "Session Changes",
     "fileCount_one": "{{count}} file",

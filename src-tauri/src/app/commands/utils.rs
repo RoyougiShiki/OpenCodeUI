@@ -10,3 +10,10 @@ pub fn get_cli_directory(
 ) -> Option<Arc<str>> {
     state.pending().pin().remove(window.label()).cloned()
 }
+
+/// 新建桌面窗口
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+pub async fn open_new_window(app: tauri::AppHandle, directory: Option<String>) {
+    crate::app::create_new_window(&app, directory);
+}

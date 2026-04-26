@@ -227,6 +227,18 @@ function App() {
   const openProject = useCallback(() => setProjectDialogOpen(true), [])
   const closeProjectDialog = useCallback(() => setProjectDialogOpen(false), [])
 
+  // 桌面标题栏通过 CustomEvent 触发打开项目/设置
+  useEffect(() => {
+    const onOpenProject = () => openProject()
+    const onOpenSettings = () => openSettings()
+    window.addEventListener('titlebar:open-project', onOpenProject)
+    window.addEventListener('titlebar:open-settings', onOpenSettings)
+    return () => {
+      window.removeEventListener('titlebar:open-project', onOpenProject)
+      window.removeEventListener('titlebar:open-settings', onOpenSettings)
+    }
+  }, [openProject, openSettings])
+
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
 
   const handleNewTerminal = useCallback(async () => {

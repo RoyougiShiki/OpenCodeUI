@@ -6,6 +6,7 @@ import type { LucideProps } from 'lucide-react'
 import {
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
   ChevronRight,
   SquarePen,
   Hand,
@@ -84,6 +85,7 @@ import {
   Columns2,
   Rows2,
   GripVertical,
+  AppWindow,
 } from 'lucide-react'
 
 export interface IconProps extends SVGProps<SVGSVGElement> {
@@ -107,6 +109,7 @@ function wrap(Icon: ComponentType<LucideProps>) {
 
 export const ChevronDownIcon = wrap(ChevronDown)
 export const ChevronUpIcon = wrap(ChevronUp)
+export const ChevronLeftIcon = wrap(ChevronLeft)
 export const ChevronRightIcon = wrap(ChevronRight)
 export const NewChatIcon = wrap(SquarePen)
 export const HandIcon = wrap(Hand)
@@ -204,3 +207,4 @@ export const ShieldIcon = wrap(Shield)
 export const SplitHorizontalIcon = wrap(Columns2)
 export const SplitVerticalIcon = wrap(Rows2)
 export const GripVerticalIcon = wrap(GripVertical)
+export const AppWindowIcon = wrap(AppWindow)

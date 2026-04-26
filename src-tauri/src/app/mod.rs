@@ -39,7 +39,7 @@ fn extract_directory_from_args(args: &[String]) -> Option<String> {
 
 /// 创建新窗口，可选地关联一个目录（多窗口支持）
 #[cfg(not(target_os = "android"))]
-fn create_new_window(app: &tauri::AppHandle, directory: Option<String>) {
+pub(crate) fn create_new_window(app: &tauri::AppHandle, directory: Option<String>) {
     static WIN_COUNTER: AtomicU64 = AtomicU64::new(1);
     let label = format!("win-{}", WIN_COUNTER.fetch_add(1, Ordering::SeqCst));
 
@@ -179,6 +179,7 @@ pub fn run() {
             commands::bridge::bridge_send,
             commands::bridge::bridge_disconnect,
             commands::utils::get_cli_directory,
+            commands::utils::open_new_window,
             commands::opencode::check_opencode_service,
             commands::opencode::start_opencode_service,
             commands::opencode::stop_opencode_service,
