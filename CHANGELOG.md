@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.5.12] - 2026-04-27
+
+- fix: create the Android main window explicitly (1c20510)
+
 ## [v0.5.11] - 2026-04-26
 
 - fix: defer desktop windows until the first frame is ready (1b1e186)
