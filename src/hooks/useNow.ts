@@ -6,9 +6,12 @@ export function useNow(intervalMs = 1000, enabled = true): number {
   useEffect(() => {
     if (!enabled) return
 
-    setNow(Date.now())
+    const frameId = requestAnimationFrame(() => setNow(Date.now()))
     const timer = window.setInterval(() => setNow(Date.now()), intervalMs)
-    return () => window.clearInterval(timer)
+    return () => {
+      cancelAnimationFrame(frameId)
+      window.clearInterval(timer)
+    }
   }, [enabled, intervalMs])
 
   return now

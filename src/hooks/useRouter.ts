@@ -1,4 +1,4 @@
-import { useCallback, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { normalizeToForwardSlash, serverStorage } from '../utils'
 import { STORAGE_KEY_LAST_DIRECTORY } from '../constants/storage'
 import { useIsMobile } from './useIsMobile'
@@ -116,7 +116,10 @@ export function useRouter() {
   // 手机浏览器左右滑动 = 前进/后退，历史栈里堆满会话会导致疯狂横跳。
   const isMobile = useIsMobile()
   const isMobileRef = useRef(isMobile)
-  isMobileRef.current = isMobile
+
+  useEffect(() => {
+    isMobileRef.current = isMobile
+  }, [isMobile])
 
   const navigateToSession = useCallback((sessionId: string, directory?: string) => {
     const currentRoute = getSnapshot()

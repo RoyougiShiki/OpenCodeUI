@@ -8,7 +8,7 @@
 // 上限：由 store 的 MAX_TOASTS 控制，新 toast 覆盖最旧的
 // 点击：跳转到对应 session + 标记通知已读
 
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   useNotificationStore,
@@ -117,27 +117,13 @@ function UpdateToast({ onOpenAbout }: { onOpenAbout: () => void }) {
   const updateState = useUpdateStore()
   const latestVersion = updateState.latestRelease?.tagName || `v${updateState.currentVersion}`
   const show = shouldShowUpdateToast(updateState)
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    if (!show) {
-      setIsVisible(false)
-      return
-    }
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setIsVisible(true))
-    })
-  }, [show])
 
   if (!show || !hasUpdateAvailable(updateState)) return null
 
   return (
     <div
       style={{
-        transition: 'all 250ms cubic-bezier(0.34, 1.15, 0.64, 1)',
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translateY(0) translateX(0)' : 'translateY(-8px) translateX(8px)',
+        animation: 'toast-update-enter 250ms cubic-bezier(0.34, 1.15, 0.64, 1)',
       }}
       className="group relative flex items-center gap-2.5 p-3 glass border border-border-200/60 rounded-xl shadow-lg cursor-pointer hover:bg-bg-100/80 hover:border-border-300 transition-colors duration-150 pointer-events-auto"
       onClick={() => {
@@ -201,7 +187,9 @@ export function ToastContainer({ onOpenAbout }: { onOpenAbout: () => void }) {
   }
 
   return (
-    <div className="absolute top-3 right-3 left-3 md:left-auto md:w-80 z-50 flex flex-col gap-2 pointer-events-none">
+    <>
+      <style>{`@keyframes toast-update-enter { from { opacity: 0; transform: translateY(-8px) translateX(8px); } to { opacity: 1; transform: translateY(0) translateX(0); } }`}</style>
+      <div className="absolute top-3 right-3 left-3 md:left-auto md:w-80 z-50 flex flex-col gap-2 pointer-events-none">
       <UpdateToast onOpenAbout={onOpenAbout} />
 
       {toasts.map(item => (
@@ -224,6 +212,7 @@ export function ToastContainer({ onOpenAbout }: { onOpenAbout: () => void }) {
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

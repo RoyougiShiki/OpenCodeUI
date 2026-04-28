@@ -73,11 +73,20 @@ export function useModelSelection({ models, sessionId = null }: UseModelSelectio
     if (!restoredModel) return
 
     const nextVariant = sessionSelection.variant ?? getModelVariantPref(sessionSelection.modelKey)
-    setSelection({
-      selectedModelKey: sessionSelection.modelKey,
-      selectedVariant: nextVariant,
+    let cancelled = false
+
+    queueMicrotask(() => {
+      if (cancelled) return
+      setSelection({
+        selectedModelKey: sessionSelection.modelKey,
+        selectedVariant: nextVariant,
+      })
+      hydratedSessionRef.current = sessionId
     })
-    hydratedSessionRef.current = sessionId
+
+    return () => {
+      cancelled = true
+    }
   }, [models, sessionId])
 
   useEffect(() => {

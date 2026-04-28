@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- exports shared helper with component */
 // ============================================
 // ChatArea - 聊天消息显示区域
 // ============================================

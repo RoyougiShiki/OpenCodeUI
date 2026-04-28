@@ -81,12 +81,20 @@ export const ToolPartView = memo(function ToolPartView({
   // 在工具完成之前继续渲染（以 resolved 状态）
   const [cachedPermissionRequest, setCachedPermissionRequest] = useState(permissionRequest)
   useEffect(() => {
+    let frameId: number | null = null
+
     if (permissionRequest) {
-      setCachedPermissionRequest(permissionRequest)
-      return
+      frameId = requestAnimationFrame(() => {
+        setCachedPermissionRequest(permissionRequest)
+      })
+    } else if (toolDone) {
+      frameId = requestAnimationFrame(() => {
+        setCachedPermissionRequest(undefined)
+      })
     }
-    if (toolDone) {
-      setCachedPermissionRequest(undefined)
+
+    return () => {
+      if (frameId !== null) cancelAnimationFrame(frameId)
     }
   }, [permissionRequest, toolDone])
 
@@ -119,16 +127,28 @@ export const ToolPartView = memo(function ToolPartView({
   const shouldRenderBody = useDelayedRender(effectiveExpanded)
 
   useEffect(() => {
+    let frameId: number | null = null
+
     if (isActive || hasPendingInteraction || permissionResolved) {
       if (immersiveMode && descriptive && isReadable) {
         hasAutoExpandedReadableRef.current = true
       }
-      setExpanded(true)
+      frameId = requestAnimationFrame(() => {
+        setExpanded(true)
+      })
     } else if (immersiveMode && descriptive && !isReadable) {
-      setExpanded(false)
+      frameId = requestAnimationFrame(() => {
+        setExpanded(false)
+      })
     } else if (immersiveMode && descriptive && isStreaming && isReadable && !hasAutoExpandedReadableRef.current) {
       hasAutoExpandedReadableRef.current = true
-      setExpanded(true)
+      frameId = requestAnimationFrame(() => {
+        setExpanded(true)
+      })
+    }
+
+    return () => {
+      if (frameId !== null) cancelAnimationFrame(frameId)
     }
   }, [isActive, hasPendingInteraction, permissionResolved, immersiveMode, descriptive, isStreaming, isReadable])
 

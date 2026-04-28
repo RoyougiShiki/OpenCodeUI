@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/Button'
 import { SunIcon, MoonIcon, SystemIcon, CheckIcon } from '../../../components/Icons'
@@ -514,11 +514,13 @@ export function AppearanceSettings() {
 
   const activeSnippet = customCSSSnippets.find(item => item.id === activeCustomCSSSnippetId) || null
   const hasUnsavedSnippetChanges = activeSnippet != null && activeSnippet.css !== customCSS
-  const [snippetName, setSnippetName] = useState('')
-
-  useEffect(() => {
-    setSnippetName(activeSnippet?.name ?? '')
-  }, [activeSnippet?.id, activeSnippet?.name])
+  const activeSnippetId = activeSnippet?.id ?? null
+  const activeSnippetName = activeSnippet?.name ?? ''
+  const [snippetDraft, setSnippetDraft] = useState<{ snippetId: string | null; name: string }>({
+    snippetId: activeSnippetId,
+    name: activeSnippetName,
+  })
+  const snippetName = snippetDraft.snippetId === activeSnippetId ? snippetDraft.name : activeSnippetName
 
   const handleImportCSS = (css: string) => {
     clearActiveCustomCSSSnippet()
@@ -597,10 +599,10 @@ export function AppearanceSettings() {
             </div>
 
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
-              <input
-                value={snippetName}
-                onChange={e => setSnippetName(e.target.value)}
-                placeholder={t('appearance.overrideNamePlaceholder')}
+                <input
+                  value={snippetName}
+                  onChange={e => setSnippetDraft({ snippetId: activeSnippetId, name: e.target.value })}
+                  placeholder={t('appearance.overrideNamePlaceholder')}
                 className="flex-1 min-w-0 px-3 py-2 text-[length:var(--fs-sm)] bg-bg-200/50 border border-border-200 rounded-lg text-text-100 placeholder:text-text-500 focus:outline-none focus:border-accent-main-100/50"
               />
 

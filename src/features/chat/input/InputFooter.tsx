@@ -47,6 +47,7 @@ export const InputFooter = memo(function InputFooter({
   const loadedRef = useRef<string | null>(null)
   const closeTimerRef = useRef<number | null>(null)
   const openingFrameRef = useRef<number | null>(null)
+  const previousSessionIdRef = useRef(sessionId)
   const fullAutoMode = useFullAutoMode(paneId)
 
   // 加载 session 时拉取初始 todos
@@ -174,18 +175,23 @@ export const InputFooter = memo(function InputFooter({
 
   useEffect(() => {
     if (!hasTodos && panelState !== 'closed') {
-      closePanel()
+      const frame = requestAnimationFrame(closePanel)
+      return () => cancelAnimationFrame(frame)
     }
   }, [closePanel, hasTodos, panelState])
 
   useEffect(() => {
-    closePanel()
+    if (previousSessionIdRef.current === sessionId) return
+    previousSessionIdRef.current = sessionId
+    const frame = requestAnimationFrame(closePanel)
+    return () => cancelAnimationFrame(frame)
   }, [closePanel, sessionId])
 
   useEffect(() => {
+    const inputContainer = inputContainerRef?.current
     return () => {
       clearPanelTimers()
-      inputContainerRef?.current?.removeAttribute('data-todo-swap')
+      inputContainer?.removeAttribute('data-todo-swap')
     }
   }, [clearPanelTimers, inputContainerRef])
 

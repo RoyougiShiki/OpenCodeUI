@@ -954,23 +954,24 @@ function WorkspaceFolderList({
     () => new Map(workspaceProjects.map(project => [project.id, project])),
     [workspaceProjects],
   )
-  const [expandedWorkspaceIds, setExpandedWorkspaceIds] = useState<string[]>(() =>
+  const [workspaceExpandedIds, setWorkspaceExpandedIds] = useState<string[]>(() =>
     getInitialExpandedProjectIds(workspaceProjects, currentDirectory),
+  )
+  const expandedWorkspaceIds = useMemo(
+    () =>
+      expandProjectId(
+        reconcileExpandedProjectIds(workspaceExpandedIds, workspaceProjects, currentDirectory),
+        getCurrentProjectId(workspaceProjects, currentDirectory),
+      ),
+    [workspaceExpandedIds, workspaceProjects, currentDirectory],
   )
   const { handleDragActivated, handleDragFinished } = useCollapseExpandedIdsOnDrag(
     expandedWorkspaceIds,
-    setExpandedWorkspaceIds,
+    setWorkspaceExpandedIds,
   )
 
-  useEffect(() => {
-    setExpandedWorkspaceIds(prev => {
-      const reconciled = reconcileExpandedProjectIds(prev, workspaceProjects, currentDirectory)
-      return expandProjectId(reconciled, getCurrentProjectId(workspaceProjects, currentDirectory))
-    })
-  }, [workspaceProjects, currentDirectory])
-
   const handleToggleWorkspace = useCallback((workspaceId: string) => {
-    setExpandedWorkspaceIds(prev => toggleProjectId(prev, workspaceId))
+    setWorkspaceExpandedIds(prev => toggleProjectId(prev, workspaceId))
   }, [])
 
   const {

@@ -47,11 +47,15 @@ export function SessionChildrenSlot({
 
   useEffect(() => {
     if (!fetchAll) {
-      setFetched([])
-      return
+      const frameId = requestAnimationFrame(() => setLoading(false))
+      return () => cancelAnimationFrame(frameId)
     }
+
     let cancelled = false
-    setLoading(true)
+    const loadingFrameId = requestAnimationFrame(() => {
+      if (!cancelled) setLoading(true)
+    })
+
     getSessionChildren(parentSession.id, parentSession.directory)
       .then(data => {
         if (!cancelled) setFetched(data)
@@ -62,6 +66,7 @@ export function SessionChildrenSlot({
       })
     return () => {
       cancelled = true
+      cancelAnimationFrame(loadingFrameId)
     }
   }, [fetchAll, parentSession.id, parentSession.directory])
 

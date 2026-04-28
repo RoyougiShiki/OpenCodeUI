@@ -120,7 +120,7 @@ function App() {
     if (paneLayout.focusedSessionId === routeSessionId) return
     syncingFromRouteRef.current = true
     paneLayoutStore.setFocusedSession(routeSessionId)
-  }, [routeSessionId])
+  }, [paneLayout.focusedSessionId, routeSessionId])
 
   // focused pane session -> URL（路由只反映当前 focused pane）
   useEffect(() => {

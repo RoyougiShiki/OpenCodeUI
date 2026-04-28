@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ApiAgent } from '../../../api/client'
 import { InputToolbar } from './InputToolbar'
 
 const useIsMobileMock = vi.fn()
@@ -7,6 +8,10 @@ const isTauriMock = vi.fn()
 const isTauriMobileMock = vi.fn()
 const openMock = vi.fn()
 const readFileMock = vi.fn()
+const agents: ApiAgent[] = [
+  { name: 'build', description: 'Build things', mode: 'primary', permission: [], options: {} },
+  { name: 'plan', description: 'Plan work', mode: 'primary', permission: [], options: {} },
+]
 
 vi.mock('../../../hooks', () => ({
   useIsMobile: () => useIsMobileMock(),
@@ -157,10 +162,7 @@ describe('InputToolbar file selection', () => {
   it('moves focus into the opened agent menu and exposes menu semantics', async () => {
     render(
       <InputToolbar
-        agents={[
-          { name: 'build', description: 'Build things', mode: 'primary' },
-          { name: 'plan', description: 'Plan work', mode: 'primary' },
-        ] as any}
+        agents={agents}
         selectedAgent="build"
         onAgentChange={vi.fn()}
         fileCapabilities={{ image: false, pdf: false, audio: false, video: false }}
@@ -184,10 +186,7 @@ describe('InputToolbar file selection', () => {
   it('closes the agent menu on Tab and moves focus to the next toolbar control', async () => {
     render(
       <InputToolbar
-        agents={[
-          { name: 'build', description: 'Build things', mode: 'primary' },
-          { name: 'plan', description: 'Plan work', mode: 'primary' },
-        ] as any}
+        agents={agents}
         selectedAgent="build"
         onAgentChange={vi.fn()}
         fileCapabilities={{ image: false, pdf: false, audio: false, video: false }}

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- exports drop-zone helper and handle types */
 /**
  * PaneDropOverlay — Visual hint for drag-to-split.
  *

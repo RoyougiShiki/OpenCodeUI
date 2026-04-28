@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- exports viewport helpers, hooks, and provider */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useInputCapabilities } from '../../hooks/useInputCapabilities'
 

@@ -299,6 +299,20 @@ export const Terminal = memo(function Terminal({ ptyId, directory, isActive }: T
   const touchCapable = hasTouch || hasCoarsePointer
   const manualTerminalTitlesRef = useRef(manualTerminalTitles)
   const terminalTab = panelTabs.find(tab => tab.id === ptyId && tab.type === 'terminal')
+  const restoreBuffer = typeof terminalTab?.buffer === 'string' ? terminalTab.buffer : ''
+  const restoreScrollY = typeof terminalTab?.scrollY === 'number' ? terminalTab.scrollY : undefined
+  const restoreCursor =
+    typeof terminalTab?.cursor === 'number' && Number.isSafeInteger(terminalTab.cursor) && terminalTab.cursor >= 0
+      ? terminalTab.cursor
+      : 0
+  const restoreCols =
+    typeof terminalTab?.cols === 'number' && Number.isSafeInteger(terminalTab.cols) && terminalTab.cols > 0
+      ? terminalTab.cols
+      : undefined
+  const restoreRows =
+    typeof terminalTab?.rows === 'number' && Number.isSafeInteger(terminalTab.rows) && terminalTab.rows > 0
+      ? terminalTab.rows
+      : undefined
 
   const clearStickyModifiers = useCallback(() => {
     const next = createStickyModifiers()
@@ -348,22 +362,7 @@ export const Terminal = memo(function Terminal({ ptyId, directory, isActive }: T
     if (!containerRef.current) return
     if (!hasBeenActive) return
 
-    const restoreBuffer = typeof terminalTab?.buffer === 'string' ? terminalTab.buffer : ''
-    const restoreScrollY = typeof terminalTab?.scrollY === 'number' ? terminalTab.scrollY : undefined
-    const restoreCursor =
-      typeof terminalTab?.cursor === 'number' && Number.isSafeInteger(terminalTab.cursor) && terminalTab.cursor >= 0
-        ? terminalTab.cursor
-        : 0
-    const restoreSize =
-      restoreBuffer &&
-      typeof terminalTab?.cols === 'number' &&
-      Number.isSafeInteger(terminalTab.cols) &&
-      terminalTab.cols > 0 &&
-      typeof terminalTab?.rows === 'number' &&
-      Number.isSafeInteger(terminalTab.rows) &&
-      terminalTab.rows > 0
-        ? { cols: terminalTab.cols, rows: terminalTab.rows }
-        : undefined
+    const restoreSize = restoreBuffer && restoreCols && restoreRows ? { cols: restoreCols, rows: restoreRows } : undefined
 
     mountedRef.current = true
     cursorRef.current = restoreCursor
@@ -639,7 +638,19 @@ export const Terminal = memo(function Terminal({ ptyId, directory, isActive }: T
       terminalRef.current = null
       fitAddonRef.current = null
     }
-  }, [ptyId, directory, hasBeenActive, clearStickyModifiers, sendTerminalData, preferTouchUi])
+  }, [
+    ptyId,
+    directory,
+    hasBeenActive,
+    clearStickyModifiers,
+    sendTerminalData,
+    preferTouchUi,
+    restoreBuffer,
+    restoreScrollY,
+    restoreCursor,
+    restoreCols,
+    restoreRows,
+  ])
 
   useEffect(() => {
     const container = containerRef.current

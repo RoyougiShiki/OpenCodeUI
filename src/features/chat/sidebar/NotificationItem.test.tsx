@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ApiSession } from '../../../api'
+import type { NotificationEntry } from '../../../store/notificationStore'
 import { NotificationItem } from './NotificationItem'
 
 const { markReadMock, dismissMock } = vi.hoisted(() => ({
@@ -19,6 +21,21 @@ vi.mock('../../../hooks/useInputCapabilities', () => ({
 }))
 
 describe('NotificationItem', () => {
+  const entry: NotificationEntry = {
+    id: 'notif-1',
+    type: 'completed',
+    title: 'Build finished',
+    body: 'All tests passed',
+    sessionId: 'session-1',
+    timestamp: Date.now(),
+    read: false,
+  }
+  const resolvedSession: ApiSession = {
+    id: 'session-1',
+    title: 'Build finished',
+    directory: '/workspace',
+  } as ApiSession
+
   beforeEach(() => {
     markReadMock.mockReset()
     dismissMock.mockReset()
@@ -26,21 +43,7 @@ describe('NotificationItem', () => {
 
   it('renders a selectable row button and a separate dismiss action', () => {
     const onSelect = vi.fn()
-    render(
-      <NotificationItem
-        entry={{
-          id: 'notif-1',
-          type: 'completed',
-          title: 'Build finished',
-          body: 'All tests passed',
-          sessionId: 'session-1',
-          timestamp: Date.now(),
-          read: false,
-        } as any}
-        resolvedSession={{ id: 'session-1', title: 'Build finished', directory: '/workspace' } as any}
-        onSelect={onSelect}
-      />,
-    )
+    render(<NotificationItem entry={entry} resolvedSession={resolvedSession} onSelect={onSelect} />)
 
     fireEvent.click(screen.getByRole('button', { name: /Build finished/i }))
 

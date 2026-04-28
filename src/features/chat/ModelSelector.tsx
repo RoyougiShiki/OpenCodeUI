@@ -261,7 +261,7 @@ const ModelListPanel = memo(function ModelListPanel({
                     onTouchEnd={onTouchEnd}
                     onTouchMove={onTouchEnd}
                     title={`${model.name} · ${model.providerName}${model.contextLimit ? ` · ${formatContext(model.contextLimit)}` : ''}`}
-                    className="flex min-w-0 flex-1 items-center justify-between gap-2 bg-transparent border-none p-0 text-left"
+                    className="flex min-w-0 flex-1 items-center justify-between gap-2 bg-transparent border-none p-0 text-left outline-none focus-visible:outline-none"
                   >
                     {/* Left: name + capability icons */}
                     <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
@@ -304,7 +304,7 @@ const ModelListPanel = memo(function ModelListPanel({
                         if (interactiveIndex !== -1) handlePinKeyDown(e, interactiveIndex)
                       }}
                       aria-label={`${pinned ? unpinLabel : pinLabel}: ${model.name}`}
-                      className={`w-5 flex items-center justify-center flex-shrink-0 p-0.5 rounded transition-all duration-150 ${
+                      className={`w-5 flex items-center justify-center flex-shrink-0 p-0.5 rounded outline-none transition-all duration-150 focus-visible:outline-none ${
                         pinned
                           ? 'text-accent-main-100 opacity-80 hover:opacity-100'
                           : 'text-text-500 opacity-0 group-hover:opacity-40 group-focus-within:opacity-40 hover:!opacity-100 focus-visible:!opacity-100'

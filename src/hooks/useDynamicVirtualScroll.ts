@@ -49,34 +49,31 @@ export function useDynamicVirtualScroll({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [containerHeight, setContainerHeight] = useState(0)
-
-  // 每行的实测高度，未测量的用 estimateLineHeight
-  const measuredHeights = useRef<Float32Array>(new Float32Array(0))
-
-  // 确保 measuredHeights 大小匹配 lineCount
-  if (measuredHeights.current.length !== lineCount) {
-    const old = measuredHeights.current
-    const next = new Float32Array(lineCount).fill(estimateLineHeight)
-    // 复制旧数据
-    const copyLen = Math.min(old.length, lineCount)
-    for (let i = 0; i < copyLen; i++) next[i] = old[i]
-    measuredHeights.current = next
-  }
-
-  // 宽度变化代数，驱动 offsets 重算
-  const [generation, setGeneration] = useState(0)
+  const [measuredHeights, setMeasuredHeights] = useState<Float32Array<ArrayBufferLike>>(
+    () => new Float32Array(lineCount).fill(estimateLineHeight),
+  )
   const pendingMeasureRef = useRef(false)
+  const pendingHeightsRef = useRef<Float32Array<ArrayBufferLike> | null>(null)
+
+  const resolvedHeights = useMemo(() => {
+    const next = new Float32Array(lineCount).fill(estimateLineHeight)
+    const copyLen = Math.min(measuredHeights.length, lineCount)
+
+    for (let i = 0; i < copyLen; i++) {
+      next[i] = measuredHeights[i] || estimateLineHeight
+    }
+
+    return next
+  }, [estimateLineHeight, lineCount, measuredHeights])
 
   // 前缀和数组
   const offsets = useMemo(() => {
     const arr = new Float64Array(lineCount + 1)
-    const h = measuredHeights.current
     for (let i = 0; i < lineCount; i++) {
-      arr[i + 1] = arr[i] + (h[i] || estimateLineHeight)
+      arr[i + 1] = arr[i] + (resolvedHeights[i] || estimateLineHeight)
     }
     return arr
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lineCount, generation])
+  }, [estimateLineHeight, lineCount, resolvedHeights])
 
   const totalHeight = offsets[lineCount] || 0
 
@@ -122,13 +119,13 @@ export function useDynamicVirtualScroll({
       const w = container.clientWidth
       if (Math.abs(w - lastWidthRef.current) > 20) {
         lastWidthRef.current = w
-        measuredHeights.current.fill(estimateLineHeight)
-        setGeneration(g => g + 1)
+        pendingHeightsRef.current = null
+        setMeasuredHeights(new Float32Array(lineCount).fill(estimateLineHeight))
       }
     })
     ro.observe(container)
     return () => ro.disconnect()
-  }, [])
+  }, [estimateLineHeight, lineCount])
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop)
@@ -138,20 +135,27 @@ export function useDynamicVirtualScroll({
     if (!el) return
     const h = el.offsetHeight
     if (h <= 0) return
-    const current = measuredHeights.current[index]
+    const sourceHeights = pendingHeightsRef.current ?? resolvedHeights
+    const current = sourceHeights[index] || estimateLineHeight
     // 只在差异超过 0.5px 时更新，且取较大值防止振荡
     const next = Math.max(current, h)
     if (Math.abs(current - next) > 0.5) {
-      measuredHeights.current[index] = next
+      const nextHeights = new Float32Array(sourceHeights)
+      nextHeights[index] = next
+      pendingHeightsRef.current = nextHeights
       if (!pendingMeasureRef.current) {
         pendingMeasureRef.current = true
         requestAnimationFrame(() => {
           pendingMeasureRef.current = false
-          setGeneration(g => g + 1)
+          const bufferedHeights = pendingHeightsRef.current
+          pendingHeightsRef.current = null
+          if (bufferedHeights) {
+            setMeasuredHeights(bufferedHeights)
+          }
         })
       }
     }
-  }, [])
+  }, [estimateLineHeight, resolvedHeights])
 
   return {
     containerRef,

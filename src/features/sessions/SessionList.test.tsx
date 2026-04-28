@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ApiSession } from '../../api'
 import { SessionListItem } from './SessionList'
 
 const { useSessionActiveEntryMock, useHasUnreadCompletedNotificationMock, markSessionNotificationsReadMock } = vi.hoisted(() => ({
@@ -32,6 +33,13 @@ vi.mock('../chat/sidebar/SessionChildrenSlot', () => ({
 }))
 
 describe('SessionListItem', () => {
+  const session: ApiSession = {
+    id: 'session-1',
+    title: 'Session One',
+    directory: '/workspace/demo',
+    time: { updated: 1 },
+  } as ApiSession
+
   beforeEach(() => {
     useSessionActiveEntryMock.mockReturnValue(null)
     useHasUnreadCompletedNotificationMock.mockReturnValue(false)
@@ -43,12 +51,7 @@ describe('SessionListItem', () => {
 
     render(
       <SessionListItem
-        session={{
-          id: 'session-1',
-          title: 'Session One',
-          directory: '/workspace/demo',
-          time: { updated: 1 },
-        } as any}
+        session={session}
         isSelected={false}
         onSelect={onSelect}
         onDelete={vi.fn()}

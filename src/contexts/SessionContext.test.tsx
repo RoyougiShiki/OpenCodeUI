@@ -1,5 +1,5 @@
 import { act, render } from '@testing-library/react'
-import { useContext, type ContextType } from 'react'
+import { useContext, useEffect, type ContextType } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { EventCallbacks } from '../types/api/event'
 import { SessionContext } from './SessionContext.shared'
@@ -74,7 +74,12 @@ vi.mock('../utils', () => ({
 }))
 
 function SessionContextProbe() {
-  latestContext = useContext(SessionContext)
+  const context = useContext(SessionContext)
+
+  useEffect(() => {
+    latestContext = context
+  }, [context])
+
   return null
 }
 
