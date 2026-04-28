@@ -133,7 +133,7 @@ export function InputToolbar({
       document.body.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([type="file"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       ),
-    )
+    ).filter(element => !element.closest('[aria-hidden="true"]'))
     const currentIndex = focusables.findIndex(item => item === trigger)
     if (currentIndex === -1) return
     const nextIndex = currentIndex + direction
@@ -235,14 +235,32 @@ export function InputToolbar({
         !agentMenuRef.current.contains(e.target as Node) &&
         !agentTriggerRef.current?.contains(e.target as Node)
       ) {
+        const target = e.target as HTMLElement | null
+        const isFocusableTarget =
+          !!target &&
+          target.matches(
+            'button, [href], input:not([type="hidden"]), textarea, select, [tabindex]:not([tabindex="-1"])',
+          )
         setAgentMenuOpen(false)
+        if (!isFocusableTarget) {
+          agentTriggerRef.current?.focus()
+        }
       }
       if (
         variantMenuRef.current &&
         !variantMenuRef.current.contains(e.target as Node) &&
         !variantTriggerRef.current?.contains(e.target as Node)
       ) {
+        const target = e.target as HTMLElement | null
+        const isFocusableTarget =
+          !!target &&
+          target.matches(
+            'button, [href], input:not([type="hidden"]), textarea, select, [tabindex]:not([tabindex="-1"])',
+          )
         setVariantMenuOpen(false)
+        if (!isFocusableTarget) {
+          variantTriggerRef.current?.focus()
+        }
       }
     }
     document.addEventListener('mousedown', handleClickOutside)

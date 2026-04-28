@@ -205,7 +205,7 @@ describe('SessionChangesPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /Change mode:/ }))
 
     await act(async () => {
-      vi.advanceTimersByTime(48)
+      vi.runAllTimers()
       await Promise.resolve()
       await Promise.resolve()
     })
@@ -247,7 +247,7 @@ describe('SessionChangesPanel', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: /Change mode:/ }), { key: 'ArrowUp' })
 
     await act(async () => {
-      vi.advanceTimersByTime(48)
+      vi.runAllTimers()
       await Promise.resolve()
       await Promise.resolve()
     })

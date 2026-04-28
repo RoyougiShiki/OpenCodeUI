@@ -409,7 +409,7 @@ export const ModelSelector = memo(
         document.body.querySelectorAll<HTMLElement>(
           'button:not([disabled]), [href], input:not([type="file"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ),
-      )
+      ).filter(element => !element.closest('[aria-hidden="true"]'))
       const currentIndex = focusables.findIndex(item => item === trigger)
       if (currentIndex === -1) return
       focusables[currentIndex + direction]?.focus()
@@ -543,7 +543,13 @@ export const ModelSelector = memo(
           menuRef.current &&
           !menuRef.current.contains(target)
         ) {
-          closeMenu({ focusTrigger: false })
+          const targetElement = target as HTMLElement | null
+          const isFocusableTarget =
+            !!targetElement &&
+            targetElement.matches(
+              'button, [href], input:not([type="hidden"]), textarea, select, [tabindex]:not([tabindex="-1"])',
+            )
+          closeMenu({ focusTrigger: !isFocusableTarget })
         }
       }
       document.addEventListener('mousedown', handleClickOutside)

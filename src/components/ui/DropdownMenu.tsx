@@ -166,6 +166,7 @@ export function DropdownMenu({
 
   return createPortal(
     <div
+      aria-hidden={!isOpen}
       className={`
         fixed z-[100]
         p-1 glass border border-border-200/60 rounded-xl shadow-lg
@@ -173,7 +174,12 @@ export function DropdownMenu({
         ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
         ${className}
       `}
-      style={{ ...posStyle, ...sizeStyle }}
+      style={{
+        ...posStyle,
+        ...sizeStyle,
+        visibility: isOpen ? 'visible' : 'hidden',
+        pointerEvents: isOpen ? 'auto' : 'none',
+      }}
     >
       {children}
     </div>,
