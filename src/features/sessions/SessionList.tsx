@@ -655,7 +655,7 @@ export function SessionListItem({
             className={`absolute right-2 z-10 shrink-0 flex items-center gap-0.5 transition-opacity duration-150 ${
               actionsVisible
                 ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
+                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto'
             }`}
           >
             <button
@@ -849,7 +849,7 @@ export function SessionListItem({
           className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 transition-all duration-200 z-10 ${
             actionsVisible
               ? 'opacity-100 pointer-events-auto'
-              : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'
+              : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto'
           }`}
         >
           <button
