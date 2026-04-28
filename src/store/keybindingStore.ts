@@ -10,6 +10,7 @@ export type KeybindingAction =
   | 'openSettings'
   | 'openProject'
   | 'commandPalette'
+  | 'quickOpen'
   | 'toggleSidebar'
   | 'toggleRightPanel'
   | 'focusInput'
@@ -98,6 +99,14 @@ const DEFAULT_KEYBINDINGS: KeybindingConfig[] = [
     description: 'Open command palette',
     defaultKey: 'Ctrl+Shift+P',
     currentKey: 'Ctrl+Shift+P',
+    category: 'general',
+  },
+  {
+    action: 'quickOpen',
+    label: 'Quick Open',
+    description: 'Quick open files, folders, and sessions',
+    defaultKey: 'Ctrl+P',
+    currentKey: 'Ctrl+P',
     category: 'general',
   },
   {

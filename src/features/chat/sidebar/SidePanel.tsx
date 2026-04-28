@@ -15,6 +15,7 @@ import {
   PlusIcon,
   TrashIcon,
   SearchIcon,
+  TerminalIcon,
   ChevronDownIcon,
   PencilIcon,
   CheckIcon,
@@ -55,6 +56,8 @@ interface SidePanelProps {
   onToggleSidebar: () => void
   contextLimit?: number
   onOpenSettings?: () => void
+  onOpenSearch?: () => void
+  onOpenCommandPalette?: () => void
 }
 
 interface ProjectItem {
@@ -108,6 +111,8 @@ export function SidePanel({
   onToggleSidebar,
   contextLimit = 200000,
   onOpenSettings,
+  onOpenSearch,
+  onOpenCommandPalette,
 }: SidePanelProps) {
   const { t } = useTranslation(['chat', 'common'])
   const {
@@ -235,6 +240,8 @@ export function SidePanel({
 
   const showLabels = isExpanded || isMobile
   const newChatShortcut = useKeybindingLabel('newSession')
+  const quickOpenShortcut = useKeybindingLabel('quickOpen')
+  const commandPaletteShortcut = useKeybindingLabel('commandPalette')
 
   // Session stats
   const { messages } = useMessageStore()
@@ -253,7 +260,7 @@ export function SidePanel({
     return subscribeToConnectionState(setConnectionState)
   }, [])
 
-  const { sessions, isLoading, isLoadingMore, hasMore, search, setSearch, loadMore, deleteSession, refresh } =
+  const { sessions, inlineChildSessions: contextChildSessions, isLoading, isLoadingMore, hasMore, search, setSearch, loadMore, deleteSession, refresh } =
     useSessionContext()
 
   // 缓存通过 API 拉取的 session 数据（sessions 列表中不存在的）
@@ -357,6 +364,14 @@ export function SidePanel({
         if (s) add(pid, s)
       }
     }
+    if (contextChildSessions) {
+      for (const [parentId, children] of contextChildSessions) {
+        if (!rootSessionIds.has(parentId)) continue
+        for (const child of children) {
+          add(parentId, child)
+        }
+      }
+    }
     return map.size > 0 ? map : undefined
   }, [
     search,
@@ -367,6 +382,7 @@ export function SidePanel({
     expandedChildSessionIds,
     sessionLookup,
     findParentId,
+    contextChildSessions,
   ])
 
   const activeSessionTree = useMemo(
@@ -843,6 +859,51 @@ export function SidePanel({
             {newChatShortcut}
           </span>
         </button>
+
+        {(onOpenSearch || onOpenCommandPalette) && (
+          <div className="flex gap-1" style={{ width: showLabels ? '100%' : 32 }}>
+            {onOpenSearch && (
+              <button
+                onClick={onOpenSearch}
+                className="h-8 flex items-center rounded-lg text-text-300 hover:text-text-100 hover:bg-bg-200 active:scale-[0.98] transition-all duration-300 group overflow-hidden flex-1 min-w-0"
+                style={{ paddingLeft: 6, paddingRight: 6 }}
+                title={t('sidebar.search')}
+              >
+                <span className="size-5 flex items-center justify-center shrink-0">
+                  <SearchIcon size={16} />
+                </span>
+                <span
+                  className="ml-2 text-[length:var(--fs-base)] whitespace-nowrap transition-opacity duration-300"
+                  style={{ opacity: showLabels ? 1 : 0 }}
+                >
+                  {t('sidebar.search')}
+                </span>
+                {showLabels && quickOpenShortcut && (
+                  <span className="ml-auto text-[length:var(--fs-xxs)] text-text-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-mono">
+                    {quickOpenShortcut}
+                  </span>
+                )}
+              </button>
+            )}
+            {onOpenCommandPalette && (
+              <button
+                onClick={onOpenCommandPalette}
+                className="h-8 flex items-center rounded-lg text-text-300 hover:text-text-100 hover:bg-accent-main-100/10 active:scale-[0.98] transition-all duration-300 group shrink-0 bg-accent-main-100/[0.03]"
+                style={{ paddingLeft: 6, paddingRight: 6 }}
+                title={t('sidebar.commands')}
+              >
+                {showLabels && commandPaletteShortcut && (
+                  <span className="mr-1 text-[length:var(--fs-xxs)] text-text-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-mono">
+                    {commandPaletteShortcut}
+                  </span>
+                )}
+                <span className="size-5 flex items-center justify-center shrink-0">
+                  <TerminalIcon size={16} />
+                </span>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Project Selector - 只在展开时显示 */}
         {showLabels && (

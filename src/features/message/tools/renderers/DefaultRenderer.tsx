@@ -12,13 +12,11 @@ import type { ToolRendererProps, ExtractedToolData } from '../types'
 // ============================================
 
 export function DefaultRenderer({ part, data }: ToolRendererProps) {
-  const { t } = useTranslation('message')
   const { state, tool } = part
   const { toolCardStyle } = useSyncExternalStore(themeStore.subscribe, themeStore.getSnapshot)
   const isCompact = toolCardStyle === 'compact'
   const isActive = state.status === 'running' || state.status === 'pending'
 
-  const hasInput = !!data.input?.trim()
   const hasError = !!data.error
   const hasOutput = !!(data.files || data.diff || data.output?.trim() || data.exitCode !== undefined)
   const hasDiagnostics = !!data.diagnostics?.length
@@ -32,18 +30,6 @@ export function DefaultRenderer({ part, data }: ToolRendererProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Input — compact 模式下不渲染 */}
-      {!isCompact && (hasInput || (isActive && !hasInput)) && (
-        <ContentBlock
-          label={t('defaultRenderer.input')}
-          content={data.input || ''}
-          language={data.inputLang}
-          isLoading={isActive && !hasInput}
-          loadingText=""
-          defaultCollapsed={true}
-        />
-      )}
-
       {/* Output */}
       {showOutput && (
         <OutputBlock
@@ -121,12 +107,12 @@ function OutputBlock({ tool, data, isActive, hasError, hasOutput, compact }: Out
     if (data.diff) {
       return (
         <ContentBlock
-          label={t('defaultRenderer.output')}
           filePath={data.filePath}
           diff={data.diff}
           diffStats={data.diffStats}
           language={data.outputLang}
           compact={compact}
+          collapsible={false}
         />
       )
     }
@@ -134,12 +120,12 @@ function OutputBlock({ tool, data, isActive, hasError, hasOutput, compact }: Out
     // Regular output
     return (
       <ContentBlock
-        label={t('defaultRenderer.output')}
         content={data.output}
         language={data.outputLang}
         filePath={data.filePath}
         stats={data.exitCode !== undefined ? { exit: data.exitCode } : undefined}
         compact={compact}
+        collapsible={false}
       />
     )
   }

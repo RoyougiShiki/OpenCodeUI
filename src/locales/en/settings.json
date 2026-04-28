@@ -87,6 +87,8 @@
     "inlineToolRequestsDesc": "Show pending permission and question requests under the related tool call instead of floating dialogs",
     "compactInlinePermission": "Compact Inline Permission",
     "compactInlinePermissionDesc": "When the tool already shows content, only display action buttons for permissions to avoid duplication",
+    "permissionDialogCollapsed": "Permission Dialog Collapsed",
+    "permissionDialogCollapsedDesc": "Collapse permission dialog by default, click to expand",
     "toolCardStyle": "Tool Output Style",
     "toolCardStyleDesc": "Choose how tool call results are displayed",
     "toolCardClassic": "Classic",
@@ -281,7 +283,10 @@
     "envVars": "Environment Variables",
     "envVarsDesc": "Passed to the opencode serve process (e.g. HTTPS_PROXY, API keys)",
     "keyPlaceholder": "KEY",
-    "valuePlaceholder": "value"
+    "valuePlaceholder": "value",
+    "boundServer": "Bound Server",
+    "useActiveServer": "Use active server",
+    "boundServerHelp": "Select which server config to use for starting the local service. The server's URL and port will be used."
   },
   "about": {
     "title": "About & Updates",

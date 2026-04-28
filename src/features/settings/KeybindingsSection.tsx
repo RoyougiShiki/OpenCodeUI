@@ -14,6 +14,7 @@ const ACTION_TRANSLATION_KEYS: Record<KeybindingAction, { label: string; descrip
   openSettings: { label: 'openSettings', description: 'openSettingsDesc' },
   openProject: { label: 'openProject', description: 'openProjectDesc' },
   commandPalette: { label: 'commandPalette', description: 'commandPaletteDesc' },
+  quickOpen: { label: 'quickOpen', description: 'quickOpenDesc' },
   toggleSidebar: { label: 'toggleSidebar', description: 'toggleSidebarDesc' },
   toggleRightPanel: { label: 'toggleRightPanel', description: 'toggleRightPanelDesc' },
   focusInput: { label: 'focusInput', description: 'focusInputDesc' },

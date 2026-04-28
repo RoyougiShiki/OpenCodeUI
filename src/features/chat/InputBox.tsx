@@ -17,7 +17,7 @@ import { FloatingActions, CollapsedCapsule } from './input/InputActions'
 import { useMobileCollapse } from './input/useMobileCollapse'
 import { useAttachmentRail } from './input/useAttachmentRail'
 import { useInputHistory } from './input/useInputHistory'
-import { TEXT_STYLE, detectSlashTrigger, isFileSupported, ensureFileMime, readFileAsDataUrl } from './input/inputUtils'
+import { TEXT_STYLE, detectSlashTrigger, ensureFileMime, readFileAsDataUrl } from './input/inputUtils'
 import { keybindingStore, matchesKeybinding } from '../../store/keybindingStore'
 import { useChatViewport } from './chatViewport'
 import type { ApiAgent } from '../../api/client'
@@ -59,12 +59,13 @@ export interface InputBoxProps {
   onVariantChange?: (variant: string | undefined) => void
   supportsImages?: boolean // 保留向后兼容（deprecated，优先用 fileCapabilities）
   fileCapabilities?: FileCapabilities
-  // Model（移动端 InputToolbar 用）
+  // Model（InputToolbar 用）
   models?: ModelInfo[]
   selectedModelKey?: string | null
   onModelChange?: (modelKey: string, model: ModelInfo) => void
   modelsLoading?: boolean
   modelSelectorRef?: React.RefObject<ModelSelectorHandle | null>
+  onOpenModelSettings?: () => void
   rootPath?: string
   sessionId?: string | null
   // Undo/Redo
@@ -110,6 +111,7 @@ function InputBoxComponent({
   onModelChange,
   modelsLoading = false,
   modelSelectorRef,
+  onOpenModelSettings,
   rootPath = '',
   sessionId,
   revertedText,
@@ -138,9 +140,6 @@ function InputBoxComponent({
       },
     [fileCapabilitiesProp, supportsImages],
   )
-
-  // 是否有任何文件附件能力
-  const supportsAnyFile = fileCaps.image || fileCaps.pdf || fileCaps.audio || fileCaps.video
 
   // 文本状态
   const [text, setText] = useState('')
@@ -517,9 +516,11 @@ function InputBoxComponent({
         return
       }
 
-      // 发送消息（读取 keybinding 配置）
+      // 发送消息（读取 keybinding 配置；也支持纯 Enter 发送）
       const sendKey = keybindingStore.getKey('sendMessage')
-      if (sendKey && matchesKeybinding(e.nativeEvent, sendKey)) {
+      const isSendKey = sendKey && matchesKeybinding(e.nativeEvent, sendKey)
+      const isPlainEnter = e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey
+      if ((isSendKey || isPlainEnter) && !slashOpen && !mentionOpen) {
         e.preventDefault()
         handleSend()
       }
@@ -686,18 +687,14 @@ function InputBoxComponent({
     textareaRef.current?.focus()
   }, [])
 
-  // 通用文件上传 — 根据模型能力判断是否接受
   const handleFilesSelected = useCallback(
     async (files: File[]) => {
-      if (files.length === 0 || !supportsAnyFile || isSubmitting) return
+      if (files.length === 0 || isSubmitting) return
 
       const nextAttachments: Attachment[] = []
 
       for (const rawFile of files) {
         const file = ensureFileMime(rawFile)
-
-        // 按 MIME 类型检查模型能力
-        if (!isFileSupported(file.type, fileCaps)) continue
 
         try {
           const dataUrl = await readFileAsDataUrl(file)
@@ -718,7 +715,7 @@ function InputBoxComponent({
         setAttachments(prev => [...prev, ...nextAttachments])
       }
     },
-    [supportsAnyFile, fileCaps, isSubmitting],
+    [isSubmitting],
   )
 
   // 删除附件
@@ -742,32 +739,27 @@ function InputBoxComponent({
     [attachments, isSubmitting, text],
   )
 
-  // 粘贴处理 — 根据模型能力过滤可粘贴的文件类型
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
-      if (supportsAnyFile) {
-        const items = e.clipboardData?.items
-        const files: File[] = []
+      const items = e.clipboardData?.items
+      const files: File[] = []
 
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            if (items[i].kind === 'file') {
-              const file = items[i].getAsFile()
-              if (file && isFileSupported(ensureFileMime(file).type, fileCaps)) files.push(file)
-            }
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].kind === 'file') {
+            const file = items[i].getAsFile()
+            if (file) files.push(ensureFileMime(file))
           }
-        }
-
-        if (files.length > 0) {
-          e.preventDefault()
-          void handleFilesSelected(files)
-          return
         }
       }
 
-      // 文本粘贴：让 textarea 默认处理（天然支持换行和 undo）
+      if (files.length > 0) {
+        e.preventDefault()
+        void handleFilesSelected(files)
+        return
+      }
     },
-    [supportsAnyFile, fileCaps, handleFilesSelected],
+    [handleFilesSelected],
   )
 
   // 拖拽文件到输入框
@@ -779,12 +771,12 @@ function InputBoxComponent({
       // 内部拖拽（FileExplorer）或原生文件拖拽都高亮
       if (
         e.dataTransfer.types.includes('application/opencode-file') ||
-        (supportsAnyFile && e.dataTransfer.types.includes('Files'))
+        e.dataTransfer.types.includes('Files')
       ) {
         setIsDragging(true)
       }
     },
-    [supportsAnyFile],
+    [],
   )
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -865,11 +857,11 @@ function InputBoxComponent({
       }
 
       // 原生文件拖拽（从操作系统拖入）
-      if (supportsAnyFile && e.dataTransfer.files.length > 0) {
+      if (e.dataTransfer.files.length > 0) {
         void handleFilesSelected(Array.from(e.dataTransfer.files))
       }
     },
-    [supportsAnyFile, handleFilesSelected, insertDraggedFile],
+    [handleFilesSelected, insertDraggedFile],
   )
 
   // 滚动同步（备用，overlay 内部也监听了 scroll）
@@ -1074,6 +1066,7 @@ function InputBoxComponent({
                         modelsLoading={modelsLoading}
                         inputContainerRef={inputContainerRef}
                         modelSelectorRef={modelSelectorRef}
+                        onOpenModelSettings={onOpenModelSettings}
                       />
                     </div>
                   </div>

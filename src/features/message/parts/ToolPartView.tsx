@@ -246,15 +246,14 @@ export const ToolPartView = memo(function ToolPartView({
   }
 
   // ── Compact layout (single-tool, no timeline) ──
-  // Grid: [14px icon] [gap 6px] [content] — mirrors ReasoningPartView alignment
+  // Header: [14px icon] [gap 6px] [content] — mirrors ReasoningPartView alignment
+  // Body: full-width below header, no extra indentation
   if (compact) {
     return (
-      <div className="group relative grid grid-cols-[14px_minmax(0,1fr)] gap-x-1.5 items-start py-1">
-        {/* Icon column — fixed, outside of interactive area */}
-        <span className="inline-flex h-9 w-[14px] items-center justify-center shrink-0">{toolIcon}</span>
+      <div className="group relative py-1">
+        <div className="grid grid-cols-[14px_minmax(0,1fr)] gap-x-1.5 items-start">
+          <span className="inline-flex h-9 w-[14px] items-center justify-center shrink-0">{toolIcon}</span>
 
-        {/* Content column */}
-        <div className="min-w-0">
           <button
             type="button"
             className="flex items-center gap-2 w-full h-9 text-left pl-2 pr-0 hover:bg-bg-200/40 rounded-sm transition-colors group/header"
@@ -311,16 +310,15 @@ export const ToolPartView = memo(function ToolPartView({
               </span>
             </div>
           </button>
+        </div>
 
-          {/* Body */}
-          <div
-            className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-              effectiveExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-            }`}
-          >
-            <div className="overflow-hidden">
-              {shouldRenderBody && <div className="pl-2 pr-2.5 pb-2 pt-1">{bodyContent}</div>}
-            </div>
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+            effectiveExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          }`}
+        >
+          <div className="overflow-hidden">
+            {shouldRenderBody && <div className="px-2 pb-2 pt-1">{bodyContent}</div>}
           </div>
         </div>
       </div>
@@ -505,7 +503,13 @@ function getTaskChildSessionId(part: ToolPart): string | undefined {
 /** Extract description from tool input as title fallback (available while running) */
 function getInputDescription(part: ToolPart): string | undefined {
   const input = part.state.input as Record<string, unknown> | undefined
-  return (input?.description as string) || undefined
+  if (!input) return undefined
+  if (input.description) return input.description as string
+  if (part.tool.toLowerCase().includes('skill')) {
+    const skillName = (input.name as string) || (input.skill as string)
+    if (skillName) return skillName
+  }
+  return undefined
 }
 
 // ============================================

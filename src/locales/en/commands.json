@@ -5,6 +5,8 @@
   "openProjectDesc": "Open project selector",
   "commandPalette": "Command Palette",
   "commandPaletteDesc": "Open command palette",
+  "quickOpen": "Quick Open",
+  "quickOpenDesc": "Quick open files, folders, and sessions",
   "openShortcutsSettings": "Open Shortcuts Settings",
   "openShortcutsSettingsDesc": "Open settings to shortcuts tab",
   "toggleSidebar": "Toggle Sidebar",

@@ -311,17 +311,6 @@ export function SidebarFooter({ showLabels, connectionState, stats, hasMessages,
               <ShareIcon size={14} />
               <span>{t('sidebar.shareChat')}</span>
             </button>
-
-            <button
-              onClick={() => {
-                closeMenu()
-                onOpenSettings?.()
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-[length:var(--fs-sm)] text-text-300 hover:text-text-100 hover:bg-bg-200/50 transition-colors text-left"
-            >
-              <CogIcon size={14} />
-              <span>{t('sidebar.settings')}</span>
-            </button>
           </div>
 
           {/* Connection Status */}
@@ -337,6 +326,30 @@ export function SidebarFooter({ showLabels, connectionState, stats, hasMessages,
   return (
     <div className="shrink-0 pb-[var(--safe-area-inset-bottom)]">
       <div ref={containerRef} className="flex flex-col gap-0.5 mx-2 py-2">
+        {/* 设置按钮 — 一级 */}
+        <button
+          onClick={() => onOpenSettings?.()}
+          className={`
+            h-8 flex items-center rounded-lg transition-all duration-300 group overflow-hidden
+            text-text-300 hover:text-text-100 hover:bg-bg-200
+          `}
+          style={{
+            width: showLabels ? '100%' : 32,
+            paddingLeft: showLabels ? 6 : 4,
+            paddingRight: showLabels ? 8 : 4,
+          }}
+          title={t('sidebar.settings')}
+        >
+          <CogIcon size={14} className="shrink-0" />
+
+          <span
+            className="ml-2 flex-1 text-left text-[length:var(--fs-sm)] text-text-300 group-hover:text-text-100 truncate transition-opacity duration-300"
+            style={{ opacity: showLabels ? 1 : 0 }}
+          >
+            {t('sidebar.settings')}
+          </span>
+        </button>
+
         {/* 状态/设置触发按钮 */}
         <button
           ref={buttonRef}

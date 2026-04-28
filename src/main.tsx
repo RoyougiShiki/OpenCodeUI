@@ -77,6 +77,42 @@ serverStore.onServerChange(() => {
 
   // 5. 重连 SSE（会自动连到新服务器）
   reconnectSSE()
+
+  // 6. 切换服务器时，如果 autoStart 开启且目标端口未连接，自动启动服务
+  if (isTauri() && serviceStore.autoStart && !serviceStore.starting && !serviceStore.running) {
+    const boundServerId = serviceStore.boundServerId
+    const boundServer = boundServerId ? serverStore.getServers().find(s => s.id === boundServerId) : undefined
+    const url = boundServer?.url || serverStore.getActiveServer()?.url || 'http://127.0.0.1:4096'
+    const binaryPath = serviceStore.effectiveBinaryPath
+    import('@tauri-apps/api/core').then(({ invoke }) => {
+      invoke<boolean>('check_opencode_service', { url }).then(running => {
+        if (running) return
+        serviceStore.setStarting(true)
+        invoke<boolean>('start_opencode_service', { url, binaryPath, envVars: serviceStore.envVarsRecord })
+          .then(weStarted => {
+            serviceStore.setStartedByUs(weStarted)
+            serviceStore.setRunning(true)
+            serviceStore.setStarting(false)
+          })
+          .catch(err => {
+            serviceStore.setStarting(false)
+            apiErrorHandler('auto-start on server switch', err)
+          })
+      }).catch(() => {
+        serviceStore.setStarting(true)
+        invoke<boolean>('start_opencode_service', { url, binaryPath, envVars: serviceStore.envVarsRecord })
+          .then(weStarted => {
+            serviceStore.setStartedByUs(weStarted)
+            serviceStore.setRunning(true)
+            serviceStore.setStarting(false)
+          })
+          .catch(err => {
+            serviceStore.setStarting(false)
+            apiErrorHandler('auto-start on server switch', err)
+          })
+      })
+    })
+  }
 })
 
 const isNativeTauri = isTauri()
@@ -98,11 +134,13 @@ if (isNativeTauri) {
 
   // Auto-start opencode serve（如果设置开启）
   if (!isNativeTauriMobile && serviceStore.autoStart) {
-    const serverUrl = serverStore.getActiveServer()?.url || 'http://127.0.0.1:4096'
+    const boundServerId = serviceStore.boundServerId
+    const boundServer = boundServerId ? serverStore.getServers().find(s => s.id === boundServerId) : undefined
+    const url = boundServer?.url || serverStore.getActiveServer()?.url || 'http://127.0.0.1:4096'
     const binaryPath = serviceStore.effectiveBinaryPath
     import('@tauri-apps/api/core').then(({ invoke }) => {
       serviceStore.setStarting(true)
-      invoke<boolean>('start_opencode_service', { url: serverUrl, binaryPath, envVars: serviceStore.envVarsRecord })
+      invoke<boolean>('start_opencode_service', { url, binaryPath, envVars: serviceStore.envVarsRecord })
         .then(weStarted => {
           serviceStore.setStartedByUs(weStarted)
           serviceStore.setRunning(true)

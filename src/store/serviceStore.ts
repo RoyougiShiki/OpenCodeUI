@@ -9,6 +9,7 @@ import { useSyncExternalStore } from 'react'
 const STORAGE_KEY_AUTO_START = 'opencode-auto-start-service'
 const STORAGE_KEY_BINARY_PATH = 'opencode-binary-path'
 const STORAGE_KEY_ENV_VARS = 'opencode-service-env-vars'
+const STORAGE_KEY_BOUND_SERVER = 'opencode-bound-server'
 
 /** 环境变量键值对 */
 export interface EnvVar {
@@ -24,15 +25,11 @@ export interface ServiceSettingsBackup {
 
 interface ServiceStoreSnapshot {
   autoStart: boolean
-  /** opencode 可执行文件路径，空字符串表示使用默认 "opencode" */
   binaryPath: string
-  /** 传给子进程的额外环境变量 */
   envVars: EnvVar[]
-  /** 服务是否正在运行（最后一次检测结果） */
+  boundServerId: string
   running: boolean
-  /** 是否由我们启动（用于关闭时判断） */
   startedByUs: boolean
-  /** 当前是否正在启动中 */
   starting: boolean
 }
 
@@ -40,6 +37,7 @@ class ServiceStore {
   private _autoStart: boolean
   private _binaryPath: string
   private _envVars: EnvVar[]
+  private _boundServerId: string
   private _running = false
   private _startedByUs = false
   private _starting = false
@@ -63,6 +61,12 @@ class ServiceStore {
     } catch {
       this._envVars = []
     }
+    this._boundServerId = ''
+    try {
+      this._boundServerId = localStorage.getItem(STORAGE_KEY_BOUND_SERVER) || ''
+    } catch {
+      this._boundServerId = ''
+    }
     this._snapshot = this._buildSnapshot()
   }
 
@@ -76,6 +80,9 @@ class ServiceStore {
   }
   get envVars() {
     return this._envVars
+  }
+  get boundServerId() {
+    return this._boundServerId
   }
   get running() {
     return this._running
@@ -134,6 +141,16 @@ class ServiceStore {
     this._notify()
   }
 
+  setBoundServerId(id: string) {
+    this._boundServerId = id
+    try {
+      localStorage.setItem(STORAGE_KEY_BOUND_SERVER, id)
+    } catch {
+      /* */
+    }
+    this._notify()
+  }
+
   setRunning(v: boolean) {
     this._running = v
     this._notify()
@@ -167,6 +184,7 @@ class ServiceStore {
       autoStart: this._autoStart,
       binaryPath: this._binaryPath,
       envVars: this._envVars,
+      boundServerId: this._boundServerId,
       running: this._running,
       startedByUs: this._startedByUs,
       starting: this._starting,

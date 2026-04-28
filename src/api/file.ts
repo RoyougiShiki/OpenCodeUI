@@ -6,7 +6,7 @@
 import { getSDKClient, unwrap } from './sdk'
 import { formatPathForApi } from '../utils/directoryUtils'
 import type { FileNode, FileContent, FileStatusItem, SymbolInfo } from './types'
-import { serverStore } from '../store/serverStore'
+import { serverStore, makeBasicAuthHeader } from '../store/serverStore'
 
 const ROOT_DIRECTORY_CACHE_TTL_MS = 10_000
 
@@ -124,4 +124,46 @@ export async function searchDirectories(query: string, baseDirectory?: string, l
     type: 'directory',
     limit,
   })
+}
+
+/**
+ * Grep 搜索结果
+ */
+export interface GrepMatch {
+  path: { text: string }
+  line_number: number
+  lines: { text: string }
+  submatches: Array<{ match: { text: string }; start: number; end: number }>
+}
+
+/**
+ * 在文件中搜索文本内容（基于 ripgrep）- 直接调用 /find API
+ */
+export async function grepFiles(
+  pattern: string,
+  options: {
+    directory?: string
+    limit?: number
+  } = {},
+): Promise<GrepMatch[]> {
+  const baseUrl = serverStore.getActiveBaseUrl()
+  const dir = formatPathForApi(options.directory) || ''
+  const params = new URLSearchParams({ pattern })
+  if (dir) params.set('directory', dir)
+  if (options.limit) params.set('limit', String(options.limit))
+
+  const auth = serverStore.getActiveAuth()
+  const headers: Record<string, string> = {}
+  if (auth?.password) {
+    headers['Authorization'] = makeBasicAuthHeader(auth)
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/find?${params}`, { headers })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data as GrepMatch[]) ?? []
+  } catch {
+    return []
+  }
 }

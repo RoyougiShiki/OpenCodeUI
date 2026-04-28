@@ -64,6 +64,8 @@
     "questionActive": "正在提问",
     "questionFailed": "{{count}} 个提问失败",
     "skillDone": "加载了 {{count}} 个技能",
+    "skillDoneNames": "加载了: {{names}}",
+    "skillDoneNamesMore": "加载了: {{names}} 等 {{count}} 个技能",
     "skillActive": "正在加载技能",
     "skillFailed": "{{count}} 个技能加载失败",
     "thinkDone": "思考了 {{count}} 次",

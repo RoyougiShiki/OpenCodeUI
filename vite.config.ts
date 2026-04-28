@@ -36,7 +36,7 @@ export default defineConfig({
 
   server: {
     // Tauri mobile dev 需要通过网络访问 Vite dev server
-    host: process.env.TAURI_DEV_HOST || false,
+    host: process.env.TAURI_DEV_HOST || '0.0.0.0',
     // 避免端口冲突
     strictPort: true,
     // 允许所有域名

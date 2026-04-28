@@ -24,8 +24,7 @@ import { useResponsiveMaxHeight } from '../hooks/useResponsiveMaxHeight'
 // ============================================
 
 export interface ContentBlockProps {
-  /** 标签 */
-  label: string
+  label?: string
   /** 文件路径 */
   filePath?: string
   /** 语言 */
@@ -94,6 +93,8 @@ export const ContentBlock = memo(function ContentBlock({
   const isDiff = !!diff
   const hasContent = !!content?.trim() || isDiff || stats?.exit !== undefined
   const canCollapse = !compact && collapsible && hasContent
+  const isCollapsed = !collapsible ? false : collapsed
+  const showHeader = collapsible || isLoading || isError || stats?.exit !== undefined || !!label
   const lang = language || (filePath ? detectLanguage(filePath) : 'text')
   const fileName = filePath?.split(/[/\\]/).pop()
 
@@ -159,7 +160,7 @@ export const ContentBlock = memo(function ContentBlock({
   }, [fullscreenOpen, isDiff])
 
   // 是否展开内容区
-  const showBody = (hasContent && !collapsed) || (isLoading && !hasContent)
+  const showBody = (hasContent && !isCollapsed) || (isLoading && !hasContent)
 
   // 容器样式
   const containerClass = isError
@@ -169,107 +170,106 @@ export const ContentBlock = memo(function ContentBlock({
   // Header 样式
   const headerClass = isError ? 'bg-danger-100/8 hover:bg-danger-100/12' : 'bg-bg-200/40 hover:bg-bg-200/60'
 
+  const contentElement = hasContent && (
+        <div ref={contentRef} className="relative group/content">
+          {content && <CopyButton text={content} position="absolute" groupName="content" />}
+
+          {isDiff && resolvedDiff ? (
+            <DiffViewer
+              before={resolvedDiff.before}
+              after={resolvedDiff.after}
+              language={lang}
+              viewMode={diffViewMode}
+              maxHeight={maxHeight}
+            />
+          ) : content?.trim() ? (
+            <CodePreview code={content} language={lang} maxHeight={maxHeight} />
+          ) : null}
+        </div>
+      )
+
   return (
     <div className={`rounded-md overflow-hidden text-[length:var(--fs-sm)] contain-content ${containerClass}`}>
-      {/* Header */}
-      <div
-        className={`flex items-center gap-2 px-3 h-8 select-none transition-colors ${
-          canCollapse ? 'cursor-pointer' : ''
-        } ${headerClass}`}
-        onClick={canCollapse ? () => setCollapsed(!collapsed) : undefined}
-      >
-        {/* Left: chevron + label + filename */}
-        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-          {canCollapse && (
-            <span className={`shrink-0 ${isError ? 'text-danger-100/60' : 'text-text-500'}`}>
-              {collapsed ? <ChevronRightIcon size={12} /> : <ChevronDownIcon size={12} />}
-            </span>
-          )}
-          <span
-            className={`font-medium font-mono leading-none whitespace-nowrap ${
-              isError ? 'text-danger-100' : 'text-text-300'
-            }`}
-          >
-            {label}
-          </span>
-          {fileName && <span className="text-text-500 truncate font-mono min-w-0 flex-1 ml-0.5">{fileName}</span>}
+      {showHeader && (
+        <div
+          className={`flex items-center gap-2 px-3 h-8 select-none transition-colors ${
+            canCollapse ? 'cursor-pointer' : ''
+          } ${headerClass}`}
+          onClick={canCollapse ? () => setCollapsed(!collapsed) : undefined}
+        >
+          <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+            {canCollapse && (
+              <span className={`shrink-0 ${isError ? 'text-danger-100/60' : 'text-text-500'}`}>
+                {isCollapsed ? <ChevronRightIcon size={12} /> : <ChevronDownIcon size={12} />}
+              </span>
+            )}
+            {label && (
+              <span
+                className={`font-medium font-mono leading-none whitespace-nowrap ${
+                  isError ? 'text-danger-100' : 'text-text-300'
+                }`}
+              >
+                {label}
+              </span>
+            )}
+            {fileName && <span className="text-text-500 truncate font-mono min-w-0 flex-1 ml-0.5">{fileName}</span>}
 
-          {/* Loading spinner */}
-          {isLoading && (
-            <div className="flex items-center gap-1.5 text-text-400 ml-1">
-              <div className="w-3 h-3 border-2 border-accent-main-100/30 border-t-accent-main-100 rounded-full animate-spin" />
-              {resolvedLoadingText && <span>{resolvedLoadingText}</span>}
-            </div>
-          )}
+            {isLoading && (
+              <div className="flex items-center gap-1.5 text-text-400 ml-1">
+                <div className="w-3 h-3 border-2 border-accent-main-100/30 border-t-accent-main-100 rounded-full animate-spin" />
+                {resolvedLoadingText && <span>{resolvedLoadingText}</span>}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5 font-mono shrink-0">
+            {diffStats && (
+              <div className="flex items-center gap-1.5 tabular-nums font-medium text-[length:var(--fs-xxs)]">
+                {diffStats.additions > 0 && <span className="text-success-100">+{diffStats.additions}</span>}
+                {diffStats.deletions > 0 && <span className="text-danger-100">-{diffStats.deletions}</span>}
+                {diffStats.additions === 0 && diffStats.deletions === 0 && (
+                  <span className="text-text-500">{t('common:noChanges')}</span>
+                )}
+              </div>
+            )}
+
+            {(isDiff || content?.trim()) && !isCollapsed && (
+              <button
+                className="p-0.5 text-text-400 hover:text-text-200 rounded transition-colors"
+                onClick={e => {
+                  e.stopPropagation()
+                  setFullscreenOpen(true)
+                }}
+                title={t('contentBlock.fullscreen')}
+              >
+                <MaximizeIcon size={13} />
+              </button>
+            )}
+
+            {stats?.exit !== undefined && (
+              <span
+                className={`tabular-nums text-[length:var(--fs-xxs)] font-medium ${
+                  stats.exit === 0 ? 'text-accent-secondary-100' : 'text-warning-100'
+                }`}
+              >
+                {t('contentBlock.exitCode', { code: stats.exit })}
+              </span>
+            )}
+          </div>
         </div>
+      )}
 
-        {/* Right: stats + actions */}
-        <div className="flex items-center gap-2.5 font-mono shrink-0">
-          {/* Diff stats */}
-          {diffStats && (
-            <div className="flex items-center gap-1.5 tabular-nums font-medium text-[length:var(--fs-xxs)]">
-              {diffStats.additions > 0 && <span className="text-success-100">+{diffStats.additions}</span>}
-              {diffStats.deletions > 0 && <span className="text-danger-100">-{diffStats.deletions}</span>}
-              {diffStats.additions === 0 && diffStats.deletions === 0 && (
-                <span className="text-text-500">{t('common:noChanges')}</span>
-              )}
-            </div>
-          )}
-
-          {/* Fullscreen button - 支持 diff 和代码 */}
-          {(isDiff || content?.trim()) && !collapsed && (
-            <button
-              className="p-0.5 text-text-400 hover:text-text-200 rounded transition-colors"
-              onClick={e => {
-                e.stopPropagation()
-                setFullscreenOpen(true)
-              }}
-              title={t('contentBlock.fullscreen')}
-            >
-              <MaximizeIcon size={13} />
-            </button>
-          )}
-
-          {/* Exit code */}
-          {stats?.exit !== undefined && (
-            <span
-              className={`tabular-nums text-[length:var(--fs-xxs)] font-medium ${
-                stats.exit === 0 ? 'text-accent-secondary-100' : 'text-warning-100'
-              }`}
-            >
-              {t('contentBlock.exitCode', { code: stats.exit })}
-            </span>
-          )}
+      {showHeader ? (
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+            showBody ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          }`}
+        >
+          <div className="overflow-hidden">{contentElement}</div>
         </div>
-      </div>
-
-      {/* Body - grid collapse animation */}
-      <div
-        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-          showBody ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-        }`}
-      >
-        <div className="overflow-hidden">
-          {/* Content */}
-          {hasContent && (
-            <div ref={contentRef} className="relative group/content">
-              {content && <CopyButton text={content} position="absolute" groupName="content" />}
-
-              {isDiff && resolvedDiff ? (
-                <DiffViewer
-                  before={resolvedDiff.before}
-                  after={resolvedDiff.after}
-                  language={lang}
-                  viewMode={diffViewMode}
-                  maxHeight={maxHeight}
-                />
-              ) : content?.trim() ? (
-                <CodePreview code={content} language={lang} maxHeight={maxHeight} />
-              ) : null}
-            </div>
-          )}
-        </div>
-      </div>
+      ) : (
+        contentElement
+      )}
 
       {/* Fullscreen Viewer - 支持 diff 和代码 */}
       {isDiff && diff && resolvedDiff ? (

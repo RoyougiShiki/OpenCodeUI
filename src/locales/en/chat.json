@@ -121,6 +121,8 @@
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
     "newChat": "New chat",
+    "search": "Search",
+    "commands": "Commands",
     "addProject": "Add project...",
     "searchChats": "Search chats...",
     "clearSearch": "Clear search",

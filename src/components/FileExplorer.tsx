@@ -5,11 +5,22 @@
 // ============================================
 
 import { memo, useCallback, useMemo, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useFileExplorer, type FileTreeNode } from '../hooks'
 import { useVerticalSplitResize } from '../hooks/useVerticalSplitResize'
-import { layoutStore, type PreviewFile } from '../store/layoutStore'
-import { ChevronRightIcon, ChevronDownIcon, RetryIcon, AlertCircleIcon, DownloadIcon, MaximizeIcon } from './Icons'
+import { layoutStore, useLayoutStore, type PreviewFile } from '../store/layoutStore'
+import {
+  ChevronRightIcon,
+  ChevronDownIcon,
+  RetryIcon,
+  AlertCircleIcon,
+  DownloadIcon,
+  MaximizeIcon,
+  PlusIcon,
+  TrashIcon,
+  PencilIcon,
+} from './Icons'
 import { CodePreview } from './CodePreview'
 import { FullscreenViewer } from './FullscreenViewer'
 import { PreviewTabsBar, type PreviewTabsBarItem } from './PreviewTabsBar'
@@ -27,6 +38,8 @@ import {
 } from '../utils/mimeUtils'
 import { downloadFileContent } from '../utils/downloadUtils'
 import type { FileContent } from '../api/types'
+import { createPtySession, removePtySession } from '../api/pty'
+import { ConfirmDialog } from './ui/ConfirmDialog'
 
 // 常量
 const MIN_TREE_HEIGHT = 100
@@ -52,8 +65,13 @@ export const FileExplorer = memo(function FileExplorer({
   sessionId,
 }: FileExplorerProps) {
   const { t } = useTranslation(['components', 'common'])
+  const { revealFilePath } = useLayoutStore()
   const containerRef = useRef<HTMLDivElement>(null)
   const treeRef = useRef<HTMLDivElement>(null)
+  const [treeContextMenu, setTreeContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const [rootInlineEdit, setRootInlineEdit] = useState<'file' | 'folder' | null>(null)
+  const [rootEditValue, setRootEditValue] = useState('')
+  const rootEditInputRef = useRef<HTMLInputElement>(null)
   const {
     splitHeight: treeHeight,
     isResizing,
@@ -77,6 +95,7 @@ export const FileExplorer = memo(function FileExplorer({
     error,
     expandedPaths,
     toggleExpand,
+    expandPath,
     previewContent,
     previewLoading,
     previewError,
@@ -95,16 +114,107 @@ export const FileExplorer = memo(function FileExplorer({
     }
   }, [previewFile, loadPreview, clearPreview])
 
+  // QuickOpen 文件定位：逐级展开父目录
+  useEffect(() => {
+    if (!revealFilePath || !directory) return
+
+    // 保存一份副本，因为后面会立即清空 revealFilePath
+    const pathToReveal = revealFilePath
+
+    // 消费掉 revealFilePath，防止重复触发
+    layoutStore.setRevealFilePath(null)
+
+    const segments = pathToReveal.split('/').filter(Boolean)
+    const pathsToExpand: string[] = []
+    for (let i = 1; i <= segments.length; i++) {
+      pathsToExpand.push(segments.slice(0, i).join('/'))
+    }
+
+    let idx = 0
+    const expandNext = () => {
+      if (idx >= pathsToExpand.length) {
+        const el = treeRef.current?.querySelector(`[data-file-path="${CSS.escape(pathToReveal)}"]`)
+        el?.scrollIntoView({ block: 'center' })
+        return
+      }
+      expandPath(pathsToExpand[idx])
+      idx++
+      setTimeout(expandNext, 200)
+    }
+    expandNext()
+  }, [revealFilePath, directory, expandPath])
+
+  useEffect(() => {
+    if (rootInlineEdit && rootEditInputRef.current) {
+      rootEditInputRef.current.focus()
+    }
+  }, [rootInlineEdit])
+
+  useEffect(() => {
+    if (!treeContextMenu) return
+    const close = () => setTreeContextMenu(null)
+    document.addEventListener('click', close)
+    document.addEventListener('contextmenu', close)
+    return () => {
+      document.removeEventListener('click', close)
+      document.removeEventListener('contextmenu', close)
+    }
+  }, [treeContextMenu])
+
+  // 空白区域右键菜单处理
+  const handleTreeContextMenu = useCallback((e: React.MouseEvent) => {
+    // 如果点击的是文件/文件夹按钮，不处理（由 FileTreeItem 处理）
+    const target = e.target as HTMLElement
+    if (target.closest('[data-file-path]')) return
+    e.preventDefault()
+    setTreeContextMenu({ x: e.clientX, y: e.clientY })
+  }, [])
+
+  // 在根目录创建文件/文件夹
+  const handleRootCreate = useCallback((type: 'file' | 'folder') => {
+    setTreeContextMenu(null)
+    setRootInlineEdit(type)
+    setRootEditValue('')
+  }, [])
+
+  const handleRootEditSubmit = useCallback(async () => {
+    if (!rootInlineEdit || !rootEditValue.trim() || !directory) return
+    const fullPath = `${directory}/${rootEditValue.trim()}`
+    const command = rootInlineEdit === 'folder'
+      ? `mkdir -p "${fullPath}"`
+      : `mkdir -p "$(dirname "${fullPath}")" && touch "${fullPath}"`
+    try {
+      const pty = await createPtySession({ command: 'sh', args: ['-c', command], cwd: directory }, directory)
+      await new Promise(r => setTimeout(r, 500))
+      await removePtySession(pty.id, directory).catch(() => {})
+    } catch { /* ignore */ }
+    setRootInlineEdit(null)
+    setRootEditValue('')
+    refresh()
+  }, [rootInlineEdit, rootEditValue, directory, refresh])
+
+  const handleRootEditKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleRootEditSubmit()
+    } else if (e.key === 'Escape') {
+      setRootInlineEdit(null)
+      setRootEditValue('')
+    }
+  }, [handleRootEditSubmit])
+
   // 处理文件点击
   const handleFileClick = useCallback(
     (node: FileTreeNode) => {
       if (node.type === 'directory') {
         toggleExpand(node.path)
+        clearPreview()
+        layoutStore.closeAllFilePreviews(panelTabId)
       } else {
         layoutStore.openFilePreview({ path: node.path, name: node.name }, position)
       }
     },
-    [toggleExpand, position],
+    [toggleExpand, position, clearPreview, panelTabId],
   )
 
   // 关闭预览
@@ -134,8 +244,9 @@ export const FileExplorer = memo(function FileExplorer({
     [panelTabId],
   )
 
-  // 是否显示预览
-  const showPreview = Boolean(previewFile) || previewLoading || Boolean(previewError)
+  // 是否显示预览（只依赖 previewFile 和 previewError，不依赖 previewLoading）
+  // previewLoading 是异步加载状态，不应独立触发预览区显示
+  const showPreview = Boolean(previewFile) || Boolean(previewError)
 
   // 没有选择目录
   if (!directory) {
@@ -186,7 +297,10 @@ export const FileExplorer = memo(function FileExplorer({
         </div>
 
         {/* Tree Content */}
-        <div className="flex-1 overflow-auto panel-scrollbar-y">
+        <div
+          className="flex-1 overflow-auto panel-scrollbar-y"
+          onContextMenu={handleTreeContextMenu}
+        >
           {isLoading && tree.length === 0 ? (
             <div className="flex items-center justify-center h-20 text-text-400 text-[length:var(--fs-sm)]">
               {t('common:loading')}
@@ -210,8 +324,35 @@ export const FileExplorer = memo(function FileExplorer({
                   expandedPaths={expandedPaths}
                   fileStatus={fileStatus}
                   onClick={handleFileClick}
+                  onRefresh={refresh}
+                  directory={directory}
                 />
               ))}
+            </div>
+          )}
+
+          {rootInlineEdit && (
+            <div className="flex items-center gap-1 px-2 py-0.5" style={{ paddingLeft: '20px' }}>
+              <img
+                src={getMaterialIconUrl(
+                  rootInlineEdit === 'folder' ? 'folder' : 'untitled',
+                  rootInlineEdit === 'folder' ? 'directory' : 'file',
+                  false,
+                )}
+                alt=""
+                width={16}
+                height={16}
+                className="shrink-0 opacity-50"
+              />
+              <input
+                ref={rootEditInputRef}
+                value={rootEditValue}
+                onChange={e => setRootEditValue(e.target.value)}
+                onKeyDown={handleRootEditKeyDown}
+                onBlur={handleRootEditSubmit}
+                placeholder={rootInlineEdit === 'file' ? t('fileExplorer.newFile') : t('fileExplorer.newFolder')}
+                className="flex-1 min-w-0 h-5 px-1 text-[length:var(--fs-sm)] bg-bg-200/50 border border-accent-main-100/50 rounded-sm outline-none text-text-100 placeholder:text-text-500"
+              />
             </div>
           )}
         </div>
@@ -247,6 +388,36 @@ export const FileExplorer = memo(function FileExplorer({
           />
         </div>
       )}
+
+      {treeContextMenu && createPortal(
+        <div
+          className="fixed inset-0 z-[100]"
+          onClick={() => setTreeContextMenu(null)}
+          onContextMenu={e => { e.preventDefault(); setTreeContextMenu(null) }}
+        >
+          <div
+            className="absolute glass border border-border-200 rounded-lg shadow-xl py-1 min-w-[160px] z-[101]"
+            style={{ left: treeContextMenu.x, top: treeContextMenu.y }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => handleRootCreate('file')}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 transition-colors"
+            >
+              <PlusIcon size={12} className="shrink-0 opacity-60" />
+              {t('fileExplorer.newFile')}
+            </button>
+            <button
+              onClick={() => handleRootCreate('folder')}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 transition-colors"
+            >
+              <PlusIcon size={12} className="shrink-0 opacity-60" />
+              {t('fileExplorer.newFolder')}
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   )
 })
@@ -261,6 +432,8 @@ interface FileTreeItemProps {
   expandedPaths: Set<string>
   fileStatus: Map<string, { status: string }>
   onClick: (node: FileTreeNode) => void
+  onRefresh?: () => void
+  directory?: string
 }
 
 const FileTreeItem = memo(function FileTreeItem({
@@ -269,6 +442,8 @@ const FileTreeItem = memo(function FileTreeItem({
   expandedPaths,
   fileStatus,
   onClick,
+  onRefresh,
+  directory,
 }: FileTreeItemProps) {
   const isExpanded = expandedPaths.has(node.path)
   const isDirectory = node.type === 'directory'
@@ -295,8 +470,8 @@ const FileTreeItem = memo(function FileTreeItem({
     (e: DragEvent<HTMLButtonElement>) => {
       const fileData = {
         type: (isDirectory ? 'folder' : 'file') as 'file' | 'folder',
-        path: node.path, // 相对路径
-        absolute: node.absolute, // 绝对路径
+        path: node.path,
+        absolute: node.absolute,
         name: node.name,
       }
       e.dataTransfer.setData('application/opencode-file', JSON.stringify(fileData))
@@ -305,12 +480,125 @@ const FileTreeItem = memo(function FileTreeItem({
     [node.path, node.absolute, node.name, isDirectory],
   )
 
+  const { t } = useTranslation(['components', 'common'])
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const [inlineEdit, setInlineEdit] = useState<'file' | 'folder' | 'rename' | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const editInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (inlineEdit && editInputRef.current) {
+      editInputRef.current.focus()
+      editInputRef.current.select()
+    }
+  }, [inlineEdit])
+
+  const executeShellCommand = useCallback(
+    async (cmd: string) => {
+      try {
+        const pty = await createPtySession({ command: 'sh', args: ['-c', cmd], cwd: directory }, directory)
+        await new Promise(r => setTimeout(r, 500))
+        await removePtySession(pty.id, directory).catch(() => {})
+        onRefresh?.()
+      } catch {
+        onRefresh?.()
+      }
+    },
+    [directory, onRefresh],
+  )
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setContextMenu({ x: e.clientX, y: e.clientY })
+    },
+    [],
+  )
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const close = () => setContextMenu(null)
+    document.addEventListener('click', close)
+    document.addEventListener('contextmenu', close)
+    return () => {
+      document.removeEventListener('click', close)
+      document.removeEventListener('contextmenu', close)
+    }
+  }, [contextMenu])
+
+  const handleCreateFile = useCallback(() => {
+    setContextMenu(null)
+    setInlineEdit('file')
+    setEditValue('')
+  }, [])
+
+  const handleCreateFolder = useCallback(() => {
+    setContextMenu(null)
+    setInlineEdit('folder')
+    setEditValue('')
+  }, [])
+
+  const handleRename = useCallback(() => {
+    setContextMenu(null)
+    setInlineEdit('rename')
+    setEditValue(node.name)
+  }, [node.name])
+
+  const handleDelete = useCallback(() => {
+    setContextMenu(null)
+    setDeleteConfirm(true)
+  }, [])
+
+  const handleEditConfirm = useCallback(() => {
+    const name = editValue.trim()
+    if (!name) {
+      setInlineEdit(null)
+      return
+    }
+
+    const basePath = isDirectory
+      ? node.path
+      : node.path.substring(0, node.path.lastIndexOf('/')) || '.'
+
+    if (inlineEdit === 'file') {
+      executeShellCommand(`touch "${basePath}/${name}"`)
+    } else if (inlineEdit === 'folder') {
+      executeShellCommand(`mkdir -p "${basePath}/${name}"`)
+    } else if (inlineEdit === 'rename') {
+      const parentPath = node.path.substring(0, node.path.lastIndexOf('/')) || '.'
+      executeShellCommand(`mv "${node.path}" "${parentPath}/${name}"`)
+    }
+    setInlineEdit(null)
+  }, [editValue, inlineEdit, isDirectory, node.path, executeShellCommand])
+
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        handleEditConfirm()
+      } else if (e.key === 'Escape') {
+        setInlineEdit(null)
+      }
+    },
+    [handleEditConfirm],
+  )
+
+  const confirmDelete = useCallback(() => {
+    const cmd = isDirectory ? `rm -rf "${node.path}"` : `rm "${node.path}"`
+    executeShellCommand(cmd)
+    setDeleteConfirm(false)
+  }, [isDirectory, node.path, executeShellCommand])
+
   return (
     <div>
       <button
-        draggable
-        onDragStart={handleDragStart}
-        onClick={() => onClick(node)}
+        draggable={!inlineEdit}
+        onDragStart={inlineEdit ? undefined : handleDragStart}
+        onClick={inlineEdit ? undefined : () => onClick(node)}
+        onContextMenu={handleContextMenu}
+        data-file-path={node.path}
         className={`
           w-full flex items-center gap-1 px-2 py-0.5 text-left cursor-default
           hover:bg-bg-200/50 transition-colors text-[length:var(--fs-sm)]
@@ -319,7 +607,6 @@ const FileTreeItem = memo(function FileTreeItem({
         `}
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
       >
-        {/* Expand/Collapse Icon */}
         {isDirectory ? (
           <span className="w-4 h-4 flex items-center justify-center text-text-400 shrink-0">
             {isExpanded ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
@@ -328,7 +615,6 @@ const FileTreeItem = memo(function FileTreeItem({
           <span className="w-4 shrink-0" />
         )}
 
-        {/* File/Folder Icon - Material Icon Theme */}
         <img
           src={getMaterialIconUrl(node.path, isDirectory ? 'directory' : 'file', isExpanded)}
           alt=""
@@ -342,16 +628,53 @@ const FileTreeItem = memo(function FileTreeItem({
           }}
         />
 
-        {/* Name */}
-        <span className={`truncate flex-1 ${statusColor || ''}`}>{node.name}</span>
+        {inlineEdit === 'rename' ? (
+          <input
+            ref={editInputRef}
+            value={editValue}
+            onChange={e => setEditValue(e.target.value)}
+            onKeyDown={handleEditKeyDown}
+            onBlur={handleEditConfirm}
+            className="flex-1 min-w-0 h-5 px-1 text-[length:var(--fs-sm)] bg-bg-200/50 border border-accent-main-100/50 rounded-sm outline-none text-text-100"
+            onClick={e => e.stopPropagation()}
+          />
+        ) : (
+          <span className={`truncate flex-1 ${statusColor || ''}`}>{node.name}</span>
+        )}
 
-        {/* Loading Indicator */}
         {node.isLoading && (
           <span className="w-3 h-3 border border-text-400 border-t-transparent rounded-full animate-spin shrink-0" />
         )}
       </button>
 
-      {/* Children */}
+      {(inlineEdit === 'file' || inlineEdit === 'folder') && (
+        <div
+          className="flex items-center gap-1 px-2 py-0.5"
+          style={{ paddingLeft: `${(depth + 1) * 12 + 8}px` }}
+        >
+          <img
+            src={getMaterialIconUrl(
+              inlineEdit === 'folder' ? 'folder' : 'untitled',
+              inlineEdit === 'folder' ? 'directory' : 'file',
+              false,
+            )}
+            alt=""
+            width={16}
+            height={16}
+            className="shrink-0 opacity-50"
+          />
+          <input
+            ref={editInputRef}
+            value={editValue}
+            onChange={e => setEditValue(e.target.value)}
+            onKeyDown={handleEditKeyDown}
+            onBlur={handleEditConfirm}
+            placeholder={inlineEdit === 'file' ? t('fileExplorer.newFile') : t('fileExplorer.newFolder')}
+            className="flex-1 min-w-0 h-5 px-1 text-[length:var(--fs-sm)] bg-bg-200/50 border border-accent-main-100/50 rounded-sm outline-none text-text-100 placeholder:text-text-500"
+          />
+        </div>
+      )}
+
       {isDirectory && isExpanded && node.children && (
         <div>
           {node.children.map(child => (
@@ -362,9 +685,68 @@ const FileTreeItem = memo(function FileTreeItem({
               expandedPaths={expandedPaths}
               fileStatus={fileStatus}
               onClick={onClick}
+              onRefresh={onRefresh}
+              directory={directory}
             />
           ))}
         </div>
+      )}
+
+      {contextMenu && createPortal(
+        <div
+          className="fixed inset-0 z-[100]"
+          onClick={() => setContextMenu(null)}
+          onContextMenu={e => { e.preventDefault(); setContextMenu(null) }}
+        >
+          <div
+            className="absolute glass border border-border-200 rounded-lg shadow-xl py-1 min-w-[160px] z-[101]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={handleCreateFile}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 transition-colors"
+            >
+              <PlusIcon size={12} className="shrink-0 opacity-60" />
+              {t('fileExplorer.newFile')}
+            </button>
+            <button
+              onClick={handleCreateFolder}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 transition-colors"
+            >
+              <PlusIcon size={12} className="shrink-0 opacity-60" />
+              {t('fileExplorer.newFolder')}
+            </button>
+            <div className="my-1 border-t border-border-200/50" />
+            <button
+              onClick={handleRename}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 transition-colors"
+            >
+              <PencilIcon size={12} className="shrink-0 opacity-60" />
+              {t('fileExplorer.rename')}
+            </button>
+            <button
+              onClick={handleDelete}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-danger-100 transition-colors"
+            >
+              <TrashIcon size={12} className="shrink-0 opacity-60" />
+              {t('fileExplorer.delete')}
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {deleteConfirm && (
+        <ConfirmDialog
+          isOpen={deleteConfirm}
+          onClose={() => setDeleteConfirm(false)}
+          variant="danger"
+          title={t('fileExplorer.deleteTitle', { name: node.name })}
+          description={isDirectory ? t('fileExplorer.deleteFolderDesc') : t('fileExplorer.deleteFileDesc')}
+          confirmText={t('common:delete')}
+          onConfirm={confirmDelete}
+        />
       )}
     </div>
   )

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/Button'
-import { TrashIcon, WifiIcon, WifiOffIcon, SpinnerIcon, StopIcon } from '../../../components/Icons'
+import { TrashIcon, WifiIcon, WifiOffIcon, SpinnerIcon, StopIcon, GlobeIcon } from '../../../components/Icons'
 import { useServerStore, useIsMobile } from '../../../hooks'
 import { serviceStore, useServiceStore } from '../../../store/serviceStore'
 import { isTauri } from '../../../utils/tauri'
@@ -15,11 +15,12 @@ export function ServiceSettings() {
     autoStart: autoStartService,
     binaryPath,
     envVars,
+    boundServerId,
     running: serviceRunning,
     startedByUs,
     starting: serviceStarting,
   } = useServiceStore()
-  const { activeServer } = useServerStore()
+  const { activeServer, servers } = useServerStore()
   const isTauriDesktop = isTauri() && !isMobile
 
   // 本地编辑状态（debounce 保存）
@@ -50,7 +51,10 @@ export function ServiceSettings() {
     pathDebounceRef.current = setTimeout(() => serviceStore.setBinaryPath(v), 400)
   }
 
-  const getServerUrl = () => activeServer?.url || 'http://127.0.0.1:4096'
+  const getServerUrl = () => {
+      const bound = boundServerId ? servers.find(s => s.id === boundServerId) : undefined
+      return bound?.url || activeServer?.url || 'http://127.0.0.1:4096'
+    }
 
   const handleStartService = async () => {
     setServiceError('')
@@ -123,6 +127,27 @@ export function ServiceSettings() {
               focus:outline-none focus:border-accent-main-100/50 text-text-100 placeholder:text-text-400"
           />
           <div className="text-[length:var(--fs-xs)] text-text-400 mt-1">{t('service.binaryPathHelp')}</div>
+        </div>
+
+        <div>
+          <div className="text-[length:var(--fs-xs)] font-medium text-text-300 mb-1">{t('service.boundServer')}</div>
+          <div className="flex items-center gap-2">
+            <GlobeIcon size={14} className="text-text-400 shrink-0" />
+            <select
+              value={boundServerId}
+              onChange={e => serviceStore.setBoundServerId(e.target.value)}
+              className="flex-1 h-8 px-2 text-[length:var(--fs-md)] bg-bg-200/50 border border-border-200 rounded-md
+                focus:outline-none focus:border-accent-main-100/50 text-text-100"
+            >
+              <option value="">{t('service.useActiveServer')}</option>
+              {servers.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.url})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="text-[length:var(--fs-xs)] text-text-400 mt-1">{t('service.boundServerHelp')}</div>
         </div>
 
         <div className="grid gap-2 md:grid-cols-2">

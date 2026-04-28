@@ -8,10 +8,17 @@
     "explorer": "Explorer",
     "noFilesFound": "No files found",
     "failedToLoadFiles": "Failed to load files",
-    "failedToLoadFile": "Failed to load file",
+    "failedToLoadFile": "Failed to load file content",
     "binaryFile": "Binary file — preview not available",
     "fit": "Fit",
-    "oneToOne": "1:1"
+    "oneToOne": "1:1",
+    "newFile": "New File",
+    "newFolder": "New Folder",
+    "rename": "Rename",
+    "delete": "Delete",
+    "deleteTitle": "Delete \"{{name}}\"?",
+    "deleteFileDesc": "This file will be permanently deleted.",
+    "deleteFolderDesc": "This folder and all its contents will be permanently deleted."
   },
   "terminal": {
     "terminal": "Terminal",
@@ -39,6 +46,7 @@
     "mcp": "MCP",
     "skills": "Skills",
     "worktrees": "Worktrees",
+    "plugins": "Plugins",
     "tab": "Tab",
     "addTab": "Add Tab",
     "renameTerminal": "Rename Terminal",
@@ -132,6 +140,12 @@
     "resetWorktreeAction": "Reset worktree",
     "removeWorktreeAction": "Remove worktree"
   },
+  "pluginPanel": {
+    "noPlugins": "No plugins configured",
+    "installed": "Plugins ({{count}})",
+    "loading": "Loading plugins...",
+    "failedToLoad": "Failed to load plugins"
+  },
   "toast": {
     "clearAll": "Clear all"
   },
@@ -166,5 +180,16 @@
   },
   "diffView": {
     "fullscreenView": "Fullscreen"
+  },
+  "quickOpen": {
+    "placeholder": "Search files, folders, sessions...",
+    "noResults": "No results found",
+    "files": "Files",
+    "folders": "Folders",
+    "sessions": "Sessions",
+    "all": "All",
+    "content": "Content",
+    "switchTab": "Switch Tab",
+    "untitledSession": "Untitled Session"
   }
 }

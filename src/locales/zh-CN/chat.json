@@ -121,6 +121,8 @@
     "collapseSidebar": "收起侧边栏",
     "expandSidebar": "展开侧边栏",
     "newChat": "新对话",
+    "search": "搜索",
+    "commands": "命令",
     "addProject": "添加项目...",
     "searchChats": "搜索对话...",
     "clearSearch": "清除搜索",

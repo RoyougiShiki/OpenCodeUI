@@ -416,6 +416,13 @@ body {
   white-space: nowrap;
 }
 
+mark {
+  background-color: hsl(var(--accent-main-100) / 0.25);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
 /* ============================================
  * 全局 Overlay Scrollbar
  * ============================================

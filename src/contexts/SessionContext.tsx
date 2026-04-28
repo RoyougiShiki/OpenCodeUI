@@ -18,6 +18,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const { currentDirectory } = useDirectory()
 
   const [sessions, setSessions] = useState<ApiSession[]>([])
+  const [inlineChildSessions, setInlineChildSessions] = useState<Map<string, ApiSession[]>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -76,14 +77,34 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         }
 
         if (append) {
-          // 去重：过滤掉已存在的 session
           setSessions(prev => {
             const existingIds = new Set(prev.map(s => s.id))
-            const newSessions = data.filter(s => !existingIds.has(s.id))
-            return [...prev, ...newSessions]
+            const newRoots = data.filter(s => !existingIds.has(s.id) && !s.parentID)
+            const newChildren = data.filter(s => !existingIds.has(s.id) && s.parentID)
+            if (newChildren.length > 0) {
+              setInlineChildSessions(prevMap => {
+                const next = new Map(prevMap)
+                for (const child of newChildren) {
+                  const key = child.parentID!
+                  const existing = next.get(key) || []
+                  next.set(key, [...existing, child])
+                }
+                return next
+              })
+            }
+            return [...prev, ...newRoots]
           })
         } else {
-          setSessions(data)
+          const roots = data.filter(s => !s.parentID)
+          const children = data.filter(s => s.parentID)
+          const childMap = new Map<string, ApiSession[]>()
+          for (const child of children) {
+            const key = child.parentID!
+            const existing = childMap.get(key) || []
+            childMap.set(key, [...existing, child])
+          }
+          setSessions(roots)
+          setInlineChildSessions(childMap)
         }
         setHasMore(data.length >= currentLimitRef.current)
       } catch (e) {
@@ -129,8 +150,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = subscribeToEvents({
       onSessionCreated: session => {
-        // 忽略子 session（有 parentID 的是子 agent 创建的）
-        if (session.parentID) return
+        if (session.parentID) {
+          if (!matchesCurrentDirectory(session)) return
+          setInlineChildSessions(prev => {
+            const key = session.parentID!
+            const existing = prev.get(key) || []
+            if (existing.some(s => s.id === session.id)) return prev
+            const next = new Map(prev)
+            next.set(key, [...existing, session])
+            return next
+          })
+          return
+        }
 
         if (!matchesCurrentDirectory(session)) return
 
@@ -146,7 +177,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         })
       },
       onSessionUpdated: session => {
-        if (session.parentID) return
+        if (session.parentID) {
+          setInlineChildSessions(prev => {
+            const key = session.parentID!
+            const existing = prev.get(key)
+            if (!existing) return prev
+            const updated = existing.map(s => s.id === session.id ? session : s)
+            const next = new Map(prev)
+            next.set(key, updated)
+            return next
+          })
+          return
+        }
 
         if (searchRef.current) {
           if (matchesCurrentDirectory(session)) {
@@ -238,6 +280,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo<SessionContextValue>(
     () => ({
       sessions,
+      inlineChildSessions,
       isLoading,
       isLoadingMore,
       hasMore,
@@ -248,7 +291,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       createSession,
       deleteSession,
     }),
-    [sessions, isLoading, isLoadingMore, hasMore, search, refresh, loadMore, createSession, deleteSession],
+    [sessions, inlineChildSessions, isLoading, isLoadingMore, hasMore, search, refresh, loadMore, createSession, deleteSession],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

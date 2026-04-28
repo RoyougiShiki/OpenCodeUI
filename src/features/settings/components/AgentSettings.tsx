@@ -5,7 +5,7 @@ import { themeStore, type ToolCardStyle } from '../../../store/themeStore'
 import { Toggle, SegmentedControl, SettingRow, SettingsSection } from './SettingsUI'
 
 export function AgentSettings() {
-  const { t } = useTranslation(['settings'])
+  const { t } = useTranslation(['settings', 'chat'])
   const [autoApprove, setAutoApprove] = useState(autoApproveStore.enabled)
   const [queueFollowupMessages, setQueueFollowupMessages] = useState(themeStore.queueFollowupMessages)
   const [descriptiveToolSteps, setDescriptiveToolSteps] = useState(themeStore.descriptiveToolSteps)
@@ -13,6 +13,7 @@ export function AgentSettings() {
   const [toolCardStyle, setToolCardStyle] = useState(themeStore.toolCardStyle)
   const [immersiveMode, setImmersiveMode] = useState(themeStore.immersiveMode)
   const [compactInlinePermission, setCompactInlinePermission] = useState(themeStore.compactInlinePermission)
+  const [permissionDialogCollapsed, setPermissionDialogCollapsed] = useState(themeStore.permissionDialogCollapsed)
 
   const handleAutoApprove = () => {
     const next = !autoApprove
@@ -43,6 +44,12 @@ export function AgentSettings() {
     const next = !compactInlinePermission
     setCompactInlinePermission(next)
     themeStore.setCompactInlinePermission(next)
+  }
+
+  const handlePermissionDialogCollapsedToggle = () => {
+    const next = !permissionDialogCollapsed
+    setPermissionDialogCollapsed(next)
+    themeStore.setPermissionDialogCollapsed(next)
   }
 
   const handleToolCardStyleChange = (style: ToolCardStyle) => {
@@ -111,6 +118,14 @@ export function AgentSettings() {
           onClick={handleCompactInlinePermissionToggle}
         >
           <Toggle enabled={compactInlinePermission} onChange={handleCompactInlinePermissionToggle} />
+        </SettingRow>
+
+        <SettingRow
+          label={t('chat.permissionDialogCollapsed')}
+          description={t('chat.permissionDialogCollapsedDesc')}
+          onClick={handlePermissionDialogCollapsedToggle}
+        >
+          <Toggle enabled={permissionDialogCollapsed} onChange={handlePermissionDialogCollapsedToggle} />
         </SettingRow>
 
         <div>

@@ -18,6 +18,8 @@ interface SidebarProps {
   onClose: () => void
   contextLimit?: number
   onOpenSettings?: () => void
+  onOpenSearch?: () => void
+  onOpenCommandPalette?: () => void
   projectDialogOpen?: boolean
   onProjectDialogClose?: () => void
 }
@@ -31,6 +33,8 @@ export const Sidebar = memo(function Sidebar({
   onClose,
   contextLimit,
   onOpenSettings,
+  onOpenSearch,
+  onOpenCommandPalette,
   projectDialogOpen,
   onProjectDialogClose,
 }: SidebarProps) {
@@ -261,6 +265,8 @@ export const Sidebar = memo(function Sidebar({
             onToggleSidebar={onClose}
             contextLimit={contextLimit}
             onOpenSettings={onOpenSettings}
+            onOpenSearch={onOpenSearch}
+            onOpenCommandPalette={onOpenCommandPalette}
           />
         </div>
 
@@ -297,6 +303,8 @@ export const Sidebar = memo(function Sidebar({
           onToggleSidebar={handleToggle}
           contextLimit={contextLimit}
           onOpenSettings={onOpenSettings}
+          onOpenSearch={onOpenSearch}
+          onOpenCommandPalette={onOpenCommandPalette}
         />
 
         {isOpen && (

@@ -35,6 +35,7 @@ import {
   Folder,
   FolderOpen,
   Search,
+  Hash,
   Pencil,
   Trash2,
   CornerDownLeft,
@@ -138,6 +139,7 @@ export const FileIcon = wrap(File)
 export const FolderIcon = wrap(Folder)
 export const FolderOpenIcon = wrap(FolderOpen)
 export const SearchIcon = wrap(Search)
+export const HashIcon = wrap(Hash)
 export const PencilIcon = wrap(Pencil)
 export const TrashIcon = wrap(Trash2)
 export const ReturnIcon = wrap(CornerDownLeft)

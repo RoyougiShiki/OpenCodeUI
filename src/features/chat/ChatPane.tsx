@@ -21,6 +21,7 @@ import { ChatViewportProvider, canUseSplitPane, useChatViewportMaybe, type ChatV
 import { SessionNavigationContext } from '../../contexts/SessionNavigationContext'
 import { paneLayoutStore } from '../../store/paneLayoutStore'
 import { autoApproveStore } from '../../store/autoApproveStore'
+import { themeStore } from '../../store/themeStore'
 import { messageStore, paneControllerStore, useHiddenModelKeys } from '../../store'
 import { restoreModelSelection } from '../../utils/sessionHelpers'
 import { findModelByKey, getModelKey } from '../../utils/modelUtils'
@@ -38,6 +39,7 @@ interface ChatPaneProps {
   showSidebarButton?: boolean
   onSplitPane?: () => void
   onTogglePaneFullscreen?: () => void
+  onOpenModelSettings?: () => void
   navigatePaneToSession: (paneId: string, sessionId: string, directory?: string) => void
   navigatePaneHome: (paneId: string) => void
 }
@@ -102,6 +104,7 @@ export const ChatPane = memo(function ChatPane({
   showSidebarButton = false,
   onSplitPane,
   onTogglePaneFullscreen,
+  onOpenModelSettings,
   navigatePaneToSession,
   navigatePaneHome,
 }: ChatPaneProps) {
@@ -612,8 +615,13 @@ export const ChatPane = memo(function ChatPane({
   // ============================================
   // Dialog Collapsed State
   // ============================================
-  const [permissionCollapsed, setPermissionCollapsed] = useState(false)
+  const [permissionCollapsed, setPermissionCollapsed] = useState(themeStore.permissionDialogCollapsed)
   const [questionCollapsed, setQuestionCollapsed] = useState(false)
+
+  const handlePermissionCollapsedChange = useCallback((collapsed: boolean) => {
+    setPermissionCollapsed(collapsed)
+    themeStore.setPermissionDialogCollapsed(collapsed)
+  }, [])
 
   const permissionRequestId = pendingPermissionRequests[0]?.id
   const questionRequestId = pendingQuestionRequests[0]?.id
@@ -662,15 +670,10 @@ export const ChatPane = memo(function ChatPane({
         <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
           <div className="pointer-events-auto">
             <Header
-              models={visibleModels}
-              modelsLoading={modelsLoading}
-              selectedModelKey={selectedModelKey}
-              onModelChange={handleModelChange}
               onOpenSidebar={onOpenSidebar}
               onSplitPane={onSplitPane}
               isPaneFullscreen={isPaneFullscreen}
               onTogglePaneFullscreen={onTogglePaneFullscreen}
-              modelSelectorRef={modelSelectorRef}
             />
           </div>
         </div>
@@ -753,6 +756,7 @@ export const ChatPane = memo(function ChatPane({
           onModelChange={handleModelChange}
           modelsLoading={modelsLoading}
           modelSelectorRef={modelSelectorRef}
+          onOpenModelSettings={onOpenModelSettings}
           rootPath={effectiveDirectory}
           sessionId={routeSessionId}
           revertedText={revertedMessage?.text}
@@ -773,7 +777,7 @@ export const ChatPane = memo(function ChatPane({
                     permission: pendingPermissionRequests[0].permission,
                   }),
                   queueLength: pendingPermissionRequests.length,
-                  onExpand: () => setPermissionCollapsed(false),
+                  onExpand: () => handlePermissionCollapsedChange(false),
                 }
               : undefined
           }
@@ -800,7 +804,7 @@ export const ChatPane = memo(function ChatPane({
           isReplying={isReplying}
           currentSessionId={routeSessionId}
           collapsed={permissionCollapsed}
-          onCollapsedChange={setPermissionCollapsed}
+          onCollapsedChange={handlePermissionCollapsedChange}
         />
       )}
 

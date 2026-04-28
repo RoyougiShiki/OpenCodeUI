@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { ToolPart } from '../../../types/message'
 import type { ToolConfig, ToolRegistry, ExtractedToolData, DiagnosticInfo } from './types'
 import { BashRenderer, QuestionRenderer } from './renderers'
+import { SkillRenderer } from './renderers/SkillRenderer'
 import {
   FileReadIcon,
   FileWriteIcon,
@@ -276,6 +277,13 @@ export const toolRegistry: ToolRegistry = [
   {
     match: exact('task'),
     icon: <TaskIcon />,
+  },
+
+  // Skill (技能调用 - 单独渲染，不显示 Input/Output)
+  {
+    match: includes('skill'),
+    icon: <BrainIcon />,
+    renderer: SkillRenderer,
   },
 
   // Read file

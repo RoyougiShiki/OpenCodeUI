@@ -27,11 +27,12 @@ interface InputToolbarProps {
   canSend: boolean
   onSend: () => void
 
-  // Model selection（移动端显示在工具栏）
+  // Model selection（显示在工具栏）
   models?: ModelInfo[]
   selectedModelKey?: string | null
   onModelChange?: (modelKey: string, model: ModelInfo) => void
   modelsLoading?: boolean
+  onOpenModelSettings?: () => void
   // 输入框容器 ref，用于约束菜单边界
   inputContainerRef?: React.RefObject<HTMLDivElement | null>
   modelSelectorRef?: React.RefObject<ModelSelectorHandle | null>
@@ -55,6 +56,7 @@ export function InputToolbar({
   selectedModelKey = null,
   onModelChange,
   modelsLoading = false,
+  onOpenModelSettings,
   inputContainerRef,
   modelSelectorRef,
 }: InputToolbarProps) {
@@ -63,12 +65,11 @@ export function InputToolbar({
   const isCompact = presentation.isCompact
   const useBrowserFileInput = !isTauri() || isTauriMobile()
 
-  // 根据模型能力计算支持的文件类型
   const caps = fileCapabilities ?? { image: false, pdf: false, audio: false, video: false }
-  const supportsAnyFile = caps.image || caps.pdf || caps.audio || caps.video
   const controlsDisabled = isSending
 
-  // 动态构建 HTML accept 和 Tauri filter
+  const hasTypedFilter = caps.image || caps.pdf || caps.audio || caps.video
+
   const { acceptString, tauriFilters } = useMemo(() => {
     const accept: string[] = []
     const extensions: string[] = []
@@ -95,11 +96,17 @@ export function InputToolbar({
       filterNames.push('Video')
     }
 
-    return {
-      acceptString: accept.join(','),
-      tauriFilters: extensions.length > 0 ? [{ name: filterNames.join(' / '), extensions }] : [],
+    if (!hasTypedFilter) {
+      accept.push('*/*')
     }
-  }, [caps.image, caps.pdf, caps.audio, caps.video])
+
+    return {
+      acceptString: accept.length > 0 ? accept.join(',') : '*/*',
+      tauriFilters: extensions.length > 0
+        ? [{ name: filterNames.join(' & '), extensions }]
+        : [{ name: 'All Files', extensions: ['*'] }],
+    }
+  }, [caps.image, caps.pdf, caps.audio, caps.video, hasTypedFilter])
   // State for menus
   const [agentMenuOpen, setAgentMenuOpen] = useState(false)
   const [variantMenuOpen, setVariantMenuOpen] = useState(false)
@@ -181,10 +188,8 @@ export function InputToolbar({
 
   return (
     <div className="flex items-center justify-between px-3 pb-3 relative">
-      {/* Left side: Model (mobile) + Agent + Variant selectors */}
       <div className={`flex items-center min-w-0 ${isCompact ? 'gap-1' : 'gap-2'}`}>
-        {/* Model Selector — 移动端显示在最左边 */}
-        {isCompact && onModelChange && (
+        {onModelChange && (
           <ModelSelector
             ref={modelSelectorRef}
             models={models}
@@ -194,10 +199,10 @@ export function InputToolbar({
             position="top"
             trigger="toolbar"
             constrainToRef={inputContainerRef}
+            onOpenModelSettings={onOpenModelSettings}
           />
         )}
 
-        {/* Agent Selector */}
         <AnimatedPresence show={selectableAgents.length > 1} className={isCompact ? 'shrink-0' : ''}>
           <div className="relative">
             <button
@@ -320,27 +325,22 @@ export function InputToolbar({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1">
-        <AnimatedPresence show={supportsAnyFile}>
-          <>
-            {/* 浏览器模式下的隐藏文件输入 */}
-            {useBrowserFileInput && (
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={acceptString}
-                multiple
-                className="hidden"
-                onChange={e => {
-                  onFilesSelected(Array.from(e.target.files ?? []))
-                  e.currentTarget.value = ''
-                }}
-              />
-            )}
-            <IconButton aria-label={t('inputToolbar.attachFile')} disabled={controlsDisabled} onClick={handleFileClick}>
-              <PaperclipIcon />
-            </IconButton>
-          </>
-        </AnimatedPresence>
+        {useBrowserFileInput && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={acceptString}
+            multiple
+            className="hidden"
+            onChange={e => {
+              onFilesSelected(Array.from(e.target.files ?? []))
+              e.currentTarget.value = ''
+            }}
+          />
+        )}
+        <IconButton aria-label={t('inputToolbar.attachFile')} disabled={controlsDisabled} onClick={handleFileClick}>
+          <PaperclipIcon />
+        </IconButton>
         {!canSend && isStreaming && !isSending ? (
           <IconButton aria-label={t('inputToolbar.stopGeneration')} variant="solid" onClick={onAbort}>
             <StopIcon />

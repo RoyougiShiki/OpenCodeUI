@@ -16,6 +16,7 @@ import {
   PlugIcon,
   TeachIcon,
   GitWorktreeIcon,
+  LayersIcon,
 } from './Icons'
 import { layoutStore, useLayoutStore, type PanelTab, type PanelPosition, type PanelTabType } from '../store/layoutStore'
 import { updatePtySession } from '../api/pty'
@@ -42,6 +43,7 @@ const TAB_ICONS: Record<PanelTabType, React.ReactNode> = {
   mcp: <PlugIcon size={12} />,
   skill: <TeachIcon size={12} />,
   worktree: <GitWorktreeIcon size={12} />,
+  plugin: <LayersIcon size={12} />,
 }
 
 // Tab 显示名称
@@ -68,6 +70,8 @@ function getTabLabel(tab: PanelTab, tabs: PanelTab[], t: (key: string) => string
       return t('panelContainer.skills')
     case 'worktree':
       return t('panelContainer.worktrees')
+    case 'plugin':
+      return t('panelContainer.plugins')
     default:
       return t('panelContainer.tab')
   }
@@ -139,7 +143,7 @@ export const PanelContainer = memo(function PanelContainer({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [addMenuPos])
 
-  // 点击外部关闭右键菜单
+  // 点击外部关闭右键菜单（mousedown 处理左键点击，contextmenu 处理右键点击）
   useEffect(() => {
     if (!contextMenu) return
 
@@ -149,8 +153,18 @@ export const PanelContainer = memo(function PanelContainer({
       }
     }
 
+    const handleContextMenuOutside = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null)
+      }
+    }
+
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('contextmenu', handleContextMenuOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('contextmenu', handleContextMenuOutside)
+    }
   }, [contextMenu])
 
   useEffect(() => {
@@ -476,6 +490,18 @@ export const PanelContainer = memo(function PanelContainer({
                 <GitWorktreeIcon size={12} />
               </span>
               {t('panelContainer.worktrees')}
+            </button>
+            <button
+              onClick={() => {
+                layoutStore.addPluginTab(position)
+                setAddMenuPos(null)
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 rounded-md transition-colors"
+            >
+              <span className="opacity-60 shrink-0">
+                <LayersIcon size={12} />
+              </span>
+              {t('panelContainer.plugins')}
             </button>
           </div>,
           document.body,

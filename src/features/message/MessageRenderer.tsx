@@ -808,9 +808,48 @@ function buildDescriptiveToolStepsSummary(
     else if (isToolPartActive(part)) activeMap.set(cat, (activeMap.get(cat) || 0) + 1)
   }
 
+  // ── 提取技能名称（用于显示具体名称而非数量）──
+  const extractSkillNames = (status: 'completed' | 'error'): string[] => {
+    const names: string[] = []
+    for (const part of parts) {
+      if (getToolSummaryCategory(part.tool) !== 'skill') continue
+      if (part.state.status !== status) continue
+      const input = part.state.input as Record<string, unknown> | undefined
+      const name = input?.name ?? input?.skill
+      if (typeof name === 'string' && name) {
+        names.push(name)
+      } else if (part.tool && part.tool.toLowerCase() !== 'skill') {
+        // 工具名本身即技能名，但 "SkillLoader" 类跳过
+        if (!part.tool.toLowerCase().includes('loader')) {
+          names.push(part.tool)
+        }
+      }
+    }
+    return [...new Set(names)]
+  }
+
+  const completedSkillNames = extractSkillNames('completed')
+  const failedSkillNames = extractSkillNames('error')
+
   // ── 已完成 + 失败（合并同类别）──
   // 先收集所有完成态类别（含纯失败的类别）
   const finishedCategories = categoryOrder.filter(cat => (doneMap.get(cat) || 0) > 0 || (failedMap.get(cat) || 0) > 0)
+
+  const formatSkillNamesSegment = (names: string[], totalCount: number, segType: 'normal' | 'error'): SummarySegment[] => {
+    const MAX_SHOW = 3
+    const result: SummarySegment[] = []
+    if (names.length > 0 && names.length <= MAX_SHOW) {
+      result.push({ text: t('toolSteps.skillDoneNames', { names: names.join(', ') }), type: segType })
+    } else if (names.length > MAX_SHOW) {
+      const shown = names.slice(0, MAX_SHOW)
+      const remaining = totalCount - MAX_SHOW
+      result.push({ text: t('toolSteps.skillDoneNamesMore', { names: shown.join(', '), count: remaining }), type: segType })
+    } else {
+      // 无名称可提取，回退到计数
+      result.push({ text: formatToolSummarySegment('skill', totalCount, 'done', t), type: segType })
+    }
+    return result
+  }
 
   const pushFinishedSegments = (cats: ToolSummaryCategory[]) => {
     for (const cat of cats) {
@@ -818,7 +857,26 @@ function buildDescriptiveToolStepsSummary(
       const failed = failedMap.get(cat) || 0
       if (segments.length > 0) segments.push({ text: sep, type: 'normal' })
 
-      if (done > 0 && failed > 0) {
+      if (cat === 'skill') {
+        // 特殊处理：显示技能名称而非数量
+        if (done > 0 && failed > 0) {
+          const allNames = [...new Set([...completedSkillNames, ...failedSkillNames])]
+          const skillSegs = formatSkillNamesSegment(allNames, done + failed, 'normal')
+          segments.push(...skillSegs)
+          segments.push({ text: t('toolSteps.failedSuffix', { count: failed }), type: 'error' })
+        } else if (done > 0) {
+          const skillSegs = formatSkillNamesSegment(completedSkillNames, done, 'normal')
+          segments.push(...skillSegs)
+        } else {
+          // 纯失败
+          if (failed === 1) {
+            segments.push({ text: formatToolSummarySegment(cat, failed, 'failed', t), type: 'error' })
+          } else {
+            segments.push({ text: formatToolSummarySegment(cat, failed, 'done', t), type: 'error' })
+            segments.push({ text: t('toolSteps.failedAllSuffix'), type: 'error' })
+          }
+        }
+      } else if (done > 0 && failed > 0) {
         // 同类别既有成功又有失败：合并成一句
         const total = done + failed
         segments.push({ text: formatToolSummarySegment(cat, total, 'done', t), type: 'normal' })

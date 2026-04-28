@@ -11,7 +11,14 @@
     "failedToLoadFile": "加载文件内容失败",
     "binaryFile": "二进制文件，无法预览",
     "fit": "适应",
-    "oneToOne": "1:1"
+    "oneToOne": "1:1",
+    "newFile": "新建文件",
+    "newFolder": "新建文件夹",
+    "rename": "重命名",
+    "delete": "删除",
+    "deleteTitle": "确定删除\"{{name}}\"吗？",
+    "deleteFileDesc": "此文件将被永久删除。",
+    "deleteFolderDesc": "此文件夹及其所有内容将被永久删除。"
   },
   "terminal": {
     "terminal": "终端",
@@ -33,12 +40,13 @@
   "bottomPanel": {
     "loadingPanel": "加载面板中..."
   },
-  "panelContainer": {
+"panelContainer": {
     "files": "文件",
-    "changes": "变更",
+    "changes": "更改",
     "mcp": "MCP",
-    "skills": "Skills",
-    "worktrees": "Worktrees",
+    "skills": "技能",
+    "worktrees": "工作树",
+    "plugins": "插件",
     "tab": "标签",
     "addTab": "添加标签",
     "renameTerminal": "重命名终端",
@@ -131,6 +139,12 @@
     "resetWorktreeAction": "重置 Worktree",
     "removeWorktreeAction": "移除 Worktree"
   },
+  "pluginPanel": {
+    "noPlugins": "未配置插件",
+    "installed": "插件 ({{count}})",
+    "loading": "加载插件中...",
+    "failedToLoad": "加载插件失败"
+  },
   "toast": {
     "clearAll": "清除全部"
   },
@@ -164,5 +178,16 @@
   },
   "diffView": {
     "fullscreenView": "全屏查看"
+  },
+  "quickOpen": {
+    "placeholder": "搜索文件、文件夹、会话...",
+    "noResults": "未找到结果",
+    "files": "文件",
+    "folders": "文件夹",
+    "sessions": "会话",
+    "all": "全部",
+    "content": "内容",
+    "switchTab": "切换标签",
+    "untitledSession": "未命名会话"
   }
 }

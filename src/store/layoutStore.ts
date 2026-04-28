@@ -6,7 +6,7 @@
 export type PanelPosition = 'bottom' | 'right'
 
 // 面板内容类型
-export type PanelTabType = 'terminal' | 'files' | 'changes' | 'mcp' | 'skill' | 'worktree'
+export type PanelTabType = 'terminal' | 'files' | 'changes' | 'mcp' | 'skill' | 'worktree' | 'plugin'
 type PersistedPanelTabType = Exclude<PanelTabType, 'terminal'>
 
 // 统一的面板标签
@@ -104,6 +104,9 @@ interface LayoutState {
 
   // 屏幕常亮
   wakeLock: boolean
+
+  // QuickOpen 文件定位
+  revealFilePath: string | null
 }
 
 type Subscriber = () => void
@@ -157,7 +160,7 @@ export interface PersistedTerminalLayoutMap {
 }
 
 const PANEL_POSITIONS: PanelPosition[] = ['bottom', 'right']
-const PERSISTED_PANEL_TAB_TYPES: PersistedPanelTabType[] = ['files', 'changes', 'mcp', 'skill', 'worktree']
+const PERSISTED_PANEL_TAB_TYPES: PersistedPanelTabType[] = ['files', 'changes', 'mcp', 'skill', 'worktree', 'plugin']
 
 function isPanelPosition(value: unknown): value is PanelPosition {
   return typeof value === 'string' && PANEL_POSITIONS.includes(value as PanelPosition)
@@ -304,6 +307,7 @@ export class LayoutStore {
     bottomPanelOpen: false,
     bottomPanelHeight: 250,
     wakeLock: false,
+    revealFilePath: null,
   }
   private subscribers = new Set<Subscriber>()
   private currentTerminalDirectory: string | null = null
@@ -607,6 +611,10 @@ export class LayoutStore {
   // 添加 Worktree 标签
   addWorktreeTab(position: PanelPosition) {
     return this.addSingletonTab('worktree', position, 'worktree')
+  }
+
+  addPluginTab(position: PanelPosition) {
+    return this.addSingletonTab('plugin', position, 'plugin')
   }
 
   // 移除 tab
@@ -1099,6 +1107,20 @@ export class LayoutStore {
 
   getState() {
     return this.state
+  }
+
+  setRevealFilePath(path: string | null) {
+    this.state = { ...this.state, revealFilePath: path }
+    this.notify()
+  }
+
+  consumeRevealFilePath(): string | null {
+    const path = this.state.revealFilePath
+    if (path) {
+      this.state = { ...this.state, revealFilePath: null }
+      this.notify()
+    }
+    return path
   }
 }
 

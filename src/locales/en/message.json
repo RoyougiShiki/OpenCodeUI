@@ -83,6 +83,8 @@
     "questionFailed_other": "{{count}} questions failed",
     "skillDone_one": "Loaded {{count}} skill",
     "skillDone_other": "Loaded {{count}} skills",
+    "skillDoneNames": "Loaded: {{names}}",
+    "skillDoneNamesMore": "Loaded: {{names}} +{{count}} more",
     "skillActive": "Loading skill",
     "skillFailed_one": "{{count}} skill failed",
     "skillFailed_other": "{{count}} skills failed",

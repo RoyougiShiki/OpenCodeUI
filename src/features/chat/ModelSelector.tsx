@@ -7,7 +7,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback, memo, forwardRef, useImperativeHandle } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDownIcon, SearchIcon, ThinkingIcon, EyeIcon, CheckIcon, PinIcon } from '../../components/Icons'
+import { ChevronDownIcon, SearchIcon, ThinkingIcon, EyeIcon, CheckIcon, PinIcon, SettingsIcon } from '../../components/Icons'
 import { DropdownMenu } from '../../components/ui'
 import type { ModelInfo } from '../../api'
 import { useInputCapabilities } from '../../hooks/useInputCapabilities'
@@ -41,6 +41,8 @@ interface ModelSelectorProps {
   constrainToRef?: React.RefObject<HTMLElement | null>
   /** 触发按钮的展示风格 */
   trigger?: 'header' | 'toolbar'
+  /** 打开模型设置页面 */
+  onOpenModelSettings?: () => void
 }
 
 // ============================================
@@ -133,6 +135,7 @@ interface ModelListPanelProps {
   noResultsText: string
   noResultsHint: string
   preferTouchUi: boolean
+  onOpenModelSettings?: () => void
 }
 
 const ModelListPanel = memo(function ModelListPanel({
@@ -159,6 +162,7 @@ const ModelListPanel = memo(function ModelListPanel({
   noResultsText,
   noResultsHint,
   preferTouchUi,
+  onOpenModelSettings,
 }: ModelListPanelProps) {
   return (
     <div ref={menuRef} onKeyDown={handleKeyDown} className="flex flex-col min-h-0 pt-1.5">
@@ -178,6 +182,18 @@ const ModelListPanel = memo(function ModelListPanel({
             placeholder={searchPlaceholder}
             className="flex-1 bg-transparent border-none outline-none text-[length:var(--fs-base)] text-text-100 placeholder:text-text-400"
           />
+          {onOpenModelSettings && (
+            <button
+              onClick={e => {
+                e.stopPropagation()
+                onOpenModelSettings()
+              }}
+              className="p-1 rounded-md text-text-400 hover:text-text-100 hover:bg-bg-200/50 transition-colors flex-shrink-0"
+              title="Model settings"
+            >
+              <SettingsIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -336,6 +352,7 @@ export const ModelSelector = memo(
       position = 'bottom',
       constrainToRef,
       trigger = 'header',
+      onOpenModelSettings,
     },
     ref,
   ) {
@@ -638,6 +655,7 @@ export const ModelSelector = memo(
             noResultsText={t('modelSelector.noModelsFound')}
             noResultsHint={t('modelSelector.tryDifferentKeyword')}
             preferTouchUi={preferTouchUi}
+            onOpenModelSettings={onOpenModelSettings}
           />
         </DropdownMenu>
       </div>

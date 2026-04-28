@@ -43,6 +43,9 @@ const SettingsDialog = lazy(() =>
 const CommandPalette = lazy(() =>
   import('./components/CommandPalette').then(module => ({ default: module.CommandPalette })),
 )
+const QuickOpen = lazy(() =>
+  import('./components/QuickOpen').then(module => ({ default: module.QuickOpen })),
+)
 const CloseServiceDialog = lazy(() =>
   import('./components/CloseServiceDialog').then(module => ({ default: module.CloseServiceDialog })),
 )
@@ -198,6 +201,7 @@ function App() {
         showSidebarButton={chatViewport.interaction.sidebarBehavior === 'overlay'}
         onSplitPane={splitPaneEnabled && !paneLayout.fullscreenPaneId ? handleEnterSplitMode : undefined}
         onTogglePaneFullscreen={paneLayout.isSplit ? handleToggleFocusedPaneFullscreen : undefined}
+        onOpenModelSettings={openModelSettings}
         navigatePaneToSession={navigatePaneToSession}
         navigatePaneHome={navigatePaneHome}
       />
@@ -228,6 +232,9 @@ function App() {
   const openSettings = useCallback(() => {
     openSettingsTab('servers')
   }, [openSettingsTab])
+  const openModelSettings = useCallback(() => {
+    openSettingsTab('models')
+  }, [openSettingsTab])
   const openAboutSettings = useCallback(() => {
     openSettingsTab('about')
   }, [openSettingsTab])
@@ -250,6 +257,7 @@ function App() {
   }, [openProject, openSettings])
 
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [quickOpenOpen, setQuickOpenOpen] = useState(false)
 
   const handleNewTerminal = useCallback(async () => {
     try {
@@ -270,6 +278,7 @@ function App() {
       openSettings,
       openProject,
       commandPalette: () => setCommandPaletteOpen(true),
+      quickOpen: () => setQuickOpenOpen(true),
       toggleSidebar: () => setSidebarExpanded(!sidebarExpanded),
       toggleRightPanel: () => layoutStore.toggleRightPanel(),
       focusInput: () => {
@@ -575,6 +584,8 @@ function App() {
             onClose={() => setSidebarExpanded(false)}
             contextLimit={focusedController?.contextLimit}
             onOpenSettings={openSettings}
+            onOpenSearch={() => setQuickOpenOpen(true)}
+            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             projectDialogOpen={projectDialogOpen}
             onProjectDialogClose={closeProjectDialog}
           />
@@ -613,6 +624,9 @@ function App() {
             onClose={() => setCommandPaletteOpen(false)}
             commands={commands}
           />
+          {quickOpenOpen && (
+            <QuickOpen onClose={() => setQuickOpenOpen(false)} />
+          )}
         </Suspense>
 
         <Suspense fallback={null}>

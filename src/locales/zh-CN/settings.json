@@ -87,6 +87,8 @@
     "inlineToolRequestsDesc": "把待处理的权限和提问显示在对应工具下方，而不是浮层弹窗",
     "compactInlinePermission": "精简内嵌权限",
     "compactInlinePermissionDesc": "工具已有内容时，内嵌权限只显示操作按钮，避免重复",
+    "permissionDialogCollapsed": "权限对话框折叠",
+    "permissionDialogCollapsedDesc": "默认折叠权限对话框，点击展开",
     "toolCardStyle": "工具输出风格",
     "toolCardStyleDesc": "选择工具调用结果的展示方式",
     "toolCardClassic": "经典",
@@ -281,7 +283,10 @@
     "envVars": "环境变量",
     "envVarsDesc": "传递给 opencode serve 进程（如 HTTPS_PROXY、API 密钥）",
     "keyPlaceholder": "KEY",
-    "valuePlaceholder": "值"
+    "valuePlaceholder": "值",
+    "boundServer": "绑定服务器",
+    "useActiveServer": "使用当前活动服务器",
+    "boundServerHelp": "选择用于启动本地服务的服务器配置。将使用该服务器的 URL 和端口。"
   },
   "about": {
     "title": "关于和更新",
