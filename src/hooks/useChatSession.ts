@@ -313,10 +313,9 @@ export function useChatSession({
           return [...prev, request]
         })
 
-        // 页面不在前台时通知用户有权限请求等待批准
         const permDesc = request.patterns?.length ? `${request.permission}: ${request.patterns[0]}` : request.permission
         const title = buildNotificationTitle(request.sessionID, 'Permission Required')
-        if (notificationEventSettingsStore.isSystemEnabled('permission')) {
+        if (document.hidden && notificationEventSettingsStore.isSystemEnabled('permission')) {
           sendNotification(title, permDesc, {
             sessionId: request.sessionID,
             directory: effectiveDirectory,
@@ -333,10 +332,9 @@ export function useChatSession({
           return [...prev, request]
         })
 
-        // 页面不在前台时通知用户有问题等待回答
         const questionDesc = request.questions?.[0]?.header || 'AI is waiting for your input'
         const title = buildNotificationTitle(request.sessionID, 'Question')
-        if (notificationEventSettingsStore.isSystemEnabled('question')) {
+        if (document.hidden && notificationEventSettingsStore.isSystemEnabled('question')) {
           sendNotification(title, questionDesc, {
             sessionId: request.sessionID,
             directory: effectiveDirectory,
@@ -354,26 +352,22 @@ export function useChatSession({
         chatAreaRef.current?.scrollToBottomIfAtBottom()
       },
       onSessionIdle: (sessionID: string) => {
-        // 页面不在前台时发送浏览器通知
-        const title = buildNotificationTitle(sessionID, 'Session completed')
-        if (notificationEventSettingsStore.isSystemEnabled('completed')) {
+        if (document.hidden && notificationEventSettingsStore.isSystemEnabled('completed') && !hasOtherConsumerForSession(sessionID, paneId)) {
+          const title = buildNotificationTitle(sessionID, 'Session completed')
           sendNotification(title, 'Session completed', {
             sessionId: sessionID,
             directory: effectiveDirectory,
           })
         }
-        // 应用内 toast 已在 useGlobalEvents 中统一处理
       },
       onSessionError: (sessionID: string) => {
-        // 页面不在前台时通知用户 session 出错
-        const title = buildNotificationTitle(sessionID, 'Session error')
-        if (notificationEventSettingsStore.isSystemEnabled('error')) {
+        if (document.hidden && notificationEventSettingsStore.isSystemEnabled('error') && !hasOtherConsumerForSession(sessionID, paneId)) {
+          const title = buildNotificationTitle(sessionID, 'Session error')
           sendNotification(title, 'Session error', {
             sessionId: sessionID,
             directory: effectiveDirectory,
           })
         }
-        // 应用内 toast 已在 useGlobalEvents 中统一处理
       },
       onReconnected: (_reason: 'network' | 'server-switch') => {
         messageStore.markAllSessionsStale()

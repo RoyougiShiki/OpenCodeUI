@@ -20,6 +20,7 @@ import { isTauri } from '../utils/tauri'
 interface NotificationData {
   sessionId: string
   directory?: string
+  tag?: string
 }
 
 // ============================================
@@ -50,7 +51,7 @@ async function ensureServiceWorker(): Promise<ServiceWorkerRegistration | null> 
 // Tauri 通知工具
 // ============================================
 
-async function sendTauriNotification(title: string, body: string): Promise<void> {
+async function sendTauriNotification(title: string, body: string, tag?: string): Promise<void> {
   try {
     const { isPermissionGranted, requestPermission, sendNotification } = await import('@tauri-apps/plugin-notification')
 
@@ -61,7 +62,7 @@ async function sendTauriNotification(title: string, body: string): Promise<void>
     }
 
     if (permitted) {
-      sendNotification({ title, body })
+      sendNotification({ title, body, tag })
     }
   } catch (e) {
     if (import.meta.env.DEV) {
@@ -186,7 +187,7 @@ export function useNotification() {
 
     // Tauri 原生通知
     if (isTauri()) {
-      await sendTauriNotification(title, body)
+      await sendTauriNotification(title, body, data?.sessionId || 'opencode')
       return
     }
 
