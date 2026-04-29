@@ -254,10 +254,7 @@ function InputBoxComponent({
 
     textarea.style.height = 'auto'
     const scrollHeight = textarea.scrollHeight
-    // 原生层已处理键盘 resize，window.innerHeight 即可用高度
-    const viewportH = window.innerHeight
-    // 可用高度 = viewport - header(48px) - toolbar/padding/footer(~100px) - 安全余量
-    const maxH = isCompact ? Math.max(80, viewportH - 48 - 100 - 72) : viewportH * 0.35
+    const maxH = isCompact ? Math.max(80, window.innerHeight - 48 - 100 - 72) : window.innerHeight * 0.35
     textarea.style.height = Math.max(24, Math.min(scrollHeight, maxH)) + 'px'
   }, [text, isCompact])
 
