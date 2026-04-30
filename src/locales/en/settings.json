@@ -209,6 +209,15 @@
   "workspace": {
     "layout": "Layout & Reading",
     "layoutDesc": "Workspace layout, reading comfort, and code viewing preferences",
+    "rightPanelDock": "Right panel dock",
+    "rightPanelDockDesc": "Choose whether the right panel docks at the far right or between sidebar and chat",
+    "rightPanelDockRight": "Far right",
+    "rightPanelDockMiddle": "Between",
+    "filePreviewPlacement": "File preview placement",
+    "filePreviewPlacementDesc": "Control where file preview appears inside Files panel",
+    "filePreviewPlacementAuto": "Auto",
+    "filePreviewPlacementInline": "Inline",
+    "filePreviewPlacementSide": "Side",
     "manualTerminalTitles": "Manual Terminal Labels",
     "manualTerminalTitlesDesc": "When enabled, terminal tabs stop following shell title changes and can be renamed manually. When disabled, terminal tabs continue to follow shell or process titles automatically.",
     "sidebar": "Sidebar",
@@ -309,6 +318,24 @@
     "checkNow": "Check for Updates",
     "viewUpdate": "View Update",
     "openReleases": "Open Releases Page",
+    "cliVersionCardTitle": "CLI Version",
+    "cliVersionCardDesc": "Check your current OpenCode CLI version and compare with the latest release.",
+    "cliCurrentVersion": "CLI Version",
+    "cliLatestVersion": "Latest CLI Release",
+    "cliStatusIdle": "Check CLI updates to compare your local version with the latest release.",
+    "cliStatusChecking": "Checking latest OpenCode CLI release...",
+    "cliStatusUpToDate": "Your CLI version is up to date.",
+    "cliStatusUpdateAvailable": "A newer CLI version is available: {{version}}",
+    "cliStatusError": "Failed to check CLI updates: {{error}}",
+    "checkCliNow": "Check CLI Updates",
+    "openCliReleases": "Open CLI Releases",
+    "cliUpdateDialogTitle": "CLI Update Available",
+    "cliUpdateDialogDesc": "A newer OpenCode CLI version is available. Update now in the currently connected server environment.",
+    "cliUpdateTargetHint": "Update target: {{target}}",
+    "updateCliNow": "Update CLI Now",
+    "remindMeLater": "Remind me later",
+    "cliUpdateSuccess": "CLI update command submitted successfully.",
+    "cliUpdateFailed": "Failed to submit CLI update command.",
     "exportBackup": "Export Backup",
     "importBackup": "Import Backup",
     "backupExportFailed": "Failed to export settings backup.",
@@ -335,4 +362,4 @@
       "permission": "Permission"
     }
   }
-} 940c5ae (feat(settings): add tool output collapse setting, merge permission toggles)
+}

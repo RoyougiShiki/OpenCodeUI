@@ -209,6 +209,15 @@
   "workspace": {
     "layout": "布局和阅读",
     "layoutDesc": "工作区布局、阅读舒适度和代码查看偏好",
+    "rightPanelDock": "右侧面板停靠",
+    "rightPanelDockDesc": "选择右侧面板停靠在最右侧，或停靠在侧边栏与聊天区之间",
+    "rightPanelDockRight": "最右侧",
+    "rightPanelDockMiddle": "中间",
+    "filePreviewPlacement": "文件预览位置",
+    "filePreviewPlacementDesc": "控制 Files 面板中的文件预览显示位置",
+    "filePreviewPlacementAuto": "自动",
+    "filePreviewPlacementInline": "下方",
+    "filePreviewPlacementSide": "侧边",
     "manualTerminalTitles": "手动终端标签",
     "manualTerminalTitlesDesc": "开启后，终端标签不再跟随 shell 自动更新，可手动重命名。关闭后，终端标签会继续按 shell 或进程标题自动变化。",
     "sidebar": "侧边栏",
@@ -309,6 +318,24 @@
     "checkNow": "检查更新",
     "viewUpdate": "查看更新",
     "openReleases": "打开发布页",
+    "cliVersionCardTitle": "CLI 版本",
+    "cliVersionCardDesc": "检查当前 OpenCode CLI 版本，并与最新发布版本进行对比。",
+    "cliCurrentVersion": "CLI 版本",
+    "cliLatestVersion": "最新 CLI 发布",
+    "cliStatusIdle": "点击检查 CLI 更新，对比本地版本与最新发布。",
+    "cliStatusChecking": "正在检查 OpenCode CLI 最新发布...",
+    "cliStatusUpToDate": "当前 CLI 已是最新版本。",
+    "cliStatusUpdateAvailable": "发现新 CLI 版本：{{version}}",
+    "cliStatusError": "检查 CLI 更新失败：{{error}}",
+    "checkCliNow": "检查 CLI 更新",
+    "openCliReleases": "打开 CLI 发布页",
+    "cliUpdateDialogTitle": "发现 CLI 更新",
+    "cliUpdateDialogDesc": "检测到更新的 OpenCode CLI 版本。可在当前连接服务器对应的环境中执行升级。",
+    "cliUpdateTargetHint": "更新目标：{{target}}",
+    "updateCliNow": "立即更新 CLI",
+    "remindMeLater": "稍后提醒",
+    "cliUpdateSuccess": "CLI 更新命令已提交。",
+    "cliUpdateFailed": "提交 CLI 更新命令失败。",
     "exportBackup": "导出备份",
     "importBackup": "导入备份",
     "backupExportFailed": "导出设置备份失败。",
@@ -335,4 +362,4 @@
       "permission": "权限"
     }
   }
-} 940c5ae (feat(settings): add tool output collapse setting, merge permission toggles)
+}

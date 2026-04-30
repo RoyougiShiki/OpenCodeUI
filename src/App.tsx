@@ -5,11 +5,13 @@ import { ChatPane } from './features/chat/ChatPane'
 import { SplitContainer } from './features/chat/SplitContainer'
 import type { CommandItem } from './components/CommandPalette'
 import { ToastContainer } from './components/ToastContainer'
+import { CliUpdateDialog } from './components/CliUpdateDialog'
 import { RightPanel } from './components/RightPanel'
 import { BottomPanel } from './components/BottomPanel'
 import { DesktopTitlebar } from './components/DesktopTitlebar'
 import { usesCustomDesktopTitlebar } from './utils/tauri'
 import { useDirectory, useGlobalEvents, useGlobalKeybindings, useRouter } from './hooks'
+import { useServerStore } from './hooks/useServerStore'
 import { useViewportHeight } from './hooks/useViewportHeight'
 import { useCloseServiceDialog } from './hooks/useCloseServiceDialog'
 import { useWakeLock } from './hooks/useWakeLock'
@@ -23,6 +25,8 @@ import {
   usePaneControllers,
   usePaneLayout,
   updateStore,
+  cliUpdateStore,
+  useCliUpdateStore,
 } from './store'
 import {
   ChatViewportProvider,
@@ -49,6 +53,33 @@ const CloseServiceDialog = lazy(() =>
   import('./components/CloseServiceDialog').then(module => ({ default: module.CloseServiceDialog })),
 )
 
+const CLI_UPDATE_PROMPT_COOLDOWN_MS = 60 * 60 * 1000
+const CLI_UPDATE_PROMPT_STORAGE_KEY = 'opencode:cli-update-last-prompt'
+
+function canShowCliUpdatePrompt(version: string): boolean {
+  try {
+    const raw = localStorage.getItem(CLI_UPDATE_PROMPT_STORAGE_KEY)
+    if (!raw) return true
+    const parsed = JSON.parse(raw) as { version?: string; timestamp?: number }
+    if (parsed.version !== version) return true
+    if (typeof parsed.timestamp !== 'number') return true
+    return Date.now() - parsed.timestamp >= CLI_UPDATE_PROMPT_COOLDOWN_MS
+  } catch {
+    return true
+  }
+}
+
+function markCliUpdatePromptShown(version: string): void {
+  try {
+    localStorage.setItem(
+      CLI_UPDATE_PROMPT_STORAGE_KEY,
+      JSON.stringify({ version, timestamp: Date.now() }),
+    )
+  } catch {
+    // ignore
+  }
+}
+
 function App() {
   const { t } = useTranslation(['commands', 'chat', 'common', 'components'])
   const router = useRouter()
@@ -60,7 +91,9 @@ function App() {
     replaceSession,
   } = router
   const { currentDirectory, savedDirectories, sidebarExpanded, setSidebarExpanded } = useDirectory()
-  const { rightPanelOpen, rightPanelWidth, wakeLock } = useLayoutStore()
+  const { activeServer, checkHealth } = useServerStore()
+  const cliUpdateState = useCliUpdateStore()
+  const { rightPanelOpen, rightPanelWidth, rightPanelDock, wakeLock } = useLayoutStore()
   const { surfaceRef, value: chatViewport } = useChatViewportController({
     sidebarExpanded,
     rightPanelOpen,
@@ -89,6 +122,43 @@ function App() {
     if (import.meta.env.DEV) return
     void updateStore.checkForUpdates()
   }, [])
+
+  const [cliUpdateDialogOpen, setCliUpdateDialogOpen] = useState(false)
+  const promptedCliVersionRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!activeServer?.id) return
+    let cancelled = false
+
+    void (async () => {
+      const health = await checkHealth(activeServer.id)
+      if (cancelled) return
+
+      if (health?.version) {
+        cliUpdateStore.setCurrentVersion(health.version)
+      }
+
+      await cliUpdateStore.checkForUpdates()
+      if (cancelled) return
+
+      const latestVersion = cliUpdateStore.getSnapshot().latestRelease?.version ?? null
+      if (!latestVersion) return
+
+      if (
+        cliUpdateStore.shouldPromptUpdate() &&
+        promptedCliVersionRef.current !== latestVersion &&
+        canShowCliUpdatePrompt(latestVersion)
+      ) {
+        promptedCliVersionRef.current = latestVersion
+        markCliUpdatePromptShown(latestVersion)
+        setCliUpdateDialogOpen(true)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeServer?.id, checkHealth])
 
   useViewportHeight()
   useWakeLock(wakeLock)
@@ -575,6 +645,10 @@ function App() {
           />
 
           <div className="flex-1 flex min-w-0 h-full overflow-hidden">
+            {rightPanelDock === 'middle' && (
+              <RightPanel directory={focusedDirectory} sessionId={paneLayout.focusedSessionId} />
+            )}
+
             <div
               ref={surfaceRef}
               className="flex-1 flex flex-col min-w-0 overflow-hidden"
@@ -596,7 +670,9 @@ function App() {
               <BottomPanel directory={focusedDirectory} />
             </div>
 
-            <RightPanel directory={focusedDirectory} sessionId={paneLayout.focusedSessionId} />
+            {rightPanelDock !== 'middle' && (
+              <RightPanel directory={focusedDirectory} sessionId={paneLayout.focusedSessionId} />
+            )}
           </div>
           <ToastContainer onOpenAbout={openAboutSettings} />
         </div>
@@ -614,6 +690,19 @@ function App() {
         </Suspense>
 
         <Suspense fallback={null}>
+          <CliUpdateDialog
+            isOpen={cliUpdateDialogOpen}
+            onClose={() => setCliUpdateDialogOpen(false)}
+            currentVersion={cliUpdateStore.getCurrentVersion() || 'unknown'}
+            latestVersion={cliUpdateState.latestRelease?.tagName || 'unknown'}
+            onDismissVersion={() => cliUpdateStore.dismissCurrentVersion()}
+            onUpdated={() => {
+              if (!activeServer?.id) return
+              void checkHealth(activeServer.id).then(health => {
+                if (health?.version) cliUpdateStore.setCurrentVersion(health.version)
+              })
+            }}
+          />
           <CloseServiceDialog
             isOpen={showCloseDialog}
             onConfirm={handleCloseDialogConfirm}

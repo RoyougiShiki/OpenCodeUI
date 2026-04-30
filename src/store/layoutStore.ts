@@ -6,7 +6,7 @@
 export type PanelPosition = 'bottom' | 'right'
 
 // 面板内容类型
-export type PanelTabType = 'terminal' | 'files' | 'changes' | 'mcp' | 'skill' | 'worktree' | 'plugin'
+export type PanelTabType = 'terminal' | 'files' | 'changes' | 'summary' | 'mcp' | 'skill' | 'worktree' | 'plugin'
 type PersistedPanelTabType = Exclude<PanelTabType, 'terminal'>
 
 // 统一的面板标签
@@ -97,6 +97,8 @@ interface LayoutState {
   // 右侧栏
   rightPanelOpen: boolean
   rightPanelWidth: number
+  rightPanelDock: 'right' | 'middle'
+  filePreviewPlacement: 'auto' | 'inline' | 'side'
 
   // 底部面板
   bottomPanelOpen: boolean
@@ -119,6 +121,8 @@ const STORAGE_KEY_SIDEBAR_SHOW_CHILD_SESSIONS = 'opencode-sidebar-show-child-ses
 const STORAGE_KEY_PANEL_LAYOUT = 'opencode-panel-layout'
 const STORAGE_KEY_TERMINAL_LAYOUT = 'opencode-terminal-layout'
 const STORAGE_KEY_RIGHT_PANEL_WIDTH = 'opencode-right-panel-width'
+const STORAGE_KEY_RIGHT_PANEL_DOCK = 'opencode-right-panel-dock'
+const STORAGE_KEY_FILE_PREVIEW_PLACEMENT = 'opencode-file-preview-placement'
 const STORAGE_KEY_BOTTOM_PANEL_HEIGHT = 'opencode-bottom-panel-height'
 const STORAGE_KEY_VIEWPORT_SIDEBAR_WIDTH = 'sidebar-width'
 
@@ -160,7 +164,7 @@ export interface PersistedTerminalLayoutMap {
 }
 
 const PANEL_POSITIONS: PanelPosition[] = ['bottom', 'right']
-const PERSISTED_PANEL_TAB_TYPES: PersistedPanelTabType[] = ['files', 'changes', 'mcp', 'skill', 'worktree', 'plugin']
+const PERSISTED_PANEL_TAB_TYPES: PersistedPanelTabType[] = ['files', 'changes', 'summary', 'mcp', 'skill', 'worktree', 'plugin']
 
 function isPanelPosition(value: unknown): value is PanelPosition {
   return typeof value === 'string' && PANEL_POSITIONS.includes(value as PanelPosition)
@@ -304,6 +308,8 @@ export class LayoutStore {
     sidebarShowChildSessions: false,
     rightPanelOpen: false,
     rightPanelWidth: 450,
+    rightPanelDock: 'right',
+    filePreviewPlacement: 'auto',
     bottomPanelOpen: false,
     bottomPanelHeight: 250,
     wakeLock: false,
@@ -413,6 +419,16 @@ export class LayoutStore {
         if (!isNaN(width) && width >= 160 && width <= MAX_RIGHT_PANEL_WIDTH) {
           this.state.rightPanelWidth = width
         }
+      }
+
+      const savedRightPanelDock = localStorage.getItem(STORAGE_KEY_RIGHT_PANEL_DOCK)
+      if (savedRightPanelDock === 'middle' || savedRightPanelDock === 'right') {
+        this.state.rightPanelDock = savedRightPanelDock
+      }
+
+      const savedPreviewPlacement = localStorage.getItem(STORAGE_KEY_FILE_PREVIEW_PLACEMENT)
+      if (savedPreviewPlacement === 'auto' || savedPreviewPlacement === 'inline' || savedPreviewPlacement === 'side') {
+        this.state.filePreviewPlacement = savedPreviewPlacement
       }
 
       // 底部面板高度
@@ -598,6 +614,11 @@ export class LayoutStore {
     return this.addTab({ type: 'changes', position })
   }
 
+  // 添加 Summary 标签
+  addSummaryTab(position: PanelPosition) {
+    return this.addSingletonTab('summary', position, 'summary')
+  }
+
   // 添加 MCP 标签
   addMcpTab(position: PanelPosition) {
     return this.addSingletonTab('mcp', position, 'mcp')
@@ -758,6 +779,28 @@ export class LayoutStore {
     this.state.rightPanelWidth = Math.min(Math.max(width, 160), MAX_RIGHT_PANEL_WIDTH)
     try {
       localStorage.setItem(STORAGE_KEY_RIGHT_PANEL_WIDTH, this.state.rightPanelWidth.toString())
+    } catch {
+      // ignore
+    }
+    this.notify()
+  }
+
+  setRightPanelDock(dock: 'right' | 'middle') {
+    if (this.state.rightPanelDock === dock) return
+    this.state.rightPanelDock = dock
+    try {
+      localStorage.setItem(STORAGE_KEY_RIGHT_PANEL_DOCK, dock)
+    } catch {
+      // ignore
+    }
+    this.notify()
+  }
+
+  setFilePreviewPlacement(placement: 'auto' | 'inline' | 'side') {
+    if (this.state.filePreviewPlacement === placement) return
+    this.state.filePreviewPlacement = placement
+    try {
+      localStorage.setItem(STORAGE_KEY_FILE_PREVIEW_PLACEMENT, placement)
     } catch {
       // ignore
     }
@@ -1133,6 +1176,8 @@ export interface LayoutBackup {
   sidebarShowChildSessions: boolean
   wakeLock: boolean
   rightPanelWidth: number
+  rightPanelDock: 'right' | 'middle'
+  filePreviewPlacement: 'auto' | 'inline' | 'side'
   bottomPanelHeight: number
   panelLayout: PersistedPanelLayout
   terminalLayout: PersistedTerminalLayoutMap
@@ -1177,6 +1222,8 @@ export function exportLayoutBackup(): LayoutBackup {
     sidebarShowChildSessions: state.sidebarShowChildSessions,
     wakeLock: state.wakeLock,
     rightPanelWidth: state.rightPanelWidth,
+    rightPanelDock: state.rightPanelDock,
+    filePreviewPlacement: state.filePreviewPlacement,
     bottomPanelHeight: state.bottomPanelHeight,
     panelLayout: buildPersistedPanelLayout(state),
     terminalLayout,
@@ -1197,6 +1244,11 @@ export function importLayoutBackup(raw: unknown): void {
     typeof parsed?.bottomPanelHeight === 'number'
       ? Math.min(Math.max(Math.round(parsed.bottomPanelHeight), 100), 500)
       : 250
+  const rightPanelDock = parsed?.rightPanelDock === 'middle' ? 'middle' : 'right'
+  const filePreviewPlacement =
+    parsed?.filePreviewPlacement === 'inline' || parsed?.filePreviewPlacement === 'side' || parsed?.filePreviewPlacement === 'auto'
+      ? parsed.filePreviewPlacement
+      : 'auto'
   const sidebarWidth =
     typeof parsed?.sidebarWidth === 'number' && Number.isFinite(parsed.sidebarWidth) && parsed.sidebarWidth > 0
       ? Math.round(parsed.sidebarWidth)
@@ -1211,6 +1263,8 @@ export function importLayoutBackup(raw: unknown): void {
   localStorage.setItem(STORAGE_KEY_SIDEBAR_SHOW_CHILD_SESSIONS, String(parsed?.sidebarShowChildSessions === true))
   localStorage.setItem(STORAGE_KEY_WAKE_LOCK, String(parsed?.wakeLock === true))
   localStorage.setItem(STORAGE_KEY_RIGHT_PANEL_WIDTH, String(rightPanelWidth))
+  localStorage.setItem(STORAGE_KEY_RIGHT_PANEL_DOCK, rightPanelDock)
+  localStorage.setItem(STORAGE_KEY_FILE_PREVIEW_PLACEMENT, filePreviewPlacement)
   localStorage.setItem(STORAGE_KEY_BOTTOM_PANEL_HEIGHT, String(bottomPanelHeight))
   localStorage.setItem(STORAGE_KEY_PANEL_LAYOUT, JSON.stringify(panelLayout))
   localStorage.setItem(STORAGE_KEY_TERMINAL_LAYOUT, JSON.stringify(terminalLayout))

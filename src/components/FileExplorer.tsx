@@ -14,6 +14,8 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   RetryIcon,
+  EyeIcon,
+  MinimizeIcon,
   AlertCircleIcon,
   DownloadIcon,
   MaximizeIcon,
@@ -40,6 +42,8 @@ import { downloadFileContent } from '../utils/downloadUtils'
 import type { FileContent } from '../api/types'
 import { createPtySession, removePtySession } from '../api/pty'
 import { ConfirmDialog } from './ui/ConfirmDialog'
+import { copyTextToClipboard } from '../utils/clipboard'
+import { MarkdownRenderer } from './MarkdownRenderer'
 
 // 常量
 const MIN_TREE_HEIGHT = 100
@@ -53,6 +57,7 @@ interface FileExplorerProps {
   position?: 'bottom' | 'right'
   isPanelResizing?: boolean
   sessionId?: string | null
+  previewLayout?: 'bottom' | 'left' | 'right'
 }
 
 export const FileExplorer = memo(function FileExplorer({
@@ -63,6 +68,7 @@ export const FileExplorer = memo(function FileExplorer({
   position = 'right',
   isPanelResizing = false,
   sessionId,
+  previewLayout = 'bottom',
 }: FileExplorerProps) {
   const { t } = useTranslation(['components', 'common'])
   const { revealFilePath } = useLayoutStore()
@@ -104,6 +110,7 @@ export const FileExplorer = memo(function FileExplorer({
     fileStatus,
     refresh,
   } = useFileExplorer({ directory, autoLoad: true, sessionId: sessionId || undefined })
+  const [previewVisible, setPreviewVisible] = useState(true)
 
   // 当 previewFile 改变时加载预览
   useEffect(() => {
@@ -208,18 +215,18 @@ export const FileExplorer = memo(function FileExplorer({
     (node: FileTreeNode) => {
       if (node.type === 'directory') {
         toggleExpand(node.path)
-        clearPreview()
-        layoutStore.closeAllFilePreviews(panelTabId)
       } else {
+        setPreviewVisible(true)
         layoutStore.openFilePreview({ path: node.path, name: node.name }, position)
       }
     },
-    [toggleExpand, position, clearPreview, panelTabId],
+    [toggleExpand, position],
   )
 
   // 关闭预览
   const handleClosePreview = useCallback(() => {
     layoutStore.closeAllFilePreviews(panelTabId)
+    setPreviewVisible(false)
     resetSplitHeight()
   }, [panelTabId, resetSplitHeight])
 
@@ -246,7 +253,7 @@ export const FileExplorer = memo(function FileExplorer({
 
   // 是否显示预览（只依赖 previewFile 和 previewError，不依赖 previewLoading）
   // previewLoading 是异步加载状态，不应独立触发预览区显示
-  const showPreview = Boolean(previewFile) || Boolean(previewError)
+  const showPreview = previewVisible && (Boolean(previewFile) || Boolean(previewError))
 
   // 没有选择目录
   if (!directory) {
@@ -267,33 +274,48 @@ export const FileExplorer = memo(function FileExplorer({
     )
   }
 
+  const isVerticalPreview = previewLayout === 'bottom'
+
   return (
     <div ref={containerRef} className="flex flex-col h-full">
-      {/* File Tree - 使用 CSS 变量控制高度 */}
-      <div
-        ref={treeRef}
-        className="overflow-hidden flex flex-col shrink-0"
-        style={
-          {
-            '--tree-height': treeHeight !== null ? `${treeHeight}px` : '40%',
-            height: showPreview ? 'var(--tree-height)' : '100%',
-            minHeight: showPreview ? MIN_TREE_HEIGHT : undefined,
-          } as React.CSSProperties
-        }
-      >
+      <div className={isVerticalPreview ? 'contents' : 'flex flex-1 min-h-0'}>
+        {/* File Tree - 使用 CSS 变量控制高度 */}
+        <div
+          ref={treeRef}
+          className={`overflow-hidden flex flex-col ${isVerticalPreview ? 'shrink-0' : 'min-w-0'} ${showPreview && !isVerticalPreview ? 'w-[45%] border-r border-border-100/30' : ''} ${!isVerticalPreview && !showPreview ? 'flex-1' : ''}`}
+          style={
+            isVerticalPreview
+              ? ({
+                  '--tree-height': treeHeight !== null ? `${treeHeight}px` : '40%',
+                  height: showPreview ? 'var(--tree-height)' : '100%',
+                  minHeight: showPreview ? MIN_TREE_HEIGHT : undefined,
+                } as React.CSSProperties)
+              : undefined
+          }
+        >
         {/* Tree Header */}
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-border-100/50 shrink-0">
           <span className="text-[length:var(--fs-xxs)] font-bold text-text-400 uppercase tracking-wider">
             {t('fileExplorer.explorer')}
           </span>
-          <button
-            onClick={refresh}
-            disabled={isLoading}
-            className="p-1 text-text-400 hover:text-text-100 hover:bg-bg-200 rounded transition-colors disabled:opacity-50"
-            title={t('common:refresh')}
-          >
-            <RetryIcon size={12} className={isLoading ? 'animate-spin' : ''} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPreviewVisible(v => !v)}
+              disabled={!previewFile && !previewError}
+              className="p-1 text-text-400 hover:text-text-100 hover:bg-bg-200 rounded transition-colors disabled:opacity-50"
+              title={previewVisible ? t('fileExplorer.hidePreview') : t('fileExplorer.showPreview')}
+            >
+              {previewVisible ? <MinimizeIcon size={12} /> : <EyeIcon size={12} />}
+            </button>
+            <button
+              onClick={refresh}
+              disabled={isLoading}
+              className="p-1 text-text-400 hover:text-text-100 hover:bg-bg-200 rounded transition-colors disabled:opacity-50"
+              title={t('common:refresh')}
+            >
+              <RetryIcon size={12} className={isLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
 
         {/* Tree Content */}
@@ -356,10 +378,10 @@ export const FileExplorer = memo(function FileExplorer({
             </div>
           )}
         </div>
-      </div>
+        </div>
 
-      {/* Resize Handle - 与标签栏同色 */}
-      {showPreview && (
+        {/* Resize Handle - 与标签栏同色 */}
+        {showPreview && isVerticalPreview && (
         <div
           className={`
             h-1.5 cursor-row-resize shrink-0 relative
@@ -369,11 +391,14 @@ export const FileExplorer = memo(function FileExplorer({
           onMouseDown={handleResizeStart}
           onTouchStart={handleTouchResizeStart}
         />
-      )}
+        )}
 
-      {/* Preview Area */}
-      {showPreview && (
-        <div className="flex-1 flex flex-col min-h-0" style={{ minHeight: MIN_PREVIEW_HEIGHT }}>
+        {/* Preview Area */}
+        {showPreview && (
+          <div
+            className={`flex flex-col min-h-0 ${isVerticalPreview ? 'flex-1' : 'flex-1 min-w-0'} ${!isVerticalPreview && previewLayout === 'left' ? 'order-first' : ''}`}
+            style={isVerticalPreview ? { minHeight: MIN_PREVIEW_HEIGHT } : undefined}
+          >
           <FilePreview
             previewFiles={previewFiles}
             path={previewFile?.path ?? null}
@@ -386,8 +411,9 @@ export const FileExplorer = memo(function FileExplorer({
             onReorderPreview={handleReorderPreviewTabs}
             isResizing={isAnyResizing}
           />
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {treeContextMenu && createPortal(
         <div
@@ -550,6 +576,29 @@ const FileTreeItem = memo(function FileTreeItem({
     setContextMenu(null)
     setDeleteConfirm(true)
   }, [])
+
+  const handleCopyRelativePath = useCallback(async () => {
+    try {
+      await copyTextToClipboard(node.path)
+    } catch {
+      // ignore
+    }
+    setContextMenu(null)
+  }, [node.path])
+
+  const handleCopyAbsolutePath = useCallback(async () => {
+    if (!directory) return
+    const normalizedBase = directory.endsWith('/') ? directory.slice(0, -1) : directory
+    const relativePath = node.path.startsWith('/') ? node.path.slice(1) : node.path
+    const absolutePath = node.path.startsWith('/') ? node.path : `${normalizedBase}/${relativePath}`
+
+    try {
+      await copyTextToClipboard(absolutePath)
+    } catch {
+      // ignore
+    }
+    setContextMenu(null)
+  }, [directory, node.path])
 
   const handleEditConfirm = useCallback(() => {
     const name = editValue.trim()
@@ -719,6 +768,21 @@ const FileTreeItem = memo(function FileTreeItem({
             </button>
             <div className="my-1 border-t border-border-200/50" />
             <button
+              onClick={() => void handleCopyRelativePath()}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 transition-colors"
+            >
+              <DownloadIcon size={12} className="shrink-0 opacity-60" />
+              {t('fileExplorer.copyRelativePath')}
+            </button>
+            <button
+              onClick={() => void handleCopyAbsolutePath()}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 transition-colors"
+            >
+              <DownloadIcon size={12} className="shrink-0 opacity-60" />
+              {t('fileExplorer.copyAbsolutePath')}
+            </button>
+            <div className="my-1 border-t border-border-200/50" />
+            <button
               onClick={handleRename}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[length:var(--fs-sm)] text-text-200 hover:bg-bg-200/60 hover:text-text-100 transition-colors"
             >
@@ -767,6 +831,12 @@ interface FilePreviewProps {
   onClosePreview: (path: string) => void
   onReorderPreview: (draggedPath: string, targetPath: string) => void
   isResizing?: boolean
+}
+
+function isMarkdownFile(path: string | null): boolean {
+  if (!path) return false
+  const normalized = path.toLowerCase()
+  return normalized.endsWith('.md') || normalized.endsWith('.markdown') || normalized.endsWith('.mdx')
 }
 
 function FilePreview({
@@ -890,6 +960,13 @@ function FilePreview({
           />
         )
       case 'text':
+        if (isMarkdownFile(path)) {
+          return (
+            <div className="p-4 md-content text-[length:var(--fs-sm)] leading-7 text-text-200">
+              <MarkdownRenderer content={displayContent.text} />
+            </div>
+          )
+        }
         return <CodePreview code={displayContent.text} language={language || 'text'} />
       default:
         return null
@@ -961,7 +1038,13 @@ function FilePreview({
         // ) : displayContent?.type === 'diff' ? (
         //   <DiffPreview hunks={displayContent.hunks} isResizing={isResizing} />
         displayContent?.type === 'text' ? (
-          <CodePreview code={displayContent.text} language={language || 'text'} isResizing={isResizing} />
+          isMarkdownFile(path) ? (
+            <div className="p-4 md-content text-[length:var(--fs-sm)] leading-7 text-text-200">
+              <MarkdownRenderer content={displayContent.text} />
+            </div>
+          ) : (
+            <CodePreview code={displayContent.text} language={language || 'text'} isResizing={isResizing} />
+          )
         ) : (
           <div className="flex items-center justify-center h-full text-text-400 text-[length:var(--fs-sm)]">
             {t('common:noContent')}

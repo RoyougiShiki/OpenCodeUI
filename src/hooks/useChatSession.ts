@@ -175,6 +175,24 @@ export function useChatSession({
     [getSessionTitle],
   )
 
+  const lastNotificationRef = useRef<Record<string, number>>({})
+  const shouldSendSystemNotification = useCallback((type: 'completed' | 'permission' | 'question' | 'error', sessionID: string) => {
+    const now = Date.now()
+    const key = `${type}:${sessionID}`
+    const last = lastNotificationRef.current[key] ?? 0
+    const cooldownMs = type === 'completed' ? 60000 : 10000
+    if (now - last < cooldownMs) return false
+
+    if (type === 'completed') {
+      const lastPermission = lastNotificationRef.current[`permission:${sessionID}`] ?? 0
+      const lastQuestion = lastNotificationRef.current[`question:${sessionID}`] ?? 0
+      if (now - Math.max(lastPermission, lastQuestion) < 10000) return false
+    }
+
+    lastNotificationRef.current[key] = now
+    return true
+  }, [])
+
   // Session family for permission polling
   const sessionFamily = useSessionFamily(routeSessionId)
 
@@ -315,7 +333,11 @@ export function useChatSession({
 
         const permDesc = request.patterns?.length ? `${request.permission}: ${request.patterns[0]}` : request.permission
         const title = buildNotificationTitle(request.sessionID, 'Permission Required')
-        if (document.hidden && notificationEventSettingsStore.isSystemEnabled('permission')) {
+        if (
+          document.hidden &&
+          notificationEventSettingsStore.isSystemEnabled('permission') &&
+          shouldSendSystemNotification('permission', request.sessionID)
+        ) {
           sendNotification(title, permDesc, {
             sessionId: request.sessionID,
             directory: effectiveDirectory,
@@ -334,7 +356,11 @@ export function useChatSession({
 
         const questionDesc = request.questions?.[0]?.header || 'AI is waiting for your input'
         const title = buildNotificationTitle(request.sessionID, 'Question')
-        if (document.hidden && notificationEventSettingsStore.isSystemEnabled('question')) {
+        if (
+          document.hidden &&
+          notificationEventSettingsStore.isSystemEnabled('question') &&
+          shouldSendSystemNotification('question', request.sessionID)
+        ) {
           sendNotification(title, questionDesc, {
             sessionId: request.sessionID,
             directory: effectiveDirectory,
@@ -352,7 +378,13 @@ export function useChatSession({
         chatAreaRef.current?.scrollToBottomIfAtBottom()
       },
       onSessionIdle: (sessionID: string) => {
-        if (document.hidden && notificationEventSettingsStore.isSystemEnabled('completed') && !hasOtherConsumerForSession(sessionID, paneId)) {
+        if (
+          document.hidden &&
+          notificationEventSettingsStore.isSystemEnabled('completed') &&
+          !hasOtherConsumerForSession(sessionID, paneId) &&
+          routeSessionId !== sessionID &&
+          shouldSendSystemNotification('completed', sessionID)
+        ) {
           const title = buildNotificationTitle(sessionID, 'Session completed')
           sendNotification(title, 'Session completed', {
             sessionId: sessionID,
@@ -361,7 +393,12 @@ export function useChatSession({
         }
       },
       onSessionError: (sessionID: string) => {
-        if (document.hidden && notificationEventSettingsStore.isSystemEnabled('error') && !hasOtherConsumerForSession(sessionID, paneId)) {
+        if (
+          document.hidden &&
+          notificationEventSettingsStore.isSystemEnabled('error') &&
+          !hasOtherConsumerForSession(sessionID, paneId) &&
+          shouldSendSystemNotification('error', sessionID)
+        ) {
           const title = buildNotificationTitle(sessionID, 'Session error')
           sendNotification(title, 'Session error', {
             sessionId: sessionID,
@@ -398,9 +435,11 @@ export function useChatSession({
       setPendingQuestionRequests,
       buildNotificationTitle,
       sendNotification,
+      shouldSendSystemNotification,
       loadSession,
       refreshPendingRequests,
       refetchModels,
+      routeSessionId,
     ],
   )
 

@@ -14,11 +14,15 @@
     "oneToOne": "1:1",
     "newFile": "New File",
     "newFolder": "New Folder",
+    "copyRelativePath": "Copy relative path",
+    "copyAbsolutePath": "Copy absolute path",
     "rename": "Rename",
     "delete": "Delete",
     "deleteTitle": "Delete \"{{name}}\"?",
     "deleteFileDesc": "This file will be permanently deleted.",
     "deleteFolderDesc": "This folder and all its contents will be permanently deleted."
+    ,"hidePreview": "Hide preview"
+    ,"showPreview": "Show preview"
   },
   "terminal": {
     "terminal": "Terminal",
@@ -43,6 +47,7 @@
   "panelContainer": {
     "files": "Files",
     "changes": "Changes",
+    "summary": "Summary",
     "mcp": "MCP",
     "skills": "Skills",
     "worktrees": "Worktrees",
@@ -191,5 +196,21 @@
     "content": "Content",
     "switchTab": "Switch Tab",
     "untitledSession": "Untitled Session"
+  },
+  "summaryPanel": {
+    "noActiveSession": "No active session",
+    "actions": "Actions",
+    "generate": "Generate / Refresh",
+    "generating": "Generating...",
+    "noModelHint": "Need at least one assistant response before generating summary",
+    "overview": "Overview",
+    "changes": "Changes",
+    "usage": "Usage",
+    "totalTokens": "Total tokens",
+    "context": "Context",
+    "cost": "Cost",
+    "duration": "Duration",
+    "compactionSummaries": "Compaction summaries",
+    "noSummaries": "No summaries yet"
   }
 }

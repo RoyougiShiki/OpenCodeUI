@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useCallback, useState, useEffect } from 'react'
+import { lazy, memo, Suspense, useCallback, useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLayoutStore, layoutStore, type PanelTab } from '../store/layoutStore'
 import { PanelContainer } from './PanelContainer'
@@ -12,6 +12,7 @@ import { useChatViewport } from '../features/chat/chatViewport'
 const SessionChangesPanel = lazy(() =>
   import('./SessionChangesPanel').then(module => ({ default: module.SessionChangesPanel })),
 )
+const SummaryPanel = lazy(() => import('./SummaryPanel').then(module => ({ default: module.SummaryPanel })))
 const FileExplorer = lazy(() => import('./FileExplorer').then(module => ({ default: module.FileExplorer })))
 const Terminal = lazy(() => import('./Terminal').then(module => ({ default: module.Terminal })))
 const McpPanel = lazy(() => import('./McpPanel').then(module => ({ default: module.McpPanel })))
@@ -35,9 +36,27 @@ interface RightPanelProps {
 
 export const RightPanel = memo(function RightPanel({ directory, sessionId }: RightPanelProps) {
   const { t } = useTranslation(['components', 'common'])
-  const { rightPanelOpen, rightPanelWidth } = useLayoutStore()
+  const { rightPanelOpen, rightPanelWidth, rightPanelDock, filePreviewPlacement } = useLayoutStore()
   const { interaction, layout } = useChatViewport()
   const normalizedDirectory = directory ? normalizeToForwardSlash(directory) : undefined
+
+  const previewLayout = useMemo<'bottom' | 'left' | 'right'>(() => {
+    if (filePreviewPlacement === 'inline') return 'bottom'
+    const chatWidthRatio = layout.surfaceWidth / Math.max(layout.viewportWidth, 1)
+    const chatAspectRatio = layout.surfaceWidth / Math.max(layout.viewportHeight, 1)
+    const shouldUseSidePreview =
+      filePreviewPlacement === 'side' ||
+      (filePreviewPlacement === 'auto' && chatWidthRatio >= 0.58 && chatAspectRatio >= 1.1)
+    if (!shouldUseSidePreview || interaction.rightPanelBehavior === 'overlay') return 'bottom'
+    return rightPanelDock === 'right' ? 'left' : 'right'
+  }, [
+    filePreviewPlacement,
+    layout.surfaceWidth,
+    layout.viewportWidth,
+    layout.viewportHeight,
+    interaction.rightPanelBehavior,
+    rightPanelDock,
+  ])
 
   // 追踪面板 resize 状态
   const [isPanelResizing, setIsPanelResizing] = useState(false)
@@ -102,6 +121,7 @@ export const RightPanel = memo(function RightPanel({ directory, sessionId }: Rig
                 directory={normalizedDirectory}
                 isPanelResizing={isPanelResizing}
                 sessionId={sessionId}
+                previewLayout={previewLayout}
               />
             </Suspense>
           </div>
@@ -118,6 +138,18 @@ export const RightPanel = memo(function RightPanel({ directory, sessionId }: Rig
               </Suspense>
             </div>
           ) : activeTab.type === 'changes' ? (
+            <div className="flex items-center justify-center h-full text-text-400 text-[length:var(--fs-sm)]">
+              {t('rightPanel.noActiveSession')}
+            </div>
+          ) : null}
+
+          {sessionId ? (
+            <div className={activeTab.type === 'summary' ? 'h-full' : 'hidden'}>
+              <Suspense fallback={<PanelFallback />}>
+                <SummaryPanel sessionId={sessionId} />
+              </Suspense>
+            </div>
+          ) : activeTab.type === 'summary' ? (
             <div className="flex items-center justify-center h-full text-text-400 text-[length:var(--fs-sm)]">
               {t('rightPanel.noActiveSession')}
             </div>
@@ -155,7 +187,7 @@ export const RightPanel = memo(function RightPanel({ directory, sessionId }: Rig
         </>
       )
     },
-    [normalizedDirectory, sessionId, isPanelResizing, t],
+    [normalizedDirectory, sessionId, isPanelResizing, t, previewLayout],
   )
 
   return (
@@ -168,6 +200,7 @@ export const RightPanel = memo(function RightPanel({ directory, sessionId }: Rig
       maxSize={layout.rightPanel.resizeMaxWidth}
       onSizeChange={w => layoutStore.setRightPanelWidth(w)}
       onClose={() => layoutStore.closeRightPanel()}
+      resizeEdge={rightPanelDock === 'middle' ? 'right' : 'left'}
       className="pb-[var(--safe-area-inset-bottom)]"
     >
       <PanelContainer
@@ -211,6 +244,7 @@ interface FilesContentProps {
   directory?: string
   isPanelResizing?: boolean
   sessionId?: string | null
+  previewLayout?: 'bottom' | 'left' | 'right'
 }
 
 const FilesContent = memo(function FilesContent({
@@ -218,6 +252,7 @@ const FilesContent = memo(function FilesContent({
   directory,
   isPanelResizing = false,
   sessionId,
+  previewLayout = 'bottom',
 }: FilesContentProps) {
   const { panelTabs } = useLayoutStore()
   const fileTabs = panelTabs.filter(t => t.position === 'right' && t.type === 'files')
@@ -234,6 +269,7 @@ const FilesContent = memo(function FilesContent({
             position="right"
             isPanelResizing={isPanelResizing}
             sessionId={sessionId}
+            previewLayout={previewLayout}
           />
         </div>
       ))}

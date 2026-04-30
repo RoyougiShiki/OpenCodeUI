@@ -15,7 +15,14 @@ export function WorkspaceSettings() {
     manualTerminalTitles,
     setManualTerminalTitles,
   } = useTheme()
-  const { sidebarFolderRecents, sidebarFolderRecentsShowDiff, sidebarShowChildSessions, wakeLock } = useLayoutStore()
+  const {
+    sidebarFolderRecents,
+    sidebarFolderRecentsShowDiff,
+    sidebarShowChildSessions,
+    wakeLock,
+    rightPanelDock,
+    filePreviewPlacement,
+  } = useLayoutStore()
 
   return (
     <div>
@@ -64,6 +71,33 @@ export function WorkspaceSettings() {
             }}
           />
         </SettingRow>
+
+        <div>
+          <p className="text-[length:var(--fs-md)] text-text-100 mb-1.5">{t('workspace.rightPanelDock')}</p>
+          <p className="text-[length:var(--fs-sm)] text-text-400 mb-3">{t('workspace.rightPanelDockDesc')}</p>
+          <SegmentedControl
+            value={rightPanelDock}
+            options={[
+              { value: 'right', label: t('workspace.rightPanelDockRight') },
+              { value: 'middle', label: t('workspace.rightPanelDockMiddle') },
+            ]}
+            onChange={v => layoutStore.setRightPanelDock(v as 'right' | 'middle')}
+          />
+        </div>
+
+        <div>
+          <p className="text-[length:var(--fs-md)] text-text-100 mb-1.5">{t('workspace.filePreviewPlacement')}</p>
+          <p className="text-[length:var(--fs-sm)] text-text-400 mb-3">{t('workspace.filePreviewPlacementDesc')}</p>
+          <SegmentedControl
+            value={filePreviewPlacement}
+            options={[
+              { value: 'auto', label: t('workspace.filePreviewPlacementAuto') },
+              { value: 'inline', label: t('workspace.filePreviewPlacementInline') },
+              { value: 'side', label: t('workspace.filePreviewPlacementSide') },
+            ]}
+            onChange={v => layoutStore.setFilePreviewPlacement(v as 'auto' | 'inline' | 'side')}
+          />
+        </div>
 
         <div>
           <p className="text-[length:var(--fs-md)] text-text-100 mb-1.5">{t('appearance.diffStyle')}</p>

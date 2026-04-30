@@ -14,11 +14,15 @@
     "oneToOne": "1:1",
     "newFile": "新建文件",
     "newFolder": "新建文件夹",
+    "copyRelativePath": "复制相对路径",
+    "copyAbsolutePath": "复制绝对路径",
     "rename": "重命名",
     "delete": "删除",
     "deleteTitle": "确定删除\"{{name}}\"吗？",
     "deleteFileDesc": "此文件将被永久删除。",
     "deleteFolderDesc": "此文件夹及其所有内容将被永久删除。"
+    ,"hidePreview": "隐藏预览"
+    ,"showPreview": "显示预览"
   },
   "terminal": {
     "terminal": "终端",
@@ -43,6 +47,7 @@
 "panelContainer": {
     "files": "文件",
     "changes": "更改",
+    "summary": "摘要",
     "mcp": "MCP",
     "skills": "技能",
     "worktrees": "工作树",
@@ -189,5 +194,21 @@
     "content": "内容",
     "switchTab": "切换标签",
     "untitledSession": "未命名会话"
+  },
+  "summaryPanel": {
+    "noActiveSession": "没有活跃会话",
+    "actions": "操作",
+    "generate": "生成 / 刷新",
+    "generating": "生成中...",
+    "noModelHint": "至少需要一条助手回复后才能生成摘要",
+    "overview": "概览",
+    "changes": "变更",
+    "usage": "用量",
+    "totalTokens": "总 Tokens",
+    "context": "上下文",
+    "cost": "费用",
+    "duration": "时长",
+    "compactionSummaries": "压缩摘要记录",
+    "noSummaries": "暂无摘要"
   }
 }

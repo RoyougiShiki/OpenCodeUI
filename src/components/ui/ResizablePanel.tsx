@@ -6,6 +6,7 @@ const ANIMATION_DURATION = 'duration-300'
 
 interface ResizablePanelProps {
   position: 'right' | 'bottom'
+  resizeEdge?: 'left' | 'right'
   isOpen: boolean
   overlay?: boolean
   size: number
@@ -19,6 +20,7 @@ interface ResizablePanelProps {
 
 export const ResizablePanel = memo(function ResizablePanel({
   position,
+  resizeEdge = 'left',
   isOpen,
   overlay = false,
   size,
@@ -92,7 +94,12 @@ export const ResizablePanel = memo(function ResizablePanel({
         if (rafRef.current) cancelAnimationFrame(rafRef.current)
 
         rafRef.current = requestAnimationFrame(() => {
-          const delta = position === 'right' ? startX - moveEvent.clientX : startY - moveEvent.clientY
+          const delta =
+            position === 'right'
+              ? resizeEdge === 'right'
+                ? moveEvent.clientX - startX
+                : startX - moveEvent.clientX
+              : startY - moveEvent.clientY
           const nextSize = Math.min(Math.max(startSize + delta, minSize), effectiveMaxSize)
 
           if (position === 'right') {
@@ -267,25 +274,25 @@ export const ResizablePanel = memo(function ResizablePanel({
     >
       {position === 'right' ? (
         <div
-          className={`absolute top-0 left-0 bottom-0 ${touchCapable ? 'w-4 touch-none' : 'w-1'} cursor-col-resize z-50 bg-transparent`}
+          className={`absolute top-0 ${resizeEdge === 'right' ? 'right-0' : 'left-0'} bottom-0 ${touchCapable ? 'w-5 touch-none' : 'w-2'} cursor-col-resize z-50`}
           onPointerDown={startResizing}
         >
           <div
             aria-hidden="true"
-            className={`absolute top-0 bottom-0 left-0 transition-colors ${touchCapable ? 'w-1 rounded-full' : 'w-full'} ${
-              isResizing ? 'bg-accent-main-100' : 'bg-transparent hover:bg-accent-main-100/50'
+            className={`absolute top-0 bottom-0 ${resizeEdge === 'right' ? 'right-0' : 'left-0'} transition-colors ${touchCapable ? 'w-1.5 rounded-full' : 'w-1'} ${
+              isResizing ? 'bg-accent-main-100' : 'bg-border-300/60 hover:bg-accent-main-100/70'
             }`}
           />
         </div>
       ) : (
         <div
-          className={`absolute top-0 left-0 right-0 ${touchCapable ? 'h-4 touch-none' : 'h-1'} cursor-row-resize z-50 bg-transparent`}
+          className={`absolute top-0 left-0 right-0 ${touchCapable ? 'h-5 touch-none' : 'h-2'} cursor-row-resize z-50`}
           onPointerDown={startResizing}
         >
           <div
             aria-hidden="true"
-            className={`absolute top-0 left-0 right-0 transition-colors ${touchCapable ? 'h-1 rounded-full' : 'h-full'} ${
-              isResizing ? 'bg-accent-main-100' : 'bg-transparent hover:bg-accent-main-100/50'
+            className={`absolute top-0 left-0 right-0 transition-colors ${touchCapable ? 'h-1.5 rounded-full' : 'h-1'} ${
+              isResizing ? 'bg-accent-main-100' : 'bg-border-300/60 hover:bg-accent-main-100/70'
             }`}
           />
         </div>
