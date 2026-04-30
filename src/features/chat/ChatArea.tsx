@@ -19,6 +19,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { animate } from 'motion/mini'
 import { MessageRenderer } from '../message'
@@ -29,6 +30,7 @@ import { RetryStatusInline, type RetryStatusInlineData } from './RetryStatusInli
 import { buildVisibleMessageEntries, getVisibleMessageForkTargetId } from './chatAreaVisibility'
 import { AT_BOTTOM_THRESHOLD_PX } from '../../constants'
 import { useChatViewport } from './chatViewport'
+import { useMessageSearch } from '../../hooks/useMessageSearch'
 
 const MESSAGE_RENDER_ROOT_MARGIN = '150% 0px'
 const STICKY_RENDER_MESSAGE_COUNT = 8
@@ -52,6 +54,7 @@ interface ChatAreaProps {
   bottomPadding?: number
   onVisibleMessageIdsChange?: (ids: string[]) => void
   onAtBottomChange?: (atBottom: boolean) => void
+  externalOpenSearchSignal?: number
 }
 
 export type ChatAreaHandle = {
@@ -60,6 +63,7 @@ export type ChatAreaHandle = {
   scrollToLastMessage: () => void
   scrollToMessageIndex: (index: number) => void
   scrollToMessageId: (messageId: string) => void
+  openSearch: () => void
 }
 
 export const ChatArea = memo(
@@ -81,11 +85,13 @@ export const ChatArea = memo(
         bottomPadding = 0,
         onVisibleMessageIdsChange,
         onAtBottomChange,
+        externalOpenSearchSignal = 0,
       },
       ref,
     ) => {
       // ---- Refs ----
       const { t } = useTranslation('chat')
+      const containerRef = useRef<HTMLDivElement | null>(null)
       const scrollRef = useRef<HTMLDivElement>(null)
       const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null)
       const topSentinelRef = useRef<HTMLDivElement>(null)
@@ -96,6 +102,9 @@ export const ChatArea = memo(
       }, [onLoadMore])
       const isLoadingRef = useRef(false)
       const [isLoadingMore, setIsLoadingMore] = useState(false)
+      const [searchInputEl, setSearchInputEl] = useState<HTMLInputElement | null>(null)
+      const [searchAnchor, setSearchAnchor] = useState<{ x: number; y: number } | null>(null)
+      const lastHandledSearchSignalRef = useRef(0)
 
       // Guard: 防止 session 初始加载时 sentinel 在视口内立即触发 loadMore。
       // 只有用户主动滚离底部后解除。
@@ -176,6 +185,79 @@ export const ChatArea = memo(
         scrollRef.current = node
         setScrollRoot(prev => (prev === node ? prev : node))
       }, [])
+
+      const {
+        query,
+        setQuery,
+        matches,
+        currentMatchIndex,
+        isOpen: isSearchOpen,
+        open: openSearch,
+        close: closeSearch,
+        navigateNext,
+        navigatePrev,
+        currentMatchMessageId,
+      } = useMessageSearch(messages, scrollRef)
+
+      const updateSearchAnchor = useCallback(() => {
+        const rect = containerRef.current?.getBoundingClientRect()
+        if (!rect) return
+        const topPadding = 12
+        setSearchAnchor({ x: rect.left + rect.width / 2, y: rect.top + topPadding })
+      }, [])
+
+      const matchedMessageIds = useMemo(() => new Set(matches.map(match => match.messageId)), [matches])
+
+      useEffect(() => {
+        if (externalOpenSearchSignal <= 0) return
+        if (externalOpenSearchSignal === lastHandledSearchSignalRef.current) return
+        lastHandledSearchSignalRef.current = externalOpenSearchSignal
+        updateSearchAnchor()
+        openSearch()
+        requestAnimationFrame(() => searchInputEl?.focus())
+      }, [externalOpenSearchSignal, openSearch, updateSearchAnchor])
+
+      useEffect(() => {
+        if (!isSearchOpen) return
+        updateSearchAnchor()
+        const onResize = () => updateSearchAnchor()
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
+      }, [isSearchOpen, updateSearchAnchor])
+
+      useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+          const isSearchShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f'
+          if (isSearchShortcut) {
+            event.preventDefault()
+            updateSearchAnchor()
+            openSearch()
+            requestAnimationFrame(() => searchInputEl?.focus())
+            return
+          }
+
+          if (!isSearchOpen) return
+
+          if (event.key === 'Escape') {
+            event.preventDefault()
+            closeSearch()
+            return
+          }
+
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            if (event.shiftKey) navigatePrev()
+            else navigateNext()
+          }
+        }
+
+        window.addEventListener('keydown', onKeyDown, true)
+        document.addEventListener('keydown', onKeyDown, true)
+        return () => {
+          window.removeEventListener('keydown', onKeyDown, true)
+          document.removeEventListener('keydown', onKeyDown, true)
+        }
+      }, [closeSearch, isSearchOpen, navigateNext, navigatePrev, openSearch, searchInputEl])
 
       // ============================================
       // Scroll: isAtBottom tracking
@@ -357,8 +439,12 @@ export const ChatArea = memo(
               ?.querySelector(`[data-message-id="${messageId}"]`)
               ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
           },
+          openSearch: () => {
+            openSearch()
+            requestAnimationFrame(() => searchInputEl?.focus())
+          },
         }),
-        [visibleMessages],
+        [visibleMessages, openSearch, searchInputEl],
       )
 
       // ============================================
@@ -399,16 +485,26 @@ export const ChatArea = memo(
                       registerMessage={registerMessage}
                       forceRender={msg.isStreaming || stickyRenderIds.has(msg.info.id)}
                     >
-                      <MessageRenderer
-                        message={msg}
-                        allowStreamingLayoutAnimation={allowStreamingLayoutAnimation}
-                        turnDuration={turnDurationMap.get(msg.info.id)}
-                        onUndo={onUndo}
-                        onFork={onFork}
-                        forkMessageId={forkTargetIdMap.get(msg.info.id)}
-                        canUndo={canUndo}
-                        onEnsureParts={NOOP}
-                      />
+                      <div
+                        className={
+                          matchedMessageIds.has(msg.info.id)
+                            ? currentMatchMessageId === msg.info.id
+                              ? 'rounded-lg ring-1 ring-warning-100/70 bg-warning-100/15'
+                              : 'rounded-lg bg-warning-100/10'
+                            : undefined
+                        }
+                      >
+                        <MessageRenderer
+                          message={msg}
+                          allowStreamingLayoutAnimation={allowStreamingLayoutAnimation}
+                          turnDuration={turnDurationMap.get(msg.info.id)}
+                          onUndo={onUndo}
+                          onFork={onFork}
+                          forkMessageId={forkTargetIdMap.get(msg.info.id)}
+                          canUndo={canUndo}
+                          onEnsureParts={NOOP}
+                        />
+                      </div>
                     </ViewportMessageItem>
                   ))}
                 </div>
@@ -428,11 +524,57 @@ export const ChatArea = memo(
           turnDurationMap,
           forkTargetIdMap,
           allowStreamingLayoutAnimation,
+          matchedMessageIds,
+          currentMatchMessageId,
         ],
       )
 
       return (
-        <div className="h-full overflow-hidden contain-strict relative">
+        <div ref={containerRef} className="h-full overflow-hidden contain-strict relative">
+          {isSearchOpen && createPortal(
+            <div
+              className="fixed z-[200] w-[min(520px,calc(100%-1.5rem))] -translate-x-1/2"
+              style={{
+                left: searchAnchor ? `${searchAnchor.x}px` : '50%',
+                top: searchAnchor ? `${searchAnchor.y}px` : '64px',
+              }}
+            >
+              <div className="glass border border-border-200/60 rounded-lg shadow-lg px-2 py-2 flex items-center gap-2">
+                <input
+                  ref={setSearchInputEl}
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder={t('chatArea.searchPlaceholder')}
+                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-[length:var(--fs-sm)] text-text-100 placeholder:text-text-400"
+                />
+                <span className="text-[length:var(--fs-xs)] text-text-400 tabular-nums px-1">
+                  {matches.length === 0 ? t('chatArea.noResults') : `${currentMatchIndex + 1} / ${matches.length}`}
+                </span>
+                <button
+                  onClick={navigatePrev}
+                  className="px-2 py-1 rounded hover:bg-bg-200 text-text-300 text-[length:var(--fs-xs)]"
+                  title={t('chatArea.prevResult')}
+                >
+                  ↑
+                </button>
+                <button
+                  onClick={navigateNext}
+                  className="px-2 py-1 rounded hover:bg-bg-200 text-text-300 text-[length:var(--fs-xs)]"
+                  title={t('chatArea.nextResult')}
+                >
+                  ↓
+                </button>
+                <button
+                  onClick={closeSearch}
+                  className="px-2 py-1 rounded hover:bg-bg-200 text-text-300 text-[length:var(--fs-xs)]"
+                  title={t('chatArea.closeSearch')}
+                >
+                  ×
+                </button>
+              </div>
+            </div>,
+            document.body,
+          )}
           {/* Session loading spinner — 延迟 150ms 显示，快速加载时不闪烁 */}
           {loadState === 'loading' && visibleMessages.length === 0 && (
             <div className="absolute inset-0 z-10 flex items-center justify-center">

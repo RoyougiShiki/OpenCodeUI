@@ -189,9 +189,15 @@ export const ChatPane = memo(function ChatPane({
     setVisibleMessageIds(ids)
   }, [])
   const [isAtBottom, setIsAtBottom] = useState(true)
+  const [openSearchSignal, setOpenSearchSignal] = useState(0)
 
   const handleOutlineScrollToMessage = useCallback((messageId: string) => {
     chatAreaRef.current?.scrollToMessageId(messageId)
+  }, [])
+
+  const handleOpenMessageSearch = useCallback(() => {
+    chatAreaRef.current?.openSearch()
+    setOpenSearchSignal(prev => prev + 1)
   }, [])
 
   // ============================================
@@ -674,6 +680,7 @@ export const ChatPane = memo(function ChatPane({
               onSplitPane={onSplitPane}
               isPaneFullscreen={isPaneFullscreen}
               onTogglePaneFullscreen={onTogglePaneFullscreen}
+              onOpenSearch={handleOpenMessageSearch}
             />
           </div>
         </div>
@@ -698,6 +705,7 @@ export const ChatPane = memo(function ChatPane({
             bottomPadding={inputBoxHeight}
             onVisibleMessageIdsChange={handleVisibleIdsChange}
             onAtBottomChange={setIsAtBottom}
+            externalOpenSearchSignal={openSearchSignal}
           />
         </InlineToolRequestContext.Provider>
       </div>
@@ -850,6 +858,7 @@ export const ChatPane = memo(function ChatPane({
             canSplitPane={splitPaneEnabled}
             isPaneFullscreen={isPaneFullscreen}
             onTogglePaneFullscreen={onTogglePaneFullscreen}
+            onOpenSearch={handleOpenMessageSearch}
             onFocus={handlePaneFocus}
           />
         )}

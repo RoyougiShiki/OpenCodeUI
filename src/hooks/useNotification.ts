@@ -51,7 +51,7 @@ async function ensureServiceWorker(): Promise<ServiceWorkerRegistration | null> 
 // Tauri 通知工具
 // ============================================
 
-async function sendTauriNotification(title: string, body: string, tag?: string): Promise<void> {
+async function sendTauriNotification(title: string, body: string): Promise<void> {
   try {
     const { isPermissionGranted, requestPermission, sendNotification } = await import('@tauri-apps/plugin-notification')
 
@@ -62,7 +62,8 @@ async function sendTauriNotification(title: string, body: string, tag?: string):
     }
 
     if (permitted) {
-      sendNotification({ title, body, tag })
+      // tauri plugin-notification 的 Options 类型不包含 tag
+      sendNotification({ title, body })
     }
   } catch (e) {
     if (import.meta.env.DEV) {
@@ -187,7 +188,7 @@ export function useNotification() {
 
     // Tauri 原生通知
     if (isTauri()) {
-      await sendTauriNotification(title, body, data?.sessionId || 'opencode')
+      await sendTauriNotification(title, body)
       return
     }
 

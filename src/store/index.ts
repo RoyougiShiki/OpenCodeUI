@@ -71,6 +71,9 @@ export type { ServiceSettingsBackup } from './serviceStore'
 
 export { modelVisibilityStore, useHiddenModelKeys } from './modelVisibilityStore'
 
+export { cliUpdateStore, useCliUpdateStore, CLI_RELEASES_PAGE_URL } from './cliUpdateStore'
+export type { CliUpdateState, CliUpdateRelease } from './cliUpdateStore'
+
 export { soundStore, useSoundSettings, exportSoundBackup, importSoundBackup } from './soundStore'
 export type { SoundBackup, SoundSettings, EventSoundConfig } from './soundStore'
 

@@ -119,6 +119,8 @@ export type ToolCardStyle = 'classic' | 'compact'
 const DEFAULT_TOOL_CARD_STYLE: ToolCardStyle = 'classic'
 const DEFAULT_IMMERSIVE_MODE = false
 const DEFAULT_COMPACT_INLINE_PERMISSION = false
+const DEFAULT_COLLAPSE_TOOL_OUTPUT = false
+const DEFAULT_PERMISSION_DIALOG_COLLAPSED = true
 const DEFAULT_GLASS_EFFECT = true
 const DEFAULT_QUEUE_FOLLOWUP_MESSAGES = false
 const DEFAULT_MANUAL_TERMINAL_TITLES = false
@@ -162,6 +164,10 @@ export interface ThemeState {
   immersiveMode: boolean
   /** 内嵌权限精简模式：ToolBody 有内容时只显示操作按钮 */
   compactInlinePermission: boolean
+  /** 工具输出是否默认折叠 */
+  collapseToolOutput: boolean
+  /** 权限对话框是否默认折叠 */
+  permissionDialogCollapsed: boolean
   /** 毛玻璃效果开关（backdrop-filter blur） */
   glassEffect: boolean
   /** 忙碌时后续消息是否进入队列 */
@@ -195,6 +201,8 @@ const STORAGE_KEY_CODE_FONT_SCALE = 'code-font-scale'
 const STORAGE_KEY_TOOL_CARD_STYLE = 'tool-card-style'
 const STORAGE_KEY_IMMERSIVE_MODE = 'immersive-mode'
 const STORAGE_KEY_COMPACT_INLINE_PERMISSION = 'compact-inline-permission'
+const STORAGE_KEY_COLLAPSE_TOOL_OUTPUT = 'collapse-tool-output'
+const STORAGE_KEY_PERMISSION_DIALOG_COLLAPSED = 'permission-dialog-collapsed'
 const STORAGE_KEY_GLASS_EFFECT = 'glass-effect'
 const STORAGE_KEY_QUEUE_FOLLOWUP_MESSAGES = 'queue-followup-messages'
 const STORAGE_KEY_MANUAL_TERMINAL_TITLES = 'manual-terminal-titles'
@@ -306,6 +314,16 @@ class ThemeStore {
     const savedGlassEffect = localStorage.getItem(STORAGE_KEY_GLASS_EFFECT)
     const glassEffect = savedGlassEffect === null ? DEFAULT_GLASS_EFFECT : savedGlassEffect === 'true'
 
+    const savedCollapseToolOutput = localStorage.getItem(STORAGE_KEY_COLLAPSE_TOOL_OUTPUT)
+    const collapseToolOutput =
+      savedCollapseToolOutput === null ? DEFAULT_COLLAPSE_TOOL_OUTPUT : savedCollapseToolOutput === 'true'
+
+    const savedPermissionDialogCollapsed = localStorage.getItem(STORAGE_KEY_PERMISSION_DIALOG_COLLAPSED)
+    const permissionDialogCollapsed =
+      savedPermissionDialogCollapsed === null
+        ? DEFAULT_PERMISSION_DIALOG_COLLAPSED
+        : savedPermissionDialogCollapsed === 'true'
+
     const savedQueueFollowupMessages = localStorage.getItem(STORAGE_KEY_QUEUE_FOLLOWUP_MESSAGES)
     const queueFollowupMessages =
       savedQueueFollowupMessages === null ? DEFAULT_QUEUE_FOLLOWUP_MESSAGES : savedQueueFollowupMessages === 'true'
@@ -334,6 +352,8 @@ class ThemeStore {
       toolCardStyle,
       immersiveMode,
       compactInlinePermission,
+      collapseToolOutput,
+      permissionDialogCollapsed,
       glassEffect,
       queueFollowupMessages,
       manualTerminalTitles,
@@ -402,6 +422,12 @@ class ThemeStore {
   }
   get compactInlinePermission() {
     return this.state.compactInlinePermission
+  }
+  get collapseToolOutput() {
+    return this.state.collapseToolOutput
+  }
+  get permissionDialogCollapsed() {
+    return this.state.permissionDialogCollapsed
   }
   get glassEffect() {
     return this.state.glassEffect
@@ -592,6 +618,11 @@ class ThemeStore {
     this.emit()
   }
 
+  // Backward-compatible alias used by settings UI
+  setPermissionDisplayMode(enabled: boolean) {
+    this.setInlineToolRequests(enabled)
+  }
+
   setCodeWordWrap(enabled: boolean) {
     if (this.state.codeWordWrap === enabled) return
     this.state = { ...this.state, codeWordWrap: enabled }
@@ -647,6 +678,20 @@ class ThemeStore {
     if (this.state.compactInlinePermission === enabled) return
     this.state = { ...this.state, compactInlinePermission: enabled }
     localStorage.setItem(STORAGE_KEY_COMPACT_INLINE_PERMISSION, String(enabled))
+    this.emit()
+  }
+
+  setCollapseToolOutput(enabled: boolean) {
+    if (this.state.collapseToolOutput === enabled) return
+    this.state = { ...this.state, collapseToolOutput: enabled }
+    localStorage.setItem(STORAGE_KEY_COLLAPSE_TOOL_OUTPUT, String(enabled))
+    this.emit()
+  }
+
+  setPermissionDialogCollapsed(collapsed: boolean) {
+    if (this.state.permissionDialogCollapsed === collapsed) return
+    this.state = { ...this.state, permissionDialogCollapsed: collapsed }
+    localStorage.setItem(STORAGE_KEY_PERMISSION_DIALOG_COLLAPSED, String(collapsed))
     this.emit()
   }
 
@@ -903,6 +948,12 @@ function normalizeThemeBackup(raw: unknown): ThemeBackup {
       typeof parsed?.compactInlinePermission === 'boolean'
         ? parsed.compactInlinePermission
         : DEFAULT_COMPACT_INLINE_PERMISSION,
+    collapseToolOutput:
+      typeof parsed?.collapseToolOutput === 'boolean' ? parsed.collapseToolOutput : DEFAULT_COLLAPSE_TOOL_OUTPUT,
+    permissionDialogCollapsed:
+      typeof parsed?.permissionDialogCollapsed === 'boolean'
+        ? parsed.permissionDialogCollapsed
+        : DEFAULT_PERMISSION_DIALOG_COLLAPSED,
     glassEffect: typeof parsed?.glassEffect === 'boolean' ? parsed.glassEffect : DEFAULT_GLASS_EFFECT,
     queueFollowupMessages:
       typeof parsed?.queueFollowupMessages === 'boolean'
@@ -949,6 +1000,8 @@ export function importThemeBackup(raw: unknown): void {
   localStorage.setItem(STORAGE_KEY_TOOL_CARD_STYLE, backup.toolCardStyle)
   localStorage.setItem(STORAGE_KEY_IMMERSIVE_MODE, String(backup.immersiveMode))
   localStorage.setItem(STORAGE_KEY_COMPACT_INLINE_PERMISSION, String(backup.compactInlinePermission))
+  localStorage.setItem(STORAGE_KEY_COLLAPSE_TOOL_OUTPUT, String(backup.collapseToolOutput))
+  localStorage.setItem(STORAGE_KEY_PERMISSION_DIALOG_COLLAPSED, String(backup.permissionDialogCollapsed))
   localStorage.setItem(STORAGE_KEY_GLASS_EFFECT, String(backup.glassEffect))
   localStorage.setItem(STORAGE_KEY_QUEUE_FOLLOWUP_MESSAGES, String(backup.queueFollowupMessages))
   localStorage.setItem(STORAGE_KEY_MANUAL_TERMINAL_TITLES, String(backup.manualTerminalTitles))

@@ -12,7 +12,14 @@
   },
   "chatArea": {
     "loadingSession": "Loading session...",
-    "loadingHistory": "Loading history..."
+    "loadingHistory": "Loading history...",
+    "searchPlaceholder": "Search in messages...",
+    "searchButton": "Search",
+    "openSearch": "Open message search",
+    "noResults": "No results",
+    "prevResult": "Previous result",
+    "nextResult": "Next result",
+    "closeSearch": "Close search"
   },
   "emptyState": {
     "title": "Start a new conversation",

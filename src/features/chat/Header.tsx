@@ -8,6 +8,7 @@ import {
   SplitHorizontalIcon,
   MaximizeIcon,
   MinimizeIcon,
+  SearchIcon,
 } from '../../components/Icons'
 import { IconButton } from '../../components/ui'
 
@@ -25,6 +26,7 @@ interface HeaderProps {
   onSplitPane?: () => void
   isPaneFullscreen?: boolean
   onTogglePaneFullscreen?: () => void
+  onOpenSearch?: () => void
 }
 
 interface SessionTitleControlProps {
@@ -109,6 +111,7 @@ export function Header({
   onSplitPane,
   isPaneFullscreen = false,
   onTogglePaneFullscreen,
+  onOpenSearch,
 }: HeaderProps) {
   const { t } = useTranslation('chat')
   const { sessionId, sessionDirectory, sessionTitle: currentSessionTitle } = useMessageStore()
@@ -215,6 +218,16 @@ export function Header({
               }`}
             >
               {isPaneFullscreen ? <MinimizeIcon size={18} /> : <MaximizeIcon size={18} />}
+            </IconButton>
+          )}
+
+          {onOpenSearch && (
+            <IconButton
+              aria-label={t('chatArea.openSearch')}
+              onClick={onOpenSearch}
+              className="transition-colors text-text-400 hover:text-text-100 hover:bg-bg-200/50"
+            >
+              <SearchIcon size={18} />
             </IconButton>
           )}
 

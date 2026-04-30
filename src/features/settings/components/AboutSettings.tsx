@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/Button'
 import { DownloadIcon, ExternalLinkIcon, RetryIcon, UploadIcon } from '../../../components/Icons'
 import { hasUpdateAvailable, updateStore, useUpdateStore, RELEASES_PAGE_URL } from '../../../store/updateStore'
+import { cliUpdateStore, useCliUpdateStore, CLI_RELEASES_PAGE_URL } from '../../../store/cliUpdateStore'
+import { useServerStore } from '../../../hooks/useServerStore'
 import { saveData } from '../../../utils/downloadUtils'
 import { exportSettingsBackup, importSettingsBackup, previewBackupMeta } from '../../../utils/settingsBackup'
 import { isTauri } from '../../../utils/tauri'
@@ -22,10 +24,18 @@ async function openExternalUrl(url: string): Promise<void> {
 export function AboutSettings() {
   const { t } = useTranslation(['settings'])
   const updateState = useUpdateStore()
+  const cliUpdateState = useCliUpdateStore()
+  const { activeServer, getHealth, checkHealth } = useServerStore()
   const hasUpdate = hasUpdateAvailable(updateState)
   const latestRelease = updateState.latestRelease
   const latestVersion = latestRelease?.tagName || t('about.unknownVersion')
   const releaseDate = latestRelease?.publishedAt ? new Date(latestRelease.publishedAt).toLocaleString() : null
+  const activeServerHealth = activeServer ? getHealth(activeServer.id) : null
+  const currentCliVersion = activeServerHealth?.version || t('about.unknownVersion')
+  const latestCliVersion = cliUpdateState.latestRelease?.tagName || t('about.unknownVersion')
+  const cliReleaseDate = cliUpdateState.latestRelease?.publishedAt
+    ? new Date(cliUpdateState.latestRelease.publishedAt).toLocaleString()
+    : null
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [backupBusy, setBackupBusy] = useState<'export' | 'import' | null>(null)
   const [backupError, setBackupError] = useState<string | null>(null)
@@ -39,6 +49,21 @@ export function AboutSettings() {
     updateStore.hideToastForCurrentVersion()
     void openExternalUrl(targetUrl)
   }, [latestRelease?.url])
+
+  const handleCheckCliUpdates = useCallback(() => {
+    if (activeServer) {
+      void checkHealth(activeServer.id).then(() => {
+        const refreshed = getHealth(activeServer.id)
+        if (refreshed?.version) cliUpdateStore.setCurrentVersion(refreshed.version)
+      })
+    }
+    void cliUpdateStore.checkForUpdates({ force: true })
+  }, [activeServer, checkHealth, getHealth])
+
+  const handleOpenCliRelease = useCallback(() => {
+    const targetUrl = cliUpdateState.latestRelease?.url || CLI_RELEASES_PAGE_URL
+    void openExternalUrl(targetUrl)
+  }, [cliUpdateState.latestRelease?.url])
 
   const handleExportBackup = useCallback(async () => {
     setBackupError(null)
@@ -98,6 +123,17 @@ export function AboutSettings() {
     statusText = t('about.statusUpToDate')
   }
 
+  let cliStatusText = t('about.cliStatusIdle')
+  if (cliUpdateState.checking) {
+    cliStatusText = t('about.cliStatusChecking')
+  } else if (cliUpdateState.error) {
+    cliStatusText = t('about.cliStatusError', { error: cliUpdateState.error })
+  } else if (cliUpdateStore.hasUpdateAvailable()) {
+    cliStatusText = t('about.cliStatusUpdateAvailable', { version: latestCliVersion })
+  } else if (cliUpdateState.latestRelease) {
+    cliStatusText = t('about.cliStatusUpToDate')
+  }
+
   return (
     <div className="space-y-7">
       <SettingsSection title={t('about.title')}>
@@ -131,6 +167,37 @@ export function AboutSettings() {
               <Button size="sm" variant="ghost" onClick={handleOpenRelease}>
                 <ExternalLinkIcon size={12} />
                 {hasUpdate ? t('about.viewUpdate') : t('about.openReleases')}
+              </Button>
+            </div>
+          </div>
+        </SettingsCard>
+
+        <SettingsCard title={t('about.cliVersionCardTitle')} description={t('about.cliVersionCardDesc')}>
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-border-200/50 bg-bg-000/35 px-3 py-2.5">
+                <div className="text-[length:var(--fs-xs)] text-text-400 mb-1">{t('about.cliCurrentVersion')}</div>
+                <div className="text-[length:var(--fs-base)] font-semibold text-text-100 font-mono">{currentCliVersion}</div>
+              </div>
+              <div className="rounded-lg border border-border-200/50 bg-bg-000/35 px-3 py-2.5">
+                <div className="text-[length:var(--fs-xs)] text-text-400 mb-1">{t('about.cliLatestVersion')}</div>
+                <div className="text-[length:var(--fs-base)] font-semibold text-text-100 font-mono">{latestCliVersion}</div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border-200/50 bg-bg-100/35 px-3 py-3 text-[length:var(--fs-sm)] text-text-300 leading-relaxed">
+              <div className="font-medium text-text-100">{cliStatusText}</div>
+              {cliReleaseDate && <div className="mt-1 text-text-400">{t('about.publishedAt', { date: cliReleaseDate })}</div>}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" isLoading={cliUpdateState.checking} onClick={handleCheckCliUpdates}>
+                {!cliUpdateState.checking && <RetryIcon size={12} />}
+                {t('about.checkCliNow')}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleOpenCliRelease}>
+                <ExternalLinkIcon size={12} />
+                {t('about.openCliReleases')}
               </Button>
             </div>
           </div>

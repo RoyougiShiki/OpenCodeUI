@@ -12,7 +12,14 @@
   },
   "chatArea": {
     "loadingSession": "加载会话中...",
-    "loadingHistory": "加载历史记录..."
+    "loadingHistory": "加载历史记录...",
+    "searchPlaceholder": "在消息中搜索...",
+    "searchButton": "搜索",
+    "openSearch": "打开消息搜索",
+    "noResults": "没有结果",
+    "prevResult": "上一个结果",
+    "nextResult": "下一个结果",
+    "closeSearch": "关闭搜索"
   },
   "emptyState": {
     "title": "开始新对话",

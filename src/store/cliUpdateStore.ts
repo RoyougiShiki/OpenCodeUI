@@ -163,6 +163,11 @@ export class CliUpdateStore {
     return compareVersions(this.state.latestRelease.version, this.currentCliVersion) > 0
   }
 
+  shouldPromptUpdate(): boolean {
+    if (!this.hasUpdateAvailable() || !this.state.latestRelease) return false
+    return this.state.dismissedVersion !== this.state.latestRelease.version
+  }
+
   private applyRelease(release: CliUpdateRelease, checkedAt: number): void {
     const previousVersion = this.state.latestRelease?.version ?? null
     this.setState({

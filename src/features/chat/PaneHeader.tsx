@@ -16,6 +16,7 @@ import {
   SidebarIcon,
   MaximizeIcon,
   MinimizeIcon,
+  SearchIcon,
 } from '../../components/Icons'
 import { IconButton } from '../../components/ui'
 import { paneLayoutStore } from '../../store/paneLayoutStore'
@@ -37,6 +38,7 @@ interface PaneHeaderProps {
   showSidebarButton?: boolean
   onOpenSidebar?: () => void
   onTogglePaneFullscreen?: () => void
+  onOpenSearch?: () => void
   onFocus: () => void
 }
 
@@ -50,6 +52,7 @@ export function PaneHeader({
   showSidebarButton = false,
   onOpenSidebar,
   onTogglePaneFullscreen,
+  onOpenSearch,
   onFocus,
 }: PaneHeaderProps) {
   const { t } = useTranslation('chat')
@@ -217,6 +220,20 @@ export function PaneHeader({
               }`}
             >
               {isPaneFullscreen ? <MinimizeIcon size={14} /> : <MaximizeIcon size={14} />}
+            </IconButton>
+          )}
+
+          {onOpenSearch && (
+            <IconButton
+              size="sm"
+              aria-label={t('chatArea.openSearch')}
+              onClick={e => {
+                e.stopPropagation()
+                onOpenSearch()
+              }}
+              className="text-text-400 hover:text-text-100 hover:bg-bg-200/50"
+            >
+              <SearchIcon size={14} />
             </IconButton>
           )}
 
