@@ -575,6 +575,19 @@ export const ChatArea = memo(
             </div>,
             document.body,
           )}
+          {/* Empty state hint when no messages */}
+          {loadState === 'idle' && visibleMessages.length === 0 && (
+            <div className="absolute inset-0 z-5 flex items-center justify-center pointer-events-none">
+              <div className="flex flex-col items-center gap-2 text-text-500 px-4 max-w-sm text-center">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-500/50">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                <span className="text-[length:var(--fs-sm)]">{t('emptyState.title')}</span>
+                <span className="text-[length:var(--fs-xs)] text-text-500/70">{t('emptyState.orJustType')}</span>
+              </div>
+            </div>
+          )}
+
           {/* Session loading spinner — 延迟 150ms 显示，快速加载时不闪烁 */}
           {loadState === 'loading' && visibleMessages.length === 0 && (
             <div className="absolute inset-0 z-10 flex items-center justify-center">

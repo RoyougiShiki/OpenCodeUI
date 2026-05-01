@@ -645,8 +645,13 @@ function App() {
           />
 
           <div className="flex-1 flex min-w-0 h-full overflow-hidden">
-            {rightPanelDock === 'middle' && (
+            {rightPanelDock === 'middle' && rightPanelOpen && (
               <RightPanel directory={focusedDirectory} sessionId={paneLayout.focusedSessionId} />
+            )}
+
+            {/* 面板之间的分隔线 */}
+            {rightPanelDock === 'middle' && rightPanelOpen && (
+              <div className="w-px bg-border-200/50 shrink-0" />
             )}
 
             <div
@@ -669,6 +674,11 @@ function App() {
 
               <BottomPanel directory={focusedDirectory} />
             </div>
+
+            {/* 面板之间的分隔线 */}
+            {rightPanelDock !== 'middle' && rightPanelOpen && (
+              <div className="w-px bg-border-200/50 shrink-0" />
+            )}
 
             {rightPanelDock !== 'middle' && (
               <RightPanel directory={focusedDirectory} sessionId={paneLayout.focusedSessionId} />

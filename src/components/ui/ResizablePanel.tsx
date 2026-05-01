@@ -245,7 +245,7 @@ export const ResizablePanel = memo(function ResizablePanel({
               className="w-full flex items-center justify-center pt-2 pb-1 cursor-ns-resize touch-none bg-bg-100 shrink-0"
               onTouchStart={handleTouchResizeStart}
             >
-              <div className="w-10 h-1 rounded-full bg-border-300 opacity-50" />
+              <div className="w-10 h-1.5 rounded-full bg-border-300 opacity-50" />
             </div>
           )}
 
@@ -259,10 +259,9 @@ export const ResizablePanel = memo(function ResizablePanel({
 
   const transitionProp = position === 'right' ? 'transition-[width]' : 'transition-[height]'
   const transitionClass = isResizing ? 'transition-none' : `${transitionProp} ${ANIMATION_DURATION} ${ANIMATION_EASE}`
-  const desktopLayoutClass =
-    position === 'right'
-      ? `relative h-full min-w-0 ${isOpen ? 'border-l border-border-200/50' : ''}`
-      : `relative w-full ${isOpen ? 'border-t border-border-200/50' : ''}`
+  const desktopLayoutClass = position === 'right'
+    ? 'relative h-full min-w-0'
+    : `relative w-full ${isOpen ? 'border-t border-border-200/50' : ''}`
   const activeSizeStyle =
     position === 'right' ? { width: isOpen ? `${effectiveSize}px` : 0 } : { height: isOpen ? `${effectiveSize}px` : 0 }
 
@@ -274,13 +273,13 @@ export const ResizablePanel = memo(function ResizablePanel({
     >
       {position === 'right' ? (
         <div
-          className={`absolute top-0 ${resizeEdge === 'right' ? 'right-0' : 'left-0'} bottom-0 ${touchCapable ? 'w-5 touch-none' : 'w-2'} cursor-col-resize z-50`}
+          className={`absolute top-0 ${resizeEdge === 'right' ? 'right-0' : 'left-0'} bottom-0 ${touchCapable ? 'w-5 touch-none' : 'w-1'} cursor-col-resize z-50`}
           onPointerDown={startResizing}
         >
           <div
             aria-hidden="true"
             className={`absolute top-0 bottom-0 ${resizeEdge === 'right' ? 'right-0' : 'left-0'} transition-colors ${touchCapable ? 'w-1.5 rounded-full' : 'w-1'} ${
-              isResizing ? 'bg-accent-main-100' : 'bg-border-300/60 hover:bg-accent-main-100/70'
+              isResizing ? 'bg-accent-main-100' : 'bg-transparent hover:bg-accent-main-100/50'
             }`}
           />
         </div>
@@ -292,7 +291,7 @@ export const ResizablePanel = memo(function ResizablePanel({
           <div
             aria-hidden="true"
             className={`absolute top-0 left-0 right-0 transition-colors ${touchCapable ? 'h-1.5 rounded-full' : 'h-1'} ${
-              isResizing ? 'bg-accent-main-100' : 'bg-border-300/60 hover:bg-accent-main-100/70'
+              isResizing ? 'bg-accent-main-100' : 'bg-border-300/40 hover:bg-accent-main-100/70'
             }`}
           />
         </div>

@@ -92,8 +92,82 @@ export const FileExplorer = memo(function FileExplorer({
     minSecondaryHeight: MIN_PREVIEW_HEIGHT,
   })
 
+  // ---- 水平分栏 resize ----
+  const [treeWidthRatio, setTreeWidthRatio] = useState(0.45)
+  const [isHorizontalResizing, setIsHorizontalResizing] = useState(false)
+  const horizontalRafRef = useRef(0)
+  const treeWidthRatioRef = useRef(treeWidthRatio)
+  treeWidthRatioRef.current = treeWidthRatio
+
   // 综合 resize 状态 - 外部面板 resize 或内部 resize
-  const isAnyResizing = isPanelResizing || isResizing
+  const isAnyResizing = isPanelResizing || isResizing || isHorizontalResizing
+
+  const handleHorizontalResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const container = containerRef.current
+    if (!container) return
+
+    setIsHorizontalResizing(true)
+    const containerRect = container.getBoundingClientRect()
+    const startX = e.clientX
+    const startRatio = treeWidthRatioRef.current
+    // previewLayout === 'left' 时，tree 在右侧，拖拽方向需要反转
+    const direction = previewLayout === 'left' ? -1 : 1
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (horizontalRafRef.current) cancelAnimationFrame(horizontalRafRef.current)
+      horizontalRafRef.current = requestAnimationFrame(() => {
+        const delta = (moveEvent.clientX - startX) / containerRect.width * direction
+        const next = Math.min(0.8, Math.max(0.15, startRatio + delta))
+        setTreeWidthRatio(next)
+      })
+    }
+
+    const handleMouseUp = () => {
+      if (horizontalRafRef.current) cancelAnimationFrame(horizontalRafRef.current)
+      setIsHorizontalResizing(false)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [previewLayout])
+
+  const handleHorizontalTouchResizeStart = useCallback((e: React.TouchEvent) => {
+    const container = containerRef.current
+    if (!container) return
+
+    setIsHorizontalResizing(true)
+    const containerRect = container.getBoundingClientRect()
+    const startX = e.touches[0].clientX
+    const startRatio = treeWidthRatioRef.current
+    const direction = previewLayout === 'left' ? -1 : 1
+
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      moveEvent.preventDefault()
+      if (horizontalRafRef.current) cancelAnimationFrame(horizontalRafRef.current)
+      horizontalRafRef.current = requestAnimationFrame(() => {
+        const delta = (moveEvent.touches[0].clientX - startX) / containerRect.width * direction
+        const next = Math.min(0.8, Math.max(0.15, startRatio + delta))
+        setTreeWidthRatio(next)
+      })
+    }
+
+    const handleTouchEnd = () => {
+      if (horizontalRafRef.current) cancelAnimationFrame(horizontalRafRef.current)
+      setIsHorizontalResizing(false)
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
+    }
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false })
+    document.addEventListener('touchend', handleTouchEnd)
+  }, [previewLayout])
 
   const {
     tree,
@@ -282,15 +356,17 @@ export const FileExplorer = memo(function FileExplorer({
         {/* File Tree - 使用 CSS 变量控制高度 */}
         <div
           ref={treeRef}
-          className={`overflow-hidden flex flex-col ${isVerticalPreview ? 'shrink-0' : 'min-w-0'} ${showPreview && !isVerticalPreview ? 'w-[45%] border-r border-border-100/30' : ''} ${!isVerticalPreview && !showPreview ? 'flex-1' : ''}`}
+          className={`overflow-hidden flex flex-col ${isVerticalPreview ? 'shrink-0' : 'min-w-0'} ${!isVerticalPreview && !showPreview ? 'flex-1' : ''} ${!isVerticalPreview && showPreview ? (previewLayout === 'left' ? 'order-1' : '') : ''}`}
           style={
-            isVerticalPreview
-              ? ({
-                  '--tree-height': treeHeight !== null ? `${treeHeight}px` : '40%',
-                  height: showPreview ? 'var(--tree-height)' : '100%',
-                  minHeight: showPreview ? MIN_TREE_HEIGHT : undefined,
-                } as React.CSSProperties)
-              : undefined
+            !isVerticalPreview && showPreview
+              ? { width: `${(treeWidthRatio * 100).toFixed(2)}%` } as React.CSSProperties
+              : isVerticalPreview
+                ? ({
+                    '--tree-height': treeHeight !== null ? `${treeHeight}px` : '40%',
+                    height: showPreview ? 'var(--tree-height)' : '100%',
+                    minHeight: showPreview ? MIN_TREE_HEIGHT : undefined,
+                  } as React.CSSProperties)
+                : undefined
           }
         >
         {/* Tree Header */}
@@ -380,7 +456,14 @@ export const FileExplorer = memo(function FileExplorer({
         </div>
         </div>
 
-        {/* Resize Handle - 与标签栏同色 */}
+        {/* Resize Handle — 用 border 和侧边栏完全一致 */}
+        {showPreview && !isVerticalPreview && (
+        <div
+          className="w-px border-l border-border-200/50 shrink-0 relative z-10 cursor-col-resize hover:border-l-2 hover:border-accent-main-100/50 active:border-accent-main-100 transition-[border] duration-150"
+          onMouseDown={handleHorizontalResizeStart}
+          onTouchStart={handleHorizontalTouchResizeStart}
+        />
+        )}
         {showPreview && isVerticalPreview && (
         <div
           className={`

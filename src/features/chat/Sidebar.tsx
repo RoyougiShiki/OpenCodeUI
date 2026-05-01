@@ -215,7 +215,7 @@ export const Sidebar = memo(function Sidebar({
   }, [])
 
   const handleSidebarTouchEnd = useCallback(() => {
-    if (isSwiping.current && touchDeltaX.current < -80) {
+    if (isSwiping.current && touchDeltaX.current < -50) {
       onClose()
     }
     isSwiping.current = false
