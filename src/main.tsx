@@ -185,6 +185,11 @@ function bootstrap() {
 
   if (isNativeTauri) {
     void getSDKClientAsync().catch(err => apiErrorHandler('initialize sdk client', err))
+    // Signal the Rust backend that the frontend is ready; the main window
+    // is created with visible(false) and waits for this call to show itself.
+    import('@tauri-apps/api/core').then(({ invoke }) => {
+      void invoke('desktop_window_ready')
+    }).catch(err => console.warn('[desktop_window_ready] failed:', err))
   }
 }
 
